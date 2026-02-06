@@ -23,7 +23,17 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 # ----------------------
 DB_FILE = os.environ.get("DB_FILE", os.path.join(BASE_DIR, "history.db"))
 
+def ensure_db_path():
+    db_dir = os.path.dirname(DB_FILE)
+    if db_dir and not os.path.exists(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except Exception:
+            # se não for possível criar (por permissões), deixamos o erro ocorrer mais tarde
+            pass
+
 def get_db_connection():
+    ensure_db_path()
     conn = sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
     conn.isolation_level = None
     return conn
