@@ -21,19 +21,9 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 # ----------------------
 # Banco de Dados SQLite (Histórico e Usuários)
 # ----------------------
-DB_FILE = os.environ.get("DB_FILE", os.path.join(BASE_DIR, "history.db"))
-
-def ensure_db_path():
-    db_dir = os.path.dirname(DB_FILE)
-    if db_dir and not os.path.exists(db_dir):
-        try:
-            os.makedirs(db_dir, exist_ok=True)
-        except Exception:
-            # se não for possível criar (por permissões), deixamos o erro ocorrer mais tarde
-            pass
+DB_FILE = os.path.join(BASE_DIR, "history.db")
 
 def get_db_connection():
-    ensure_db_path()
     conn = sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
     conn.isolation_level = None
     return conn
@@ -72,7 +62,7 @@ conn.commit()
 # ----------------------
 API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
-SESSION_FILE = os.environ.get("SESSION_FILE", os.path.join(BASE_DIR, "bot_session_novo.session"))
+SESSION_NAME = 'bot_session_novo'
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
 telegram_semaphore = asyncio.Semaphore(3)
@@ -111,7 +101,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # ----------------------
 @asynccontextmanager
 async def get_telegram_client():
-    client = TelegramClient(SESSION_FILE, API_ID, API_HASH)
+    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     await client.connect()
     try:
         if not await client.is_user_authorized(): raise Exception("Não autorizado")
