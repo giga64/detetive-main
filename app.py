@@ -21,7 +21,7 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 # ----------------------
 # Banco de Dados SQLite (Histórico e Usuários)
 # ----------------------
-DB_FILE = os.path.join(BASE_DIR, "history.db")
+DB_FILE = os.environ.get("DB_FILE", os.path.join(BASE_DIR, "history.db"))
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
@@ -62,7 +62,7 @@ conn.commit()
 # ----------------------
 API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
-SESSION_NAME = 'bot_session_novo'
+SESSION_FILE = os.environ.get("SESSION_FILE", os.path.join(BASE_DIR, "bot_session_novo.session"))
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
 telegram_semaphore = asyncio.Semaphore(3)
@@ -101,7 +101,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # ----------------------
 @asynccontextmanager
 async def get_telegram_client():
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+    client = TelegramClient(SESSION_FILE, API_ID, API_HASH)
     await client.connect()
     try:
         if not await client.is_user_authorized(): raise Exception("Não autorizado")

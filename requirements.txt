@@ -1,8 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
+gunicorn
 telethon
+tenacity
 jinja2
-playwright  # Remova se não for usar automação de navegador 
+aiofiles
 python-multipart
 psutil
-tenacity
+python-dotenv
