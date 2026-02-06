@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug - Teste CSS</title>
+  <style>
+    /* Teste básico para verificar se o CSS está funcionando */
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .test-card {
+      background: rgba(255, 255, 255, 0.95);
+      color: #2c3e50;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .test-button {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 25px;
+      font-size: 18px;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .test-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(243, 156, 18, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="test-card">
+    <h1>🕵️‍♂️ Teste de CSS</h1>
+    <p>Se você vê este card com gradiente e animações, o CSS está funcionando!</p>
+    <button class="test-button" onclick="alert('CSS funcionando!')">
+      Teste o Botão
+    </button>
+    <br>
+    <a href="http://localhost:8000" style="color: #f39c12; text-decoration: none; font-weight: bold;">
+      → Ir para o site principal
+    </a>
+  </div>
+</body>
+</html> 
