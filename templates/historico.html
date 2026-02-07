@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneSeek - Histórico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 0, 150, 0.03) 0px,
+                rgba(255, 0, 150, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+        .navbar {
+            background: rgba(20, 20, 40, 0.9);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        .navbar h1 {
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            letter-spacing: 2px;
+        }
+        .navbar a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        .navbar a:hover {
+            color: #ff0096;
+            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
+        }
+        .container {
+            background: rgba(20, 20, 40, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 0, 150, 0.3);
+            color: #00d4ff;
+            font-size: 12px;
+        }
+        th {
+            background: rgba(255, 0, 150, 0.1);
+            color: #ff0096;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        .info {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            color: #00d4ff;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🔍 ONESEEK</h1>
+        <div>
+            <a href="/">BUSCAR</a>
+            <a href="/historico">HISTÓRICO</a>
+            <a href="/usuarios">USUÁRIOS</a>
+            <a href="/login">LOGOUT</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📜 HISTÓRICO DE INVESTIGAÇÕES</h2>
+        <div class="info">
+            <p>🗂️ Registro de todas as buscas realizadas</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>DATA/HORA</th>
+                    <th>ALVO</th>
+                    <th>RESULTADO</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #00d4ff;">⏳ Carregando histórico...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function carregarHistorico() {
+            try {
+                const response = await fetch('/api/historico');
+                if (response.ok) {
+                    const data = await response.json();
+                    const tbody = document.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.searched_at || 'N/A'}</td>
+                            <td>${item.identifier || 'N/A'}</td>
+                            <td>${item.response?.substring(0, 100) || 'N/A'}...</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+            }
+        }
+        carregarHistorico();
+    </script>
+</body>
+</html>

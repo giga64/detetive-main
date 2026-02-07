@@ -181,6 +181,13 @@ def historico(request: Request):
     if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
     return templates.TemplateResponse("historico.html", {"request": request})
 
+@app.get("/api/historico")
+def api_historico(request: Request):
+    if not request.cookies.get("auth_user"): raise HTTPException(status_code=401, detail="Não autorizado")
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    searches = cursor.fetchall()
+    return [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
+
 # ----------------------
 # Gestão de Usuários
 # ----------------------

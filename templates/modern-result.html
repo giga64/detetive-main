@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneSeek - Resultado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 0, 150, 0.03) 0px,
+                rgba(255, 0, 150, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+        .navbar {
+            background: rgba(20, 20, 40, 0.9);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        .navbar h1 {
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            letter-spacing: 2px;
+        }
+        .navbar a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        .navbar a:hover {
+            color: #ff0096;
+            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
+        }
+        .container {
+            background: rgba(20, 20, 40, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        .result-box {
+            background: rgba(0, 212, 255, 0.05);
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #ff0096;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 0, 150, 0.3);
+        }
+        .result-label {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        .result-value {
+            color: #00d4ff;
+            word-break: break-word;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
+            transform: translateY(-2px);
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🔍 ONESEEK</h1>
+        <div>
+            <a href="/">BUSCAR</a>
+            <a href="/historico">HISTÓRICO</a>
+            <a href="/usuarios">USUÁRIOS</a>
+            <a href="/login">LOGOUT</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 RESULTADO DA INVESTIGAÇÃO</h2>
+        <div class="result-box">
+            <div class="result-label">🔎 ALVO:</div>
+            <div class="result-value">{{ mensagem }}</div>
+        </div>
+        <div class="result-box">
+            <div class="result-label">📊 DADOS ENCONTRADOS:</div>
+            <div class="result-value">{{ resultado }}</div>
+        </div>
+        <div class="button-group">
+            <button onclick="history.back()">← VOLTAR</button>
+            <button><a href="/">📈 NOVA BUSCA</a></button>
+        </div>
+    </div>
+</body>
+</html>
