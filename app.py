@@ -26,7 +26,7 @@ os.makedirs(TEMPLATES_DIR, exist_ok=True)
 # ----------------------
 # Banco de Dados SQLite (Histórico e Usuários)
 # ----------------------
-DB_FILE = os.path.join(BASE_DIR, "history.db")
+DB_FILE = os.environ.get("DB_FILE", os.path.join(BASE_DIR, "history.db"))
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE, timeout=10, check_same_thread=False)
