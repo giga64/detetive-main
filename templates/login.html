@@ -3,143 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek - Investigações Digitais</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            position: relative;
-            overflow: hidden;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 0, 150, 0.03) 0px,
-                rgba(255, 0, 150, 0.03) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-        }
-        .login-container {
-            background: rgba(20, 20, 40, 0.85);
-            padding: 50px 40px;
-            border-radius: 15px;
-            box-shadow: 0 0 40px rgba(255, 0, 150, 0.3), inset 0 0 40px rgba(255, 0, 150, 0.1);
-            border: 2px solid rgba(255, 0, 150, 0.5);
-            width: 100%;
-            max-width: 450px;
-            position: relative;
-            z-index: 1;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #00d4ff;
-            margin-bottom: 30px;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: 'Courier New', monospace;
-            background: rgba(0, 0, 0, 0.3);
-            color: #00d4ff;
-            transition: all 0.3s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #ff0096;
-            box-shadow: 0 0 15px rgba(255, 0, 150, 0.5);
-        }
-        input::placeholder {
-            color: rgba(0, 212, 255, 0.3);
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 1px;
-        }
-        button:hover {
-            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
-            transform: translateY(-2px);
-        }
-        .error {
-            background: rgba(255, 50, 100, 0.2);
-            color: #ff3264;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 50, 100, 0.5);
-            font-size: 12px;
-        }
-    </style>
+    <title>🔐 DETETIVE - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='modern-style.css') }}">
 </head>
-<body>
-    <div class="login-container">
-        <h1>🔍 ONESEEK</h1>
-        <div class="subtitle">INVESTIGAÇÕES DIGITAIS</div>
-        {% if erro %}
-            <div class="error">{{ erro }}</div>
-        {% endif %}
-        <form method="post" action="/login">
-            <div class="form-group">
-                <label for="username">USUÁRIO</label>
-                <input type="text" id="username" name="username" placeholder="seu_usuario" required>
+<body class="dark">
+    <div class="detective-container">
+        <div class="detective-card">
+            <div class="detective-header">
+                <div class="icon">🔐</div>
+                <h1>DETETIVE</h1>
+                <p class="subtitle">Sistema de Investigação</p>
             </div>
-            <div class="form-group">
-                <label for="password">SENHA</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit">🔓 ACESSAR</button>
-        </form>
+
+            <form method="POST" action="/login" class="investigation-form">
+                <div class="form-group">
+                    <input 
+                        class="form-input" 
+                        type="text" 
+                        name="username" 
+                        placeholder="👤 Agente ID" 
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <input 
+                        class="form-input" 
+                        type="password" 
+                        name="password" 
+                        placeholder="🔑 Senha" 
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                {% if erro %}
+                <p class="error-message">⚠️ {{ erro }}</p>
+                {% endif %}
+
+                <button type="submit" class="submit-button">🔓 ACESSAR</button>
+            </form>
+        </div>
     </div>
+
+    <script src="{{ url_for('static', path='detective.js') }}"></script>
+    <script>
+        // Detectar tema do sistema se não houver preferência salva
+        if (!localStorage.getItem('theme')) {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setTheme(prefersDark ? 'dark' : 'light');
+        }
+    </script>
 </body>
 </html>

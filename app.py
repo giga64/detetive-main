@@ -188,19 +188,20 @@ async def do_consulta(request: Request):
     else: return templates.TemplateResponse("modern-form.html", {"request": request, "erro": "Tipo desconhecido"})
     
     resultado = await consulta_telegram(cmd)
+    
+    # Salvar no histórico
+    try:
+        cursor.execute("INSERT INTO searches (identifier, response) VALUES (?, ?)", (identificador, resultado))
+        conn.commit()
+    except:
+        pass
+    
     return templates.TemplateResponse("modern-result.html", {"request": request, "mensagem": identificador, "resultado": resultado, "identifier": identificador})
 
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
     if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
     return templates.TemplateResponse("historico.html", {"request": request})
-
-@app.get("/api/historico")
-def api_historico(request: Request):
-    if not request.cookies.get("auth_user"): raise HTTPException(status_code=401, detail="Não autorizado")
-    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
-    searches = cursor.fetchall()
-    return [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
 
 # ----------------------
 # Gestão de Usuários
@@ -211,21 +212,63 @@ async def list_users(request: Request):
     cursor.execute("SELECT id, username, is_admin FROM users")
     return templates.TemplateResponse("usuarios.html", {"request": request, "users": cursor.fetchall()})
 
-@app.post("/usuarios/novo")
-async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None)):
-    if request.cookies.get("is_admin") == "1":
-        try:
-            cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", (new_user, new_pass, 1 if admin else 0))
-            conn.commit()
-        except: pass
-    return RedirectResponse(url="/usuarios", status_code=303)
+@app.get("/logout", response_class=HTMLResponse)
+def logout(request: Request):
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie("auth_user")
+    response.delete_cookie("is_admin")
+    return response
 
-@app.get("/usuarios/deletar/{user_id}")
-async def delete_user(request: Request, user_id: int):
-    if request.cookies.get("is_admin") == "1":
+@app.get("/api/historico")
+def api_historico_json(request: Request):
+    if not request.cookies.get("auth_user"): raise HTTPException(status_code=401, detail="Não autorizado")
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    searches = cursor.fetchall()
+    return searches
+
+@app.post("/api/limpar-historico")
+def clear_history(request: Request):
+    if not request.cookies.get("auth_user"): raise HTTPException(status_code=401, detail="Não autorizado")
+    try:
+        cursor.execute("DELETE FROM searches")
+        conn.commit()
+        return {"sucesso": True}
+    except Exception as e:
+        return {"sucesso": False, "erro": str(e)}
+
+@app.get("/api/usuarios")
+def get_users_json(request: Request):
+    if request.cookies.get("is_admin") != "1": raise HTTPException(status_code=401, detail="Não autorizado")
+    cursor.execute("SELECT id, username, password, is_admin FROM users")
+    return cursor.fetchall()
+
+@app.post("/api/criar-usuario")
+async def create_user_api(request: Request):
+    if request.cookies.get("is_admin") != "1": raise HTTPException(status_code=401, detail="Não autorizado")
+    try:
+        data = await request.json()
+        username = data.get("username", "").strip()
+        password = data.get("password", "").strip()
+        is_admin = data.get("is_admin", 0)
+        
+        if not username or not password:
+            return {"sucesso": False, "erro": "Username e password são obrigatórios"}
+        
+        cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", (username, password, is_admin))
+        conn.commit()
+        return {"sucesso": True}
+    except Exception as e:
+        return {"sucesso": False, "erro": str(e)}
+
+@app.post("/api/deletar-usuario/{user_id}")
+def delete_user_api(request: Request, user_id: int):
+    if request.cookies.get("is_admin") != "1": raise HTTPException(status_code=401, detail="Não autorizado")
+    try:
         cursor.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
         conn.commit()
-    return RedirectResponse(url="/usuarios", status_code=303)
+        return {"sucesso": True}
+    except Exception as e:
+        return {"sucesso": False, "erro": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

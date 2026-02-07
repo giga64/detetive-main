@@ -1,0 +1,690 @@
+/* Modern Detetive Theme - Base Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Cores Futuristas - Tema Claro */
+  --background: linear-gradient(135deg, #f0f7fa 0%, #e8f3f7 100%);
+  --foreground: #0f172a;
+  --card: rgba(255, 255, 255, 0.8);
+  --card-foreground: #0f172a;
+  --primary: #06b6d4; /* Cyan futurista */
+  --primary-foreground: #000814;
+  --primary-hover: #0ea5a4; /* Teal mais escuro */
+  --secondary: rgba(6, 182, 212, 0.15);
+  --secondary-foreground: #06b6d4;
+  --secondary-hover: rgba(6, 182, 212, 0.25);
+  --muted: rgba(148, 163, 184, 0.1);
+  --muted-foreground: #64748b;
+  --accent: #0ea5a4;
+  --accent-foreground: #ffffff;
+  --destructive: #fca5a5;
+  --destructive-foreground: #ffffff;
+  --border: rgba(6, 182, 212, 0.3);
+  --input: rgba(30, 41, 59, 0.5);
+  --ring: #06b6d4;
+  --detective-report: rgba(30, 41, 59, 0.6);
+  --detective-border: rgba(6, 182, 212, 0.4);
+  --detective-shadow: rgba(0, 0, 0, 0.2);
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* Cores Futuristas - Tema Escuro */
+  --background: linear-gradient(135deg, #000814 0%, #0a0f1f 50%, #000814 100%);
+  --foreground: #e2e8f0;
+  --card: rgba(15, 23, 42, 0.7);
+  --card-foreground: #e2e8f0;
+  --primary: #06b6d4;
+  --primary-foreground: #000814;
+  --primary-hover: #0ea5a4;
+  --secondary: rgba(6, 182, 212, 0.2);
+  --secondary-foreground: #06b6d4;
+  --secondary-hover: rgba(6, 182, 212, 0.3);
+  --muted: rgba(148, 163, 184, 0.2);
+  --muted-foreground: #cbd5e1;
+  --accent: #0ea5a4;
+  --accent-foreground: #ffffff;
+  --destructive: #fca5a5;
+  --destructive-foreground: #ffffff;
+  --border: rgba(6, 182, 212, 0.4);
+  --input: rgba(30, 41, 59, 0.8);
+  --ring: #06b6d4;
+  --detective-report: rgba(30, 41, 59, 0.8);
+  --detective-border: rgba(6, 182, 212, 0.5);
+  --detective-shadow: rgba(0, 0, 0, 0.6);
+}
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+body.dark {
+    background: var(--background);
+    color: var(--foreground);
+}
+
+body.dark .container {
+    background: var(--card);
+    color: var(--card-foreground);
+    box-shadow: 0 4px 32px var(--detective-shadow);
+}
+
+body.dark .form-input,
+body.dark input[type="text"],
+body.dark input[type="number"] {
+    background: var(--input);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+}
+
+body.dark .btn,
+body.dark .btn-historico,
+body.dark .back-link,
+body.dark .submit-button {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: 2px solid var(--border);
+    box-shadow: 0 4px 15px hsla(0,0%,0%,0.4);
+}
+
+body.dark .btn-historico {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    border: 2px solid var(--border);
+}
+
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+body.dark .btn:hover,
+body.dark .btn-historico:hover,
+body.dark .back-link:hover,
+body.dark .submit-button:hover {
+    background: var(--primary-hover); /* Usando o novo primary-hover */
+    color: var(--primary-foreground); /* Mantém o texto claro */
+    border-color: var(--ring);
+}
+
+body.dark .history-list {
+    background: var(--card);
+    color: var(--card-foreground);
+}
+
+body.dark .result-content {
+    background: var(--input);
+    color: var(--primary);
+    border: 1px dashed var(--accent);
+}
+
+.container {
+    background: transparent;
+    color: var(--foreground);
+    border-radius: 18px;
+    padding: 32px;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    font-weight: 900;
+    color: var(--primary);
+    background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+    text-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+}
+
+.icon {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    color: var(--primary); /* Ícone com a cor primary */
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    margin-bottom: 24px;
+    font-weight: 300;
+    line-height: 1.5;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 14px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin: 20px 0 16px 0;
+    font-size: 1.1rem;
+    background: var(--input);
+    color: var(--foreground);
+    box-sizing: border-box;
+    transition: all 0.2s ease-in-out;
+}
+input[type="text"]:focus, input[type="number"]:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px hsla(var(--ring-h), var(--ring-s), var(--ring-l), 0.5);
+}
+
+button, .btn {
+    width: 100%;
+    padding: 14px 0;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 8px hsla(0,0%,0%,0.2);
+}
+
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+button:hover, .btn:hover {
+    background: var(--primary-hover); /* Usando o novo primary-hover */
+    color: var(--primary-foreground); /* Mantém o texto claro */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px hsla(0,0%,0%,0.3);
+}
+
+.btn-historico {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    font-size: 0.9rem;
+    padding: 10px 0;
+    margin-top: 12px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    width: 100%;
+    transition: all 0.3s ease-in-out;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px hsla(0,0%,0%,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.btn-historico:hover {
+    background: var(--secondary-hover); /* Usando o novo secondary-hover */
+    color: var(--foreground);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px hsla(0,0%,0%,0.2);
+    border-color: var(--primary);
+}
+
+.btn-historico:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px hsla(0,0%,0%,0.1);
+}
+
+.detective-container {
+  min-height: 100vh;
+  background-color: var(--background);
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.detective-card {
+  width: 100%;
+  max-width: 34rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px -3px var(--detective-shadow), 0 4px 6px -2px hsla(0,0%,0%,0.05);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* 3D card and parallax root */
+.detective-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  will-change: transform;
+}
+
+/* subtle glossy highlight */
+.detective-card::before {
+  content: '';
+  position: absolute;
+  left: -50%;
+  top: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 20%);
+  mix-blend-mode: overlay;
+  transition: opacity 0.2s ease-out;
+}
+
+.top-actions {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 12px;
+    z-index: 3;
+    align-items: flex-start;
+}
+.theme-toggle-wrapper, .copy-btn-wrapper {
+    position: static;
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+}
+/* Ajuste específico para a tela inicial (formulário) */
+.form-top-actions {
+    position: absolute;
+    top: 18px;
+    right: 24px;
+    z-index: 3;
+}
+.theme-toggle {
+    background: var(--primary);
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 1.6rem;
+    color: var(--primary-foreground);
+    cursor: pointer;
+    box-shadow: 0 2px 8px hsla(0,0%,0%,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    z-index: 2;
+    margin: 0;
+}
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.theme-toggle:hover {
+    background: var(--primary-hover); /* Usando o novo primary-hover */
+    color: var(--primary-foreground);
+    transform: scale(1.08);
+}
+
+
+/* Spline background (3D scene) */
+.spline-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+spline-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+#spline-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+#spline-bg iframe {
+  width: 110vw;
+  height: 110vh;
+  border: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1.02);
+  opacity: 0.95;
+}
+
+/* Particle canvas overlay */
+#particle-canvas {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1; /* particles above background, under UI */
+}
+
+/* Bring the card above particles */
+.detective-card, .container { z-index: 3; position: relative; }
+
+/* Make interactive elements feel deeper with layered shadows */
+.btn, .btn-historico, .theme-toggle, .copy-btn {
+  transition: transform 0.18s cubic-bezier(.2,.9,.3,1), box-shadow 0.18s;
+}
+.btn:hover, .btn-historico:hover { transform: translateY(-6px) translateZ(8px); box-shadow: 0 18px 40px rgba(10,10,30,0.12);} 
+
+/* small 3D tilt helper */
+.tilt { transform: perspective(800px) translateZ(0); }
+
+.detective-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.detective-header .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+.detective-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+}
+.detective-header .subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0;
+  margin-bottom: 0.5rem;
+}
+
+.investigation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.form-input {
+  width: 90%;
+  max-width: 500px;
+  margin: 0 auto 0.5rem auto;
+  display: block;
+  padding: 1.1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: var(--input);
+  color: var(--foreground);
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+.form-input::placeholder {
+  color: var(--muted-foreground);
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--ring); /* Usando ring para foco */
+  box-shadow: 0 0 0 2px var(--ring);
+}
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.error-message {
+  color: var(--destructive);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+.history-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.back-link, .submit-button, .limpar-historico {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: 0.95rem;
+    padding: 12px 0;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 4px 15px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.3);
+    position: relative;
+    overflow: hidden;
+    width: 50%;
+    margin-top: 0;
+    text-align: center;
+}
+
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.back-link:hover, .submit-button:hover, .limpar-historico:hover {
+    background: var(--primary-hover); /* Usando o novo primary-hover */
+    color: var(--primary-foreground);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.4);
+    border-color: var(--ring);
+}
+
+.back-link:active, .submit-button:active, .limpar-historico:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.2);
+}
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.loading {
+  animation: pulseSubtle 2s infinite;
+}
+.result-section {
+  margin-top: 1.5rem;
+}
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.result-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+.result-content {
+  background-color: var(--background);
+  border: 1px dashed var(--primary);
+  border-radius: 0.375rem;
+  padding: 1rem;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  margin-bottom: 1rem;
+}
+.result-content-container {
+  position: relative;
+}
+.copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: var(--secondary); /* Usando secondary para o copy button */
+  color: var(--secondary-foreground);
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.copy-button:hover {
+  background-color: var(--secondary-hover); /* Usando secondary-hover */
+  color: var(--foreground);
+}
+.history-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.history-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.history-link:hover {
+  background-color: var(--secondary-hover); /* Usando secondary-hover para links de histórico */
+  color: var(--foreground);
+  border-color: var(--secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px hsla(0, 0%, 0%, 0.1);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+@media (min-width: 640px) {
+  .detective-container {
+    padding: 1rem;
+  }
+  .detective-card {
+    max-width: 28rem;
+    padding: 2rem;
+  }
+  .theme-toggle {
+    top: 1.5rem;
+    right: 1.5rem;
+  }
+}
+
+.copy-btn {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px hsla(0,0%,0%,0.2);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+/* ALTERAÇÕES AQUI: HOVERS SEM ROXO */
+.copy-btn:hover {
+    background: var(--secondary-hover);
+    color: var(--foreground);
+    transform: scale(1.08);
+}
