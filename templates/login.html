@@ -3,143 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek - Investigações Digitais</title>
+    <title>Acesso | OneSeek</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            position: relative;
             overflow: hidden;
         }
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 0, 150, 0.03) 0px,
-                rgba(255, 0, 150, 0.03) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-        }
-        .login-container {
-            background: rgba(20, 20, 40, 0.85);
-            padding: 50px 40px;
-            border-radius: 15px;
-            box-shadow: 0 0 40px rgba(255, 0, 150, 0.3), inset 0 0 40px rgba(255, 0, 150, 0.1);
-            border: 2px solid rgba(255, 0, 150, 0.5);
+
+        .login-wrapper {
             width: 100%;
-            max-width: 450px;
-            position: relative;
-            z-index: 1;
+            max-width: 400px;
+            padding: 2rem;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
         h1 {
+            font-weight: 600;
+            font-size: 1.5rem;
             text-align: center;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
         }
+
         .subtitle {
             text-align: center;
-            color: #00d4ff;
-            margin-bottom: 30px;
-            font-size: 12px;
-            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
         }
-        .form-group {
-            margin-bottom: 20px;
-        }
+
+        .form-group { margin-bottom: 1.25rem; }
+
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
+
         input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: 'Courier New', monospace;
-            background: rgba(0, 0, 0, 0.3);
-            color: #00d4ff;
-            transition: all 0.3s;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            background: #fdfdfd;
         }
+
         input:focus {
             outline: none;
-            border-color: #ff0096;
-            box-shadow: 0 0 15px rgba(255, 0, 150, 0.5);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background: #fff;
         }
-        input::placeholder {
-            color: rgba(0, 212, 255, 0.3);
-        }
+
         button {
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            color: #000;
+            padding: 0.875rem;
+            background-color: var(--primary);
+            color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+            transition: transform 0.1s ease, background-color 0.2s;
+            margin-top: 1rem;
         }
-        button:hover {
-            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
-            transform: translateY(-2px);
-        }
+
+        button:hover { background-color: var(--primary-hover); }
+        button:active { transform: scale(0.98); }
+
         .error {
-            background: rgba(255, 50, 100, 0.2);
-            color: #ff3264;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 50, 100, 0.5);
-            font-size: 12px;
+            background-color: #fef2f2;
+            color: #ef4444;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border: 1px solid #fee2e2;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>🔍 ONESEEK</h1>
-        <div class="subtitle">INVESTIGAÇÕES DIGITAIS</div>
-        {% if erro %}
-            <div class="error">{{ erro }}</div>
-        {% endif %}
-        <form method="post" action="/login">
-            <div class="form-group">
-                <label for="username">USUÁRIO</label>
-                <input type="text" id="username" name="username" placeholder="seu_usuario" required>
-            </div>
-            <div class="form-group">
-                <label for="password">SENHA</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit">🔓 ACESSAR</button>
-        </form>
+    <div class="login-wrapper">
+        <div class="card">
+            <h1>OneSeek</h1>
+            <p class="subtitle">Faça login para continuar</p>
+            
+            {% if erro %}
+                <div class="error">{{ erro }}</div>
+            {% endif %}
+
+            <form method="post" action="/login">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

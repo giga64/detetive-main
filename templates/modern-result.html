@@ -3,164 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek - Resultado</title>
+    <title>OneSeek | Resultados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-soft: #64748b;
+            --border: #e2e8f0;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
+            padding-bottom: 4rem;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 0, 150, 0.03) 0px,
-                rgba(255, 0, 150, 0.03) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 0;
-        }
-        .navbar {
-            background: rgba(20, 20, 40, 0.9);
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
-            position: relative;
-            z-index: 1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        .navbar h1 {
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 20px;
-            letter-spacing: 2px;
-        }
-        .navbar a {
-            margin: 0 15px;
+
+        .logo { font-weight: 600; font-size: 1.1rem; }
+        
+        .nav-links a {
             text-decoration: none;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 12px;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+            color: var(--text-soft);
+            font-size: 0.875rem;
+            margin-left: 2rem;
+            transition: color 0.2s;
         }
-        .navbar a:hover {
-            color: #ff0096;
-            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
-        }
+        .nav-links a:hover { color: var(--primary); }
+
         .container {
-            background: rgba(20, 20, 40, 0.85);
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
             max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            animation: slideIn 0.5s ease-out;
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 24px;
-            letter-spacing: 1px;
-        }
-        .result-box {
-            background: rgba(0, 212, 255, 0.05);
-            padding: 20px;
-            border-radius: 5px;
-            border-left: 4px solid #ff0096;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 0, 150, 0.3);
-        }
-        .result-label {
-            font-weight: bold;
-            color: #00d4ff;
-            margin-bottom: 8px;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-        .result-value {
-            color: #00d4ff;
-            word-break: break-word;
-            white-space: pre-wrap;
-            font-size: 14px;
-        }
-        .button-group {
+
+        .header-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
         }
-        button {
-            flex: 1;
-            padding: 12px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: #e0e7ff;
+            color: var(--primary);
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        button:hover {
-            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
-            transform: translateY(-2px);
+
+        h2 { font-size: 1.5rem; font-weight: 600; margin-top: 0.5rem; }
+
+        .result-card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
         }
-        a {
-            color: inherit;
+
+        .result-body {
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace; /* Fonte mono apenas para os dados */
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #334155;
+            white-space: pre-wrap;
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
             text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--text);
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover { background: var(--primary); transform: translateY(-2px); }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #f1f5f9; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>🔍 ONESEEK</h1>
-        <div>
-            <a href="/">BUSCAR</a>
-            <a href="/historico">HISTÓRICO</a>
-            <a href="/usuarios">USUÁRIOS</a>
-            <a href="/login">LOGOUT</a>
+    <nav>
+        <div class="logo">OneSeek</div>
+        <div class="nav-links">
+            <a href="/">Nova Busca</a>
+            <a href="/historico">Histórico</a>
+            <a href="/login">Sair</a>
         </div>
-    </div>
+    </nav>
 
     <div class="container">
-        <h2>📋 RESULTADO DA INVESTIGAÇÃO</h2>
-        <div class="result-box">
-            <div class="result-label">🔎 ALVO:</div>
-            <div class="result-value">{{ mensagem }}</div>
+        <div class="header-actions">
+            <div>
+                <span class="badge">Investigação Concluída</span>
+                <h2>Resultado da Busca</h2>
+                <p style="color: var(--text-soft); margin-top: 0.25rem;">Alvo: {{ identifier }}</p>
+            </div>
         </div>
-        <div class="result-box">
-            <div class="result-label">📊 DADOS ENCONTRADOS:</div>
-            <div class="result-value">{{ resultado }}</div>
+
+        <div class="result-card">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: white;">
+                <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-soft);">RELATÓRIO DE DADOS</span>
+            </div>
+            <div class="result-body">{{ resultado }}</div>
         </div>
-        <div class="button-group">
-            <button onclick="history.back()">← VOLTAR</button>
-            <button><a href="/">📈 NOVA BUSCA</a></button>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="history.back()">Voltar</button>
+            <a href="/" class="btn btn-primary">Nova Investigação</a>
         </div>
     </div>
 </body>

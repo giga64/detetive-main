@@ -3,174 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek - Histórico</title>
+    <title>OneSeek | Histórico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-soft: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 0, 150, 0.03) 0px,
-                rgba(255, 0, 150, 0.03) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 0;
-        }
-        .navbar {
-            background: rgba(20, 20, 40, 0.9);
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
-            position: relative;
-            z-index: 1;
         }
-        .navbar h1 {
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 20px;
-            letter-spacing: 2px;
-        }
-        .navbar a {
-            margin: 0 15px;
+
+        .logo { font-weight: 600; font-size: 1.1rem; color: var(--text); }
+        
+        .nav-links a {
             text-decoration: none;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 12px;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+            color: var(--text-soft);
+            font-size: 0.875rem;
+            margin-left: 2rem;
+            transition: color 0.2s;
         }
-        .navbar a:hover {
-            color: #ff0096;
-            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
-        }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-links a.active { color: var(--text); font-weight: 500; }
+
         .container {
-            background: rgba(20, 20, 40, 0.85);
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            animation: fadeIn 0.6s ease;
         }
+
         h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 24px;
-            letter-spacing: 1px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
+        
+        .subtitle {
+            color: var(--text-soft);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 0, 150, 0.3);
-            color: #00d4ff;
-            font-size: 12px;
         }
+
         th {
-            background: rgba(255, 0, 150, 0.1);
-            color: #ff0096;
-            font-weight: bold;
-            letter-spacing: 1px;
+            background: #f1f5f9;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
         }
-        tr:hover {
-            background: rgba(0, 212, 255, 0.05);
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+            color: #334155;
         }
-        .info {
-            background: rgba(0, 212, 255, 0.1);
-            padding: 15px;
-            border-radius: 5px;
-            color: #00d4ff;
+
+        tr:last-child td { border-bottom: none; }
+        
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Coluna de dados com fonte mono para melhor leitura de IDs/CPFs */
+        .mono-data {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--primary);
+            background: #eff6ff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            padding: 3rem;
             text-align: center;
-            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: var(--text-soft);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>🔍 ONESEEK</h1>
-        <div>
-            <a href="/">BUSCAR</a>
-            <a href="/historico">HISTÓRICO</a>
-            <a href="/usuarios">USUÁRIOS</a>
-            <a href="/login">LOGOUT</a>
+    <nav>
+        <div class="logo">OneSeek</div>
+        <div class="nav-links">
+            <a href="/">Busca</a>
+            <a href="/historico" class="active">Histórico</a>
+            <a href="/usuarios">Agentes</a>
+            <a href="/login" style="color: var(--danger);">Sair</a>
         </div>
-    </div>
+    </nav>
 
     <div class="container">
-        <h2>📜 HISTÓRICO DE INVESTIGAÇÕES</h2>
-        <div class="info">
-            <p>🗂️ Registro de todas as buscas realizadas</p>
+        <h2>Registro de Atividades</h2>
+        <p class="subtitle">Histórico completo de todas as consultas realizadas no sistema.</p>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">Data/Hora</th>
+                        <th>Alvo Pesquisado</th>
+                        <th>Resumo do Resultado</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr>
+                        <td colspan="3" class="empty-state">
+                            Carregando registros...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>DATA/HORA</th>
-                    <th>ALVO</th>
-                    <th>RESULTADO</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="3" style="text-align: center; color: #00d4ff;">⏳ Carregando histórico...</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
     <script>
         async function carregarHistorico() {
             try {
                 const response = await fetch('/api/historico');
+                const tbody = document.getElementById('history-body');
+                
                 if (response.ok) {
                     const data = await response.json();
-                    const tbody = document.querySelector('tbody');
                     tbody.innerHTML = '';
+                    
+                    if(data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+                        return;
+                    }
+
                     data.forEach(item => {
+                        // Formatação simples de data se necessário, ou usar direto do back
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td>${item.searched_at || 'N/A'}</td>
-                            <td>${item.identifier || 'N/A'}</td>
-                            <td>${item.response?.substring(0, 100) || 'N/A'}...</td>
+                            <td style="color: var(--text-soft); font-size: 0.8rem;">${item.searched_at || 'N/A'}</td>
+                            <td><span class="mono-data">${item.identifier || 'N/A'}</span></td>
+                            <td style="color: var(--text-soft); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${item.response?.substring(0, 80) || 'Sem dados'}...
+                            </td>
                         `;
                         tbody.appendChild(tr);
                     });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" class="empty-state" style="color: var(--danger)">Erro ao carregar dados.</td></tr>`;
                 }
             } catch (error) {
-                console.error('Erro ao carregar histórico:', error);
+                console.error('Erro:', error);
+                document.getElementById('history-body').innerHTML = 
+                    `<tr><td colspan="3" class="empty-state" style="color: var(--danger)">Erro de conexão.</td></tr>`;
             }
         }
         carregarHistorico();

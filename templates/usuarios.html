@@ -3,280 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek - Gerenciamento</title>
+    <title>OneSeek | Equipe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-soft: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(255, 0, 150, 0.03) 0px,
-                rgba(255, 0, 150, 0.03) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 0;
-        }
-        .navbar {
-            background: rgba(20, 20, 40, 0.9);
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
-            position: relative;
-            z-index: 1;
         }
-        .navbar h1 {
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 20px;
-            letter-spacing: 2px;
-        }
-        .navbar a {
-            margin: 0 15px;
+
+        .logo { font-weight: 600; font-size: 1.1rem; }
+        
+        .nav-links a {
             text-decoration: none;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 12px;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+            color: var(--text-soft);
+            font-size: 0.875rem;
+            margin-left: 2rem;
+            transition: color 0.2s;
         }
-        .navbar a:hover {
-            color: #ff0096;
-            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
-        }
+        .nav-links a:hover { color: var(--primary); }
+        .nav-links a.active { color: var(--text); font-weight: 500; }
+
         .container {
-            background: rgba(20, 20, 40, 0.85);
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
-            border: 1px solid rgba(255, 0, 150, 0.3);
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            gap: 2rem;
+            animation: fadeIn 0.6s ease;
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 24px;
-            letter-spacing: 1px;
+
+        /* Área de Criação de Usuário */
+        .create-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .form-section {
-            background: rgba(0, 212, 255, 0.05);
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 0, 150, 0.3);
-        }
-        .form-section h3 {
-            color: #ff0096;
-            margin-bottom: 15px;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
+
+        .form-group { flex: 1; }
+
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #00d4ff;
-            font-weight: bold;
-            font-size: 11px;
-            letter-spacing: 1px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
         }
-        input {
+
+        input[type="text"], input[type="password"] {
             width: 100%;
-            padding: 10px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: 'Courier New', monospace;
-            background: rgba(0, 0, 0, 0.3);
-            color: #00d4ff;
-            transition: all 0.3s;
-        }
-        input:focus {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
             outline: none;
-            border-color: #ff0096;
-            box-shadow: 0 0 15px rgba(255, 0, 150, 0.5);
+            transition: border-color 0.2s;
         }
-        input::placeholder {
-            color: rgba(0, 212, 255, 0.2);
-        }
-        .checkbox-group {
+        
+        input:focus { border-color: var(--primary); }
+
+        .checkbox-wrapper {
             display: flex;
             align-items: center;
-            margin-top: 10px;
+            height: 40px; /* Alinha com os inputs */
+            padding-bottom: 2px;
         }
-        input[type="checkbox"] {
-            width: auto;
-            margin-right: 10px;
-            cursor: pointer;
-        }
+
         button {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            letter-spacing: 1px;
-        }
-        button:hover {
-            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
-            transform: translateY(-2px);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 0, 150, 0.3);
-            color: #00d4ff;
-            font-size: 12px;
-        }
-        th {
-            background: rgba(255, 0, 150, 0.1);
-            color: #ff0096;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        tr:hover {
-            background: rgba(0, 212, 255, 0.05);
-        }
-        h3 {
-            color: #00d4ff;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
-        }
-        .badge {
-            background: rgba(255, 0, 150, 0.3);
-            color: #ff0096;
-            padding: 4px 10px;
-            border-radius: 3px;
-            font-size: 10px;
-            border: 1px solid rgba(255, 0, 150, 0.5);
-            letter-spacing: 1px;
-        }
-        .delete-btn {
-            background: #ff3264;
+            padding: 0.6rem 1.2rem;
+            background: var(--text);
             color: white;
-            padding: 6px 12px;
             border: none;
-            border-radius: 3px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 11px;
-            transition: all 0.3s;
-            letter-spacing: 1px;
+            transition: opacity 0.2s;
         }
-        .delete-btn:hover {
-            background: #c82333;
-            box-shadow: 0 0 10px rgba(255, 50, 100, 0.8);
+        button:hover { opacity: 0.9; }
+
+        /* Lista de Usuários */
+        .list-header { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+
+        .user-table {
+            width: 100%;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-collapse: collapse;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-table th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            font-size: 0.75rem;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .user-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .user-table tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-admin { background: #e0e7ff; color: var(--primary); }
+        .badge-agent { background: #f1f5f9; color: var(--text-soft); }
+
+        .btn-delete {
+            color: var(--danger);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            background: #fef2f2;
+            transition: background 0.2s;
+        }
+        .btn-delete:hover { background: #fee2e2; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>🔍 ONESEEK</h1>
-        <div>
-            <a href="/">BUSCAR</a>
-            <a href="/historico">HISTÓRICO</a>
-            <a href="/usuarios">USUÁRIOS</a>
-            <a href="/login">LOGOUT</a>
+    <nav>
+        <div class="logo">OneSeek</div>
+        <div class="nav-links">
+            <a href="/">Busca</a>
+            <a href="/historico">Histórico</a>
+            <a href="/usuarios" class="active">Agentes</a>
+            <a href="/login" style="color: var(--danger);">Sair</a>
         </div>
-    </div>
+    </nav>
 
     <div class="container">
-        <h2>👥 GERENCIAMENTO DE AGENTES</h2>
-
-        <div class="form-section">
-            <h3>➕ NOVO AGENTE</h3>
-            <form method="post" action="/usuarios/novo">
+        
+        <div>
+            <h2>Gerenciamento de Equipe</h2>
+            <p style="color: var(--text-soft); margin-bottom: 1.5rem;">Adicione novos agentes ou remova acessos existentes.</p>
+            
+            <form method="post" action="/usuarios/novo" class="create-card">
                 <div class="form-group">
-                    <label for="new_user">NOME DO AGENTE</label>
-                    <input type="text" id="new_user" name="new_user" placeholder="nome_agente" required>
+                    <label for="new_user">Nome do Agente</label>
+                    <input type="text" id="new_user" name="new_user" placeholder="ex: joao.silva" required autocomplete="off">
                 </div>
                 <div class="form-group">
-                    <label for="new_pass">SENHA DE ACESSO</label>
-                    <input type="password" id="new_pass" name="new_pass" placeholder="••••••••" required>
+                    <label for="new_pass">Senha Temporária</label>
+                    <input type="password" id="new_pass" name="new_pass" placeholder="••••••" required>
                 </div>
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="admin" name="admin" value="on">
-                        <label for="admin" style="margin: 0; margin-left: 8px;">ACESSO DE ADMINISTRADOR</label>
-                    </div>
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="admin" name="admin" value="on" style="margin-right: 0.5rem;">
+                    <label for="admin" style="margin: 0; cursor: pointer;">Admin</label>
                 </div>
-                <button type="submit">🔐 CADASTRAR AGENTE</button>
+                <button type="submit">Adicionar Membro</button>
             </form>
         </div>
 
-        <h3>📋 AGENTES REGISTRADOS</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>AGENTE</th>
-                    <th>NÍVEL</th>
-                    <th>AÇÃO</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user[0] }}</td>
-                    <td>{{ user[1] }}</td>
-                    <td>
-                        {% if user[2] == 1 %}
-                            <span class="badge">⭐ ADMIN</span>
-                        {% else %}
-                            <span style="color: #00d4ff;">👤 AGENTE</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if user[2] == 0 %}
-                            <a href="/usuarios/deletar/{{ user[0] }}" class="delete-btn" onclick="return confirm('Remover agente?')">❌ REMOVER</a>
-                        {% else %}
-                            <span style="color: #999;">-</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div>
+            <div class="list-header">Membros Ativos</div>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Usuário</th>
+                        <th>Permissão</th>
+                        <th style="text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td style="color: var(--text-soft);">#{{ user[0] }}</td>
+                        <td style="font-weight: 500;">{{ user[1] }}</td>
+                        <td>
+                            {% if user[2] == 1 %}
+                                <span class="badge badge-admin">Administrador</span>
+                            {% else %}
+                                <span class="badge badge-agent">Agente</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            {% if user[2] == 0 %}
+                                <a href="/usuarios/deletar/{{ user[0] }}" class="btn-delete" onclick="return confirm('Tem certeza que deseja remover este agente?')">Remover</a>
+                            {% else %}
+                                <span style="color: #cbd5e1; font-size: 0.8rem;">Bloqueado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </body>
 </html>
