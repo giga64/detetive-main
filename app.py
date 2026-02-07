@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
+from telethon.sessions import StringSession
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # ----------------------
@@ -66,8 +67,11 @@ conn.commit()
 # ----------------------
 API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
-SESSION_NAME = 'bot_session_novo'
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
+
+# Suporte a STRING_SESSION ou arquivo de sessão
+STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
+SESSION_FILE_PATH = os.environ.get("SESSION_FILE", os.path.join(BASE_DIR, "bot_session_novo.session"))
 
 telegram_semaphore = asyncio.Semaphore(3)
 
@@ -105,10 +109,17 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # ----------------------
 @asynccontextmanager
 async def get_telegram_client():
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+    # Usar STRING_SESSION se disponível, senão arquivo de sessão
+    if STRING_SESSION_ENV:
+        session = StringSession(STRING_SESSION_ENV)
+    else:
+        session = SESSION_FILE_PATH
+    
+    client = TelegramClient(session, API_ID, API_HASH)
     await client.connect()
     try:
-        if not await client.is_user_authorized(): raise Exception("Não autorizado")
+        if not await client.is_user_authorized():
+            raise Exception("❌ Sessão Telegram não autorizada. Configure STRING_SESSION ou faça login local.")
         yield client
     finally:
         await client.disconnect()
