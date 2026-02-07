@@ -3,82 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔍 DETETIVE - Busca</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='modern-style.css') }}">
+    <title>OneSeek - Busca Inteligente</title>
     <style>
-        :root {
-            --primary: #06b6d4;
-            --primary-hover: #0ea5a4;
-            --background: linear-gradient(135deg, #000814 0%, #0a0f1f 50%, #000814 100%);
-            --foreground: #e2e8f0;
-            --card: rgba(15, 23, 42, 0.7);
-            --input: rgba(30, 41, 59, 0.8);
-            --border: rgba(6, 182, 212, 0.4);
-            --ring: #06b6d4;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 0, 150, 0.03) 0px,
+                rgba(255, 0, 150, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+        .navbar {
+            background: rgba(20, 20, 40, 0.9);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        .navbar h1 {
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            letter-spacing: 2px;
+        }
+        .navbar a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        .navbar a:hover {
+            color: #ff0096;
+            text-shadow: 0 0 10px rgba(255, 0, 150, 0.8);
+        }
+        .container {
+            background: rgba(20, 20, 40, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(255, 0, 150, 0.2);
+            border: 1px solid rgba(255, 0, 150, 0.3);
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            color: #00d4ff;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff0096;
+            box-shadow: 0 0 15px rgba(255, 0, 150, 0.5);
+        }
+        input::placeholder {
+            color: rgba(0, 212, 255, 0.3);
+        }
+        option {
+            background: #16213e;
+            color: #00d4ff;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff0096 0%, #00d4ff 100%);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            box-shadow: 0 0 25px rgba(255, 0, 150, 0.8);
+            transform: translateY(-2px);
+        }
+        .error {
+            background: rgba(255, 50, 100, 0.2);
+            color: #ff3264;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 50, 100, 0.5);
+            font-size: 12px;
         }
     </style>
 </head>
-<body style="background: linear-gradient(135deg, #000814 0%, #0a0f1f 50%, #000814 100%); margin: 0; padding: 0; font-family: 'Inter', sans-serif;">
-    <div class="detective-container">
-        <div class="form-top-actions">
-            <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
-                <span id="theme-icon">🌙</span>
-            </button>
-        </div>
-
-        <div class="detective-card">
-            <div class="detective-header">
-                <div class="icon">🔍</div>
-                <h1>OPERAÇÃO SCAN</h1>
-                <p class="subtitle">Digite o identificador para investigar</p>
-            </div>
-
-            <form id="consulta-form" method="POST" action="/consulta" class="investigation-form">
-                <div class="form-group">
-                    <input 
-                        id="identificador"
-                        class="form-input" 
-                        type="text" 
-                        name="identificador" 
-                        placeholder="CPF, CNPJ, PLACA ou NOME" 
-                        required
-                        autocomplete="off"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <select class="form-input" name="tipo" style="appearance: none; cursor: pointer; padding-right: 30px;">
-                        <option value="auto">🔎 Auto-detectar</option>
-                        <option value="cpf">👤 CPF</option>
-                        <option value="cnpj">🏢 CNPJ</option>
-                        <option value="placa">🚗 PLACA</option>
-                        <option value="nome">📝 NOME</option>
-                    </select>
-                </div>
-
-                {% if erro %}
-                <p class="error-message">⚠️ {{ erro }}</p>
-                {% endif %}
-
-                <button type="submit" class="submit-button">🚀 ESCANEAR</button>
-            </form>
-
-            <div class="history-button-container">
-                <a href="/historico" class="history-link">📋 VER HISTÓRICO</a>
-            </div>
-
-            {% if session.get('is_admin') %}
-            <div class="history-button-container">
-                <a href="/usuarios" class="history-link">👥 GERENCIAR AGENTES</a>
-            </div>
-            {% endif %}
-
-            <div class="history-button-container">
-                <a href="/logout" class="history-link">🚪 SAIR</a>
-            </div>
+<body>
+    <div class="navbar">
+        <h1>🔍 ONESEEK</h1>
+        <div>
+            <a href="/">BUSCAR</a>
+            <a href="/historico">HISTÓRICO</a>
+            <a href="/usuarios">USUÁRIOS</a>
+            <a href="/login">LOGOUT</a>
         </div>
     </div>
 
-    <script src="{{ url_for('static', path='detective.js') }}"></script>
+    <div class="container">
+        <h2>🔎 BUSCA DE DADOS</h2>
+        {% if erro %}
+            <div class="error">{{ erro }}</div>
+        {% endif %}
+        <form method="post" action="/consulta">
+            <div class="form-group">
+                <label for="identificador">IDENTIFICADOR</label>
+                <input type="text" id="identificador" name="identificador" placeholder="CPF, CNPJ, PLACA ou NOME" required>
+            </div>
+            <div class="form-group">
+                <label for="tipo">TIPO DE BUSCA</label>
+                <select id="tipo" name="tipo">
+                    <option value="auto">AUTO-DETECTAR</option>
+                    <option value="cpf">CPF</option>
+                    <option value="cnpj">CNPJ</option>
+                    <option value="placa">PLACA VEICULAR</option>
+                    <option value="nome">NOME</option>
+                </select>
+            </div>
+            <button type="submit">🔍 INVESTIGAR</button>
+        </form>
+    </div>
 </body>
 </html>
