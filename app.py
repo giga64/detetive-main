@@ -71,6 +71,9 @@ GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
+if STRING_SESSION_ENV:
+    # Remover espaços, quebras de linha e caracteres extras
+    STRING_SESSION_ENV = STRING_SESSION_ENV.strip()
 SESSION_FILE_PATH = os.environ.get("SESSION_FILE", os.path.join(BASE_DIR, "bot_session_novo.session"))
 
 telegram_semaphore = asyncio.Semaphore(3)
