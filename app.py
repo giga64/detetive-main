@@ -8,9 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
-from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 # ----------------------
 # Configurações de diretórios
@@ -69,11 +67,19 @@ API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
+print(f"🔧 Configuração Telegram:")
+print(f"   API_ID: {API_ID}")
+print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
+
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
 if STRING_SESSION_ENV:
     # Remover espaços, quebras de linha e caracteres extras
     STRING_SESSION_ENV = STRING_SESSION_ENV.strip()
+    print(f"   Usando STRING_SESSION")
+else:
+    print(f"   Usando arquivo de sessão local")
+    
 SESSION_FILE_PATH = os.environ.get("SESSION_FILE", os.path.join(BASE_DIR, "bot_session_novo.session"))
 
 telegram_semaphore = asyncio.Semaphore(3)
@@ -127,25 +133,52 @@ async def get_telegram_client():
     finally:
         await client.disconnect()
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 async def consulta_telegram(cmd: str) -> str:
     async with telegram_semaphore:
-        async with get_telegram_client() as client:
-            response_text = None
-            response_received = asyncio.Event()
-            async def handler(event):
-                nonlocal response_text
-                response_text = re.sub(r"🔛\s*BY:\s*@Skynet08Robot", "", event.raw_text, flags=re.IGNORECASE)
-                response_received.set()
-            
-            group_entity = PeerChannel(int(GROUP_ID_OR_NAME))
-            client.add_event_handler(handler, events.NewMessage(chats=group_entity))
-            await client.send_message(group_entity, cmd)
-            try:
-                await asyncio.wait_for(response_received.wait(), timeout=45)
-                return response_text or "❌ Vazio"
-            except:
-                return "❌ Timeout"
+        try:
+            async with get_telegram_client() as client:
+                response_text = None
+                response_received = asyncio.Event()
+                
+                async def handler(event):
+                    nonlocal response_text
+                    response_text = re.sub(r"🔛\s*BY:\s*@Skynet08Robot", "", event.raw_text, flags=re.IGNORECASE)
+                    response_received.set()
+                
+                # Tenta obter o grupo - usa tanto ID direto quanto busca por username
+                try:
+                    if GROUP_ID_OR_NAME.startswith('-') or GROUP_ID_OR_NAME.isdigit():
+                        # É um ID numérico
+                        group_entity = await client.get_entity(int(GROUP_ID_OR_NAME))
+                    else:
+                        # É um username ou link
+                        group_entity = await client.get_entity(GROUP_ID_OR_NAME)
+                except Exception as e:
+                    return f"❌ Erro ao acessar grupo: {str(e)}"
+                
+                # Adiciona handler e envia mensagem
+                client.add_event_handler(handler, events.NewMessage(chats=group_entity))
+                
+                try:
+                    await client.send_message(group_entity, cmd)
+                except Exception as send_error:
+                    error_msg = str(send_error)
+                    if "ChatRestrictedError" in error_msg or "restricted" in error_msg.lower():
+                        return "❌ Grupo restrito - verifique permissões do bot"
+                    elif "ChatWriteForbiddenError" in error_msg:
+                        return "❌ Bot sem permissão para escrever no grupo"
+                    else:
+                        return f"❌ Erro ao enviar mensagem: {error_msg}"
+                
+                # Aguarda resposta
+                try:
+                    await asyncio.wait_for(response_received.wait(), timeout=45)
+                    return response_text or "❌ Resposta vazia"
+                except asyncio.TimeoutError:
+                    return "❌ Timeout - Sem resposta em 45 segundos"
+                    
+        except Exception as e:
+            return f"❌ Erro na consulta: {str(e)}"
 
 # ----------------------
 # Rotas de Autenticação
@@ -175,20 +208,60 @@ def form(request: Request):
 
 @app.post("/consulta", response_class=HTMLResponse)
 async def do_consulta(request: Request):
-    if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
+    if not request.cookies.get("auth_user"): 
+        return RedirectResponse(url="/login")
+    
     form_data = await request.form()
     identificador = str(form_data.get("identificador", "")).strip()
     tipo_manual = str(form_data.get("tipo", "")).strip().lower()
+    
+    if not identificador:
+        return templates.TemplateResponse("modern-form.html", {
+            "request": request, 
+            "erro": "Digite um identificador válido"
+        })
+    
     tipo = tipo_manual if (tipo_manual and tipo_manual != "auto") else detect_tipo(identificador)
     
-    if tipo == 'cpf': cmd = f"/cpf3 {normalize(identificador)}"
-    elif tipo == 'cnpj': cmd = f"/cnpj3 {normalize(identificador)}"
-    elif tipo == 'placa': cmd = f"/placa {normalize_placa(identificador)}"
-    elif tipo == 'nome': cmd = f"/nome {identificador}"
-    else: return templates.TemplateResponse("modern-form.html", {"request": request, "erro": "Tipo desconhecido"})
+    if tipo == 'cpf': 
+        cmd = f"/cpf3 {normalize(identificador)}"
+    elif tipo == 'cnpj': 
+        cmd = f"/cnpj3 {normalize(identificador)}"
+    elif tipo == 'placa': 
+        cmd = f"/placa {normalize_placa(identificador)}"
+    elif tipo == 'nome': 
+        cmd = f"/nome {identificador}"
+    else: 
+        return templates.TemplateResponse("modern-form.html", {
+            "request": request, 
+            "erro": "Tipo de identificador não reconhecido"
+        })
     
-    resultado = await consulta_telegram(cmd)
-    return templates.TemplateResponse("modern-result.html", {"request": request, "mensagem": identificador, "resultado": resultado, "identifier": identificador})
+    try:
+        resultado = await consulta_telegram(cmd)
+        
+        # Salvar no histórico apenas se não for erro
+        if not resultado.startswith("❌"):
+            try:
+                cursor.execute(
+                    "INSERT INTO searches (identifier, response) VALUES (?, ?)", 
+                    (identificador, resultado)
+                )
+                conn.commit()
+            except:
+                pass
+        
+        return templates.TemplateResponse("modern-result.html", {
+            "request": request, 
+            "mensagem": identificador, 
+            "resultado": resultado, 
+            "identifier": identificador
+        })
+    except Exception as e:
+        return templates.TemplateResponse("modern-form.html", {
+            "request": request,
+            "erro": f"Erro ao processar consulta: {str(e)}"
+        })
 
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
@@ -207,17 +280,23 @@ def api_historico(request: Request):
 # ----------------------
 @app.get("/usuarios", response_class=HTMLResponse)
 async def list_users(request: Request):
-    if request.cookies.get("is_admin") != "1": return RedirectResponse(url="/")
+    if request.cookies.get("is_admin") != "1": 
+        return RedirectResponse(url="/")
     cursor.execute("SELECT id, username, is_admin FROM users")
-    return templates.TemplateResponse("usuarios.html", {"request": request, "users": cursor.fetchall()})
+    return templates.TemplateResponse("usuarios.html", {
+        "request": request, 
+        "usuarios": cursor.fetchall()
+    })
 
 @app.post("/usuarios/novo")
 async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None)):
     if request.cookies.get("is_admin") == "1":
         try:
-            cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", (new_user, new_pass, 1 if admin else 0))
+            cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
+                         (new_user, new_pass, 1 if admin else 0))
             conn.commit()
-        except: pass
+        except: 
+            pass
     return RedirectResponse(url="/usuarios", status_code=303)
 
 @app.get("/usuarios/deletar/{user_id}")
@@ -226,6 +305,51 @@ async def delete_user(request: Request, user_id: int):
         cursor.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
         conn.commit()
     return RedirectResponse(url="/usuarios", status_code=303)
+
+# ----------------------
+# Teste de Conexão Telegram
+# ----------------------
+@app.get("/test-telegram")
+async def test_telegram(request: Request):
+    """Endpoint para testar conexão com Telegram"""
+    if request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    try:
+        async with get_telegram_client() as client:
+            me = await client.get_me()
+            
+            # Tenta acessar o grupo
+            try:
+                if GROUP_ID_OR_NAME.startswith('-') or GROUP_ID_OR_NAME.isdigit():
+                    group_entity = await client.get_entity(int(GROUP_ID_OR_NAME))
+                else:
+                    group_entity = await client.get_entity(GROUP_ID_OR_NAME)
+                
+                return {
+                    "status": "✅ Conectado",
+                    "user": f"{me.first_name} (@{me.username})",
+                    "phone": me.phone,
+                    "group_id": GROUP_ID_OR_NAME,
+                    "group_title": getattr(group_entity, 'title', 'N/A'),
+                    "can_send": True
+                }
+            except Exception as group_error:
+                return {
+                    "status": "⚠️ Conectado mas grupo inacessível",
+                    "user": f"{me.first_name} (@{me.username})",
+                    "phone": me.phone,
+                    "group_id": GROUP_ID_OR_NAME,
+                    "error": str(group_error),
+                    "fix": "Verifique se o bot está no grupo e tem permissão para postar"
+                }
+                
+    except Exception as e:
+        return {
+            "status": "❌ Erro de conexão",
+            "error": str(e),
+            "fix": "Verifique STRING_SESSION, API_ID e API_HASH"
+        }
 
 if __name__ == "__main__":
     import uvicorn
