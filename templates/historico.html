@@ -1,63 +1,422 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Histórico | Elite CRM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        body { background: #fff; font-family: 'Inter', sans-serif; padding: 4rem 2rem; margin: 0; }
-        .max-w { max-width: 900px; margin: 0 auto; }
-        
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; }
-        h1 { font-size: 2rem; font-weight: 600; letter-spacing: -0.04em; }
-        
-        .btn-back {
-            text-decoration: none; color: #000; font-size: 0.85rem; font-weight: 600;
-            padding: 0.6rem 1.2rem; border: 1px solid #e2e8f0; border-radius: 8px; transition: 0.3s;
-        }
-        .btn-back:hover { background: #f8fafc; border-color: #000; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arquivo Morto | Detetive</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { 
-            text-align: left; padding: 1rem; font-size: 0.7rem; text-transform: uppercase; 
-            letter-spacing: 0.1em; color: #64748b; border-bottom: 1px solid #f1f5f9;
-        }
-        td { padding: 1.5rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; color: #1e293b; }
-        
-        tr { transition: all 0.2s; }
-        tr:hover td { background: #f9fafb; color: #3b82f6; cursor: default; }
+    #detective-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      min-height: 100vh;
+    }
 
-        .status-pill {
-            padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem;
-            background: #f1f5f9; font-weight: 600;
-        }
-    </style>
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-back {
+      display: inline-block;
+      text-decoration: none;
+      color: #06b6d4;
+      border: 1.5px solid rgba(6, 182, 212, 0.5);
+      padding: 0.8rem 1.8rem;
+      border-radius: 0.6rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+    }
+
+    .btn-back:hover {
+      background: rgba(6, 182, 212, 0.25);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+      border-color: rgba(6, 182, 212, 0.8);
+    }
+
+    .archive-content {
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .archive-card {
+      background: transparent;
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 1rem;
+      padding: 2rem;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.05);
+      margin-bottom: 1.5rem;
+      transition: all 0.4s ease;
+    }
+
+    .archive-card:hover {
+      border-color: rgba(6, 182, 212, 0.6);
+      box-shadow: 0 0 40px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.1);
+      transform: translateY(-3px);
+      backdrop-filter: blur(10px);
+    }
+
+    .archive-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .archive-icon {
+      display: none;
+    }
+
+    .archive-info {
+      flex: 1;
+    }
+
+    .archive-id {
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      color: #06b6d4;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    .archive-meta {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-top: 0.3rem;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 0.4rem;
+      color: #10b981;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge::before {
+      content: '●';
+      font-size: 0.6rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #64748b;
+    }
+
+    .empty-icon {
+      display: none;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state .hint {
+      font-size: 0.9rem;
+      color: #475569;
+      margin-bottom: 2rem;
+    }
+
+    .empty-state a {
+      display: inline-block;
+      padding: 0.8rem 1.8rem;
+      background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+      color: #000814;
+      border: none;
+      border-radius: 0.6rem;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+    }
+
+    .empty-state a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        letter-spacing: 2px;
+      }
+
+      .archive-card {
+        padding: 1.5rem;
+      }
+
+      .archive-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .archive-info {
+        width: 100%;
+      }
+
+      .status-badge {
+        align-self: flex-start;
+      }
+
+      .archive-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="max-w">
-        <header>
-            <h1>Logs de Sistema</h1>
-            <a href="/" class="btn-back">Voltar ao Dashboard</a>
-        </header>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>ID Alvo</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for consulta in consultas %}
-                <tr>
-                    <td style="color: #94a3b8;">{{ consulta.data }}</td>
-                    <td><strong>{{ consulta.id_alvo }}</strong></td>
-                    <td><span class="status-pill">Sincronizado</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <canvas id="detective-canvas"></canvas>
+  
+  <div class="container">
+    <header>
+      <h1>ARQUIVO MORTO</h1>
+      <a href="/" class="btn-back">← Painel Principal</a>
+    </header>
+    
+    <div class="archive-content">
+      {% if consultas %}
+        {% for consulta in consultas %}
+        <div class="archive-card">
+          <div class="archive-header">
+            <div class="archive-info">
+              <div class="archive-icon">🔎</div>
+              <div class="archive-id">{{ consulta.id_alvo }}</div>
+              <div class="archive-meta">
+                <span class="meta-tag">
+                  <span>📅</span>
+                  <span>{{ consulta.data }}</span>
+                </span>
+              </div>
+            </div>
+            <span class="status-badge">Completo</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <p>Nenhum arquivo no histórico</p>
+        <p class="hint">Realize sua primeira investigação para iniciar o registro.</p>
+        <a href="/">Iniciar Investigação</a>
+      </div>
+      {% endif %}
     </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('detective-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    const numParticles = 50;
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 0.5;
+        this.opacity = Math.random() * 0.5 + 0.2;
+        this.color = Math.random() > 0.5 ? '#06b6d4' : '#0ea5a4';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
+
+        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 150) {
+          const angle = Math.atan2(dy, dx);
+          this.vx += Math.cos(angle) * 0.1;
+          this.vy += Math.sin(angle) * 0.1;
+          this.opacity = Math.min(1, this.opacity + 0.05);
+        } else {
+          this.opacity = Math.max(0.2, this.opacity - 0.02);
+        }
+
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 2) {
+          this.vx = (this.vx / speed) * 2;
+          this.vy = (this.vy / speed) * 2;
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    for (let i = 0; i < numParticles; i++) {
+      particles.push(new Particle());
+    }
+
+    function drawConnections() {
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 100) {
+            ctx.globalAlpha = (1 - distance / 100) * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function animate() {
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
+      gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.03)';
+      ctx.lineWidth = 0.5;
+      const gridSize = 50;
+      
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      for (let particle of particles) {
+        particle.update();
+        particle.draw();
+      }
+
+      drawConnections();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
 </body>
 </html>

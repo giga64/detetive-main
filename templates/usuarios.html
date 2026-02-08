@@ -1,67 +1,306 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Usuários | Elite CRM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Operadores | Detetive</title>
+    <link rel="icon" href="/static/favicon.ico">
     <style>
-        body { background: #f8fafc; font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 3rem; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 3rem; animation: slideDown 0.5s ease;
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e2e8f0;
+            overflow-x: hidden;
         }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.04em; margin: 0; }
-        
-        .btn-action {
-            text-decoration: none; padding: 0.7rem 1.2rem; border-radius: 10px;
-            font-size: 0.85rem; font-weight: 600; transition: 0.3s;
+        #detective-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.6;
         }
-        .btn-primary { background: #000; color: #fff; }
-        .btn-outline { border: 1px solid #e2e8f0; color: #64748b; background: #fff; }
-        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-content h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+            margin-bottom: 0.5rem;
+        }
+
+        .header-subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.6rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+            color: #000814;
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 45px rgba(6, 182, 212, 0.6);
+            background: linear-gradient(135deg, #0ea5a4, #06b6d4);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1.5px solid rgba(6, 182, 212, 0.5);
+            color: #06b6d4;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            transform: translateY(-2px);
+            border-color: rgba(6, 182, 212, 0.8);
+        }
 
         .user-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem; margin-top: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .user-card {
-            background: #fff; padding: 1.5rem; border-radius: 20px;
-            border: 1px solid #f1f5f9; transition: 0.3s;
-            display: flex; align-items: center; gap: 1rem;
+            background: transparent;
+            border: 2px solid rgba(6, 182, 212, 0.3);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s ease;
         }
-        .user-card:hover { border-color: #000; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
+
+        .user-card:hover {
+            border-color: rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.1);
+            transform: translateY(-5px);
+            backdrop-filter: blur(10px);
+        }
 
         .avatar {
-            width: 48px; height: 48px; background: #f1f5f9; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 600; color: #64748b; font-size: 1.1rem;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 164, 0.2));
+            border: 2px solid rgba(6, 182, 212, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #06b6d4;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
         }
 
-        .user-info { flex: 1; }
-        .user-info .name { display: block; font-weight: 600; font-size: 0.95rem; }
-        .user-info .role { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 0.3rem;
+            letter-spacing: 1px;
+            display: block;
+        }
 
-        .badge-active { 
-            width: 8px; height: 8px; background: #10b981; border-radius: 50%; 
-            display: inline-block; margin-right: 5px;
+        .user-role {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+        }
+
+        .user-badge {
+            display: inline-block;
+            padding: 0.4rem 0.9rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 0.4rem;
+            color: #10b981;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #64748b;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state .hint {
+            font-size: 0.9rem;
+            color: #475569;
+            margin-bottom: 2rem;
+        }
+
+        .empty-state a {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+            color: #000814;
+            border: none;
+            border-radius: 0.6rem;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .empty-state a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-content h1 {
+                font-size: 2rem;
+                letter-spacing: 2px;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .user-card {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
+    <canvas id="detective-canvas"></canvas>
+
     <div class="container">
         <header>
-            <div>
-                <h1>Gestão de Acesso</h1>
-                <p style="color: #64748b; margin: 5px 0 0; font-size: 0.9rem;">Controle quem pode operar o motor de dados.</p>
+            <div class="header-content">
+                <h1>OPERADORES</h1>
+                <p class="header-subtitle">Gestão de Acesso ao Sistema</p>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <a href="/" class="btn-action btn-outline">Dashboard</a>
-                <a href="#" class="btn-action btn-primary">+ Novo Operador</a>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← Dashboard</a>
+                <a href="#" class="btn btn-primary">+ Novo Operador</a>
             </div>
         </header>
 
@@ -69,15 +308,159 @@
             {% for usuario in usuarios %}
             <div class="user-card">
                 <div class="avatar">{{ usuario.username[0] | upper }}</div>
-                <div class="user-info">
-                    <span class="name">{{ usuario.username }}</span>
-                    <span class="role"><span class="badge-active"></span> Operador de Elite</span>
+                <span class="user-name">{{ usuario.username }}</span>
+                <div class="user-role">
+                    <span class="status-indicator"></span>
+                    Operador Ativo
                 </div>
+                <span class="user-badge">🔐 Permissions</span>
             </div>
             {% else %}
-            <p style="color: #94a3b8; grid-column: 1/-1; text-align: center; padding: 3rem;">Nenhum usuário cadastrado.</p>
+            <div class="empty-state">
+                <div class="empty-icon">👤</div>
+                <p>Nenhum operador cadastrado</p>
+                <p class="hint">Comece criando seu primeiro operador do sistema.</p>
+                <a href="#">+ Criar Operador</a>
+            </div>
             {% endfor %}
         </div>
     </div>
+
+    <script>
+        const canvas = document.getElementById('detective-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        const numParticles = 50;
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.color = Math.random() > 0.5 ? '#06b6d4' : '#0ea5a4';
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
+
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 150) {
+                    const angle = Math.atan2(dy, dx);
+                    this.vx += Math.cos(angle) * 0.1;
+                    this.vy += Math.sin(angle) * 0.1;
+                    this.opacity = Math.min(1, this.opacity + 0.05);
+                } else {
+                    this.opacity = Math.max(0.2, this.opacity - 0.02);
+                }
+
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > 2) {
+                    this.vx = (this.vx / speed) * 2;
+                    this.vy = (this.vy / speed) * 2;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        function drawConnections() {
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.globalAlpha = (1 - distance / 100) * 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function animate() {
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+            gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
+            gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.03)';
+            ctx.lineWidth = 0.5;
+            const gridSize = 50;
+            
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            for (let particle of particles) {
+                particle.update();
+                particle.draw();
+            }
+
+            drawConnections();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
 </body>
 </html>

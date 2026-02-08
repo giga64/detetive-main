@@ -1,138 +1,752 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite CRM | Engine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #000000;
-            --accent: #3b82f6; /* Azul sutil para foco */
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --bg: #f3f4f6;
-            --glass: rgba(255, 255, 255, 0.8);
-        }
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8516606447752216"
+     crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-adsense-account" content="ca-pub-8516606447752216">
+  <title>Detetive - Consulta CPF/CNPJ/Nome/Placa</title>
+  <link rel="stylesheet" href="/static/modern-style.css">
+  <link rel="icon" href="/static/favicon.ico">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    
+    body.dark { 
+      background: linear-gradient(135deg, #000814 0%, #0a0f1f 50%, #000814 100%);
+    }
+    
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .spline-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.25;
+      pointer-events: none;
+    }
+    spline-viewer { 
+      width: 100%; 
+      height: 100%; 
+    }
+    
+    .main-content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1rem;
+    }
+    
+    .detective-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeInDown 0.8s ease-out;
+    }
+    
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .detective-header .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 25px rgba(6,182,212,0.8));
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .detective-header h1 {
+      font-size: 3.5rem;
+      background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow: 0 0 30px rgba(6,182,212,0.4);
+      margin-bottom: 0.5rem;
+    }
+    
+    .detective-header .subtitle {
+      font-size: 1.2rem;
+      color: #cbd5e1;
+      font-weight: 300;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    
+    .investigation-form {
+      background: transparent;
+      border: 2px solid rgba(6,182,212,0.3);
+      border-radius: 1.2rem;
+      padding: 2.5rem;
+      max-width: 500px;
+      width: 100%;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 20px rgba(6,182,212,0.1), inset 0 0 30px rgba(6,182,212,0.05);
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+      transition: all 0.4s ease;
+    }
+    
+    .investigation-form:hover {
+      border-color: rgba(6,182,212,0.6);
+      box-shadow: 0 0 40px rgba(6,182,212,0.3), inset 0 0 40px rgba(6,182,212,0.1);
+      transform: translateY(-5px);
+      backdrop-filter: blur(10px);
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-group {
+      margin-bottom: 0rem;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 0.9rem 1.1rem;
+      background: rgba(30,41,59,0.5);
+      border: 1.5px solid rgba(6,182,212,0.4);
+      border-radius: 0.6rem;
+      color: #ffffff !important;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    /* Tipo Selector Dropdown */
+    .tipo-selector-wrapper {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    
+    .tipo-selector-btn {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(30,41,59,0.5);
+      border: 1.5px solid rgba(6,182,212,0.4);
+      border-radius: 0.6rem;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .tipo-selector-btn:hover {
+      border-color: rgba(6,182,212,0.6);
+      background: rgba(30,41,59,0.7);
+      box-shadow: 0 0 15px rgba(6,182,212,0.2);
+    }
+    
+    .tipo-selector-btn.active {
+      border-color: #06b6d4;
+      background: rgba(30,41,59,0.8);
+      box-shadow: 0 0 20px rgba(6,182,212,0.4);
+      color: #06b6d4;
+    }
+    
+    .tipo-selector-btn::after {
+      content: '▼';
+      font-size: 0.8rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .tipo-selector-btn.active::after {
+      transform: rotate(180deg);
+    }
+    
+    .tipo-selector-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 0.5rem;
+      background: rgba(15,23,42,0.95);
+      border: 1.5px solid rgba(6,182,212,0.4);
+      border-radius: 0.6rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      overflow: hidden;
+    }
+    
+    .tipo-selector-dropdown.show {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .tipo-option {
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(6,182,212,0.1);
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .tipo-option:last-child {
+      border-bottom: none;
+    }
+    
+    .tipo-option:hover {
+      background: rgba(6,182,212,0.2);
+      color: #06b6d4;
+      padding-left: 1.5rem;
+    }
+    
+    .tipo-option.selected {
+      background: rgba(6,182,212,0.3);
+      color: #06b6d4;
+      font-weight: 700;
+    }
+    
+    .tipo-option-icon {
+      font-size: 1.2rem;
+      min-width: 30px;
+    }
+    
+    .tipo-radio {
+      display: none;
+    }
+    
+    .form-input::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
 
-        body {
-            background: radial-gradient(circle at top left, #e5e7eb, #f9fafb);
-            font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
+    .form-input:focus {
+      outline: none;
+      border-color: #06b6d4;
+      background: rgba(30,41,59,0.8);
+      box-shadow: 0 0 20px rgba(6,182,212,0.5), inset 0 0 10px rgba(6,182,212,0.1);
+      color: #ffffff !important;
+    }
 
-        /* Animação de flutuação para o fundo */
-        body::before {
-            content: "";
-            position: absolute;
-            width: 300px; height: 300px;
-            background: var(--accent);
-            filter: blur(120px);
-            opacity: 0.1;
-            top: 10%; left: 10%;
-            z-index: -1;
-        }
+    .form-input:-webkit-autofill,
+    .form-input:-webkit-autofill:hover,
+    .form-input:-webkit-autofill:focus,
+    .form-input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px rgba(30,41,59,0.5) inset !important;
+      box-shadow: 0 0 0 30px rgba(30,41,59,0.5) inset !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    
+    .error-message {
+      color: #fca5a5;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      animation: shake 0.4s ease-in-out;
+      background: rgba(252, 165, 165, 0.1);
+      padding: 0.8rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(252, 165, 165, 0.3);
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+      color: #000814;
+      border: none;
+      border-radius: 0.6rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(6,182,212,0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 1rem;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 45px rgba(6,182,212,0.6);
+      background: linear-gradient(135deg, #0ea5a4, #06b6d4);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .history-button-container {
+      margin-top: 2rem;
+      animation: fadeInUp 0.8s ease-out 0.4s backwards;
+    }
+    
+    .btn-historico {
+      display: inline-block;
+      padding: 0.8rem 1.8rem;
+      background: rgba(6,182,212,0.15);
+      border: 1.5px solid rgba(6,182,212,0.6);
+      color: #06b6d4;
+      border-radius: 0.6rem;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(6,182,212,0.2);
+    }
+    
+    .btn-historico:hover {
+      background: rgba(6,182,212,0.25);
+      box-shadow: 0 0 20px rgba(6,182,212,0.5);
+      transform: translateY(-2px);
+      border-color: rgba(6,182,212,0.8);
+    }
+    
+    
+    @media (max-width: 768px) {
+      .detective-header h1 { 
+        font-size: 2.5rem; 
+        letter-spacing: 2px; 
+      }
+      .detective-header .icon { 
+        font-size: 3rem; 
+      }
+      .detective-header .subtitle { 
+        font-size: 1rem; 
+      }
+      .investigation-form { 
+        padding: 2rem; 
+        margin: 0 1rem; 
+      }
+      .spline-bg { 
+        opacity: 0.15; 
+      }
+      .main-content { 
+        padding: 2rem 1rem; 
+      }
+      .form-input,
+      .tipo-selector-btn {
+        margin-bottom: 1.2rem;
+      }
+    }
 
-        .card {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 3rem;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
-            width: 100%;
-            max-width: 380px;
-            animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes cardReveal {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        h1 { font-size: 1.75rem; font-weight: 600; margin: 0 0 0.5rem; letter-spacing: -0.04em; }
-        p { color: var(--text-sub); font-size: 0.875rem; margin-bottom: 2.5rem; line-height: 1.5; }
-
-        .field { margin-bottom: 1.5rem; position: relative; }
-        
-        label { 
-            font-size: 0.7rem; font-weight: 600; text-transform: uppercase; 
-            letter-spacing: 0.1em; color: var(--text-sub); margin-bottom: 0.6rem; display: block;
-        }
-
-        input {
-            width: 100%; padding: 0.9rem 1.2rem;
-            background: rgba(255,255,255,0.5);
-            border: 1px solid rgba(0,0,0,0.05);
-            border-radius: 12px;
-            font-size: 1rem; transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            outline: none;
-            background: #fff;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-        }
-
-        /* Botão com efeito de Brilho (Shimmer) */
-        button {
-            width: 100%; position: relative; overflow: hidden;
-            background: var(--primary); color: white;
-            padding: 1rem; border: none; border-radius: 12px;
-            font-size: 1rem; font-weight: 500; cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            margin-top: 1rem;
-        }
-
-        button::after {
-            content: ""; position: absolute; top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg); transition: 0.8s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
-        }
-
-        button:hover::after { left: 120%; }
-
-        button:active { transform: translateY(0); }
-
-        .history-link {
-            display: block; text-align: center; margin-top: 2rem;
-            font-size: 0.8rem; color: var(--text-sub);
-            text-decoration: none; transition: 0.3s;
-            font-weight: 500;
-        }
-
-        .history-link:hover { color: var(--primary); }
-    </style>
+    /* Background Interativo - Detective Theme */
+    #detective-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Elite Engine</h1>
-        <p>Acesse o núcleo de processamento do monstro com identificação segura.</p>
-        
-        <form action="/consultar" method="post">
-            <div class="field">
-                <label>Identificador Alvo</label>
-                <input type="text" name="id_alvo" placeholder="ID do registro..." required>
+  <!-- Canvas para fundo interativo -->
+  <canvas id="detective-canvas"></canvas>
+  
+  <div class="container">
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div class="detective-header">
+        <h1>ONESEEK</h1>
+        <p class="subtitle">Sistema Avançado de Investigação</p>
+      </div>
+      
+      <!-- Form -->
+      <form class="investigation-form" action="/consulta" method="post">
+        <!-- Tipo Selector Dropdown -->
+        <div class="form-group">
+          <div class="tipo-selector-wrapper">
+            <button type="button" class="tipo-selector-btn" id="tipoSelectorBtn">
+              <span id="tipoSelectorText">🔍 Auto Detectar</span>
+            </button>
+            <input type="hidden" id="tipo" name="tipo" value="auto">
+            
+            <div class="tipo-selector-dropdown" id="tipoSelectorDropdown">
+              <div class="tipo-option selected" data-value="auto">
+                <span class="tipo-option-icon">🔍</span>
+                <span>Auto Detectar</span>
+              </div>
+              <div class="tipo-option" data-value="cpf">
+                <span class="tipo-option-icon">👤</span>
+                <span>Buscar por CPF</span>
+              </div>
+              <div class="tipo-option" data-value="cnpj">
+                <span class="tipo-option-icon">🏢</span>
+                <span>Buscar por CNPJ</span>
+              </div>
+              <div class="tipo-option" data-value="placa">
+                <span class="tipo-option-icon">🚗</span>
+                <span>Buscar por Placa</span>
+              </div>
+              <div class="tipo-option" data-value="nome">
+                <span class="tipo-option-icon">📝</span>
+                <span>Buscar por Nome</span>
+              </div>
             </div>
-            <button type="submit">Iniciar Processamento</button>
-        </form>
+          </div>
+        </div>
 
-        <a href="/historico" class="history-link">Auditar Histórico</a>
+        <!-- Input Field -->
+        <div class="form-group">
+          <input 
+            type="text" 
+            id="identificador" 
+            name="identificador" 
+            class="form-input"
+            placeholder="CPF, CNPJ, Placa ou Nome..."
+            value="{{ reuse_value or '' }}"
+            required
+          >
+          {% if erro %}
+            <p class="error-message">{{ erro }}</p>
+          {% endif %}
+        </div>
+        
+        <button type="submit" class="btn">
+          Iniciar Investigação
+        </button>
+      </form>
+      
+      <!-- History Button -->
+      <div class="history-button-container">
+        <a href="/historico" class="btn-historico">Ver Histórico</a>
+      </div>
     </div>
+  </div>
+  
+  <script>
+    // Canvas Background - Detective Theme
+    const canvas = document.getElementById('detective-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Particles array
+    const particles = [];
+    const numParticles = 50;
+    
+    // Mouse tracking
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    
+    // Particle class
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 0.5;
+        this.opacity = Math.random() * 0.5 + 0.2;
+        this.color = Math.random() > 0.5 ? '#06b6d4' : '#0ea5a4';
+      }
+      
+      update() {
+        // Move
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Bounce off walls
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
+        
+        // Keep in bounds
+        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+        
+        // Limite velocidade
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 2) {
+          this.vx = (this.vx / speed) * 2;
+          this.vy = (this.vy / speed) * 2;
+        }
+      }
+      
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    // Initialize particles
+    for (let i = 0; i < numParticles; i++) {
+      particles.push(new Particle());
+    }
+    
+    // Draw connecting lines
+    function drawConnections() {
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+      ctx.lineWidth = 1;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 100) {
+            ctx.globalAlpha = (1 - distance / 100) * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    
+    // Array para armazenar pegadas do mouse
+    const footprintTrail = [];
+    
+    // Draw detective elements
+    function drawDetectiveElements() {
+      const time = Date.now() * 0.0003;
+      
+      // Magnifying glasses flutuando
+      const magnifiers = [
+        { x: canvas.width * 0.15, y: canvas.height * 0.2, size: 40 },
+        { x: canvas.width * 0.85, y: canvas.height * 0.7, size: 50 },
+        { x: canvas.width * 0.7, y: canvas.height * 0.15, size: 35 },
+        { x: canvas.width * 0.1, y: canvas.height * 0.8, size: 38 },
+        { x: canvas.width * 0.9, y: canvas.height * 0.2, size: 42 },
+        { x: canvas.width * 0.5, y: canvas.height * 0.5, size: 45 },
+      ];
+      
+      magnifiers.forEach((mag, idx) => {
+        const float = Math.sin(time + idx) * 5;
+        const x = mag.x + float;
+        const y = mag.y + Math.cos(time * 0.7 + idx) * 5;
+        const s = mag.size;
+        
+        ctx.strokeStyle = `rgba(6, 182, 212, ${0.1 + Math.sin(time + idx) * 0.05})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, s, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Cabo da lupa
+        ctx.beginPath();
+        ctx.moveTo(x + s * 0.7, y + s * 0.7);
+        ctx.lineTo(x + s * 1.2, y + s * 1.2);
+        ctx.stroke();
+      });
+      
+      // Símbolos de investigação (?)
+      ctx.font = 'bold 60px Arial';
+      ctx.fillStyle = `rgba(6, 182, 212, 0.08)`;
+      ctx.fillText('?', canvas.width * 0.1, canvas.height * 0.5);
+      ctx.fillText('?', canvas.width * 0.8, canvas.height * 0.3);
+    }
+    
+    // Draw footprints from mouse trail
+    function drawFootprintTrail() {
+      footprintTrail.forEach((fp, idx) => {
+        // Desvanece progressivamente
+        const alpha = (idx / footprintTrail.length) * 0.6;
+        
+        // Pegada maior e mais realista
+        ctx.fillStyle = `rgba(6, 182, 212, ${alpha})`;
+        
+        // Corpo da pegada (parte maior - calcanhar)
+        ctx.beginPath();
+        ctx.ellipse(fp.x, fp.y, 12, 18, fp.angle, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Dedos da pegada (5 dedos em leque)
+        ctx.fillStyle = `rgba(6, 182, 212, ${alpha * 0.8})`;
+        const toeCount = 5;
+        const toeRadius = 5;
+        const toeDistance = 22;
+        
+        for (let i = 0; i < toeCount; i++) {
+          // Espalha os dedos em leque
+          const toeAngle = (Math.PI / 3) * (i - 2) + fp.angle;
+          const dx = Math.cos(toeAngle) * toeDistance;
+          const dy = Math.sin(toeAngle) * toeDistance;
+          
+          ctx.beginPath();
+          ctx.arc(fp.x + dx, fp.y + dy, toeRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+    
+    // Mouse position tracking
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+    
+    // Animation loop
+    function animate() {
+      // Clear canvas with gradient
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
+      gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add subtle grid pattern
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.03)';
+      ctx.lineWidth = 0.5;
+      const gridSize = 50;
+      
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      // Update and draw particles
+      for (let particle of particles) {
+        particle.update();
+        particle.draw();
+      }
+      
+      // Draw connections
+      drawConnections();
+      
+      // Draw detective elements
+      drawDetectiveElements();
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Dropdown selector functionality
+    const tipoSelectorBtn = document.getElementById('tipoSelectorBtn');
+    const tipoSelectorDropdown = document.getElementById('tipoSelectorDropdown');
+    const tipoInput = document.getElementById('tipo');
+    const tipoOptions = document.querySelectorAll('.tipo-option');
+    
+    // Toggle dropdown
+    tipoSelectorBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      tipoSelectorDropdown.classList.toggle('show');
+      tipoSelectorBtn.classList.toggle('active');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.tipo-selector-wrapper')) {
+        tipoSelectorDropdown.classList.remove('show');
+        tipoSelectorBtn.classList.remove('active');
+      }
+    });
+    
+    // Handle option selection
+    tipoOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const value = option.dataset.value;
+        const icon = option.querySelector('.tipo-option-icon').textContent;
+        const text = option.querySelector('span:last-child').textContent;
+        
+        // Update hidden input
+        tipoInput.value = value;
+        
+        // Update button text
+        document.getElementById('tipoSelectorText').textContent = `${icon} ${text}`;
+        
+        // Update selected state
+        tipoOptions.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Close dropdown
+        tipoSelectorDropdown.classList.remove('show');
+        tipoSelectorBtn.classList.remove('active');
+      });
+    });
+  </script>
 </body>
 </html>
