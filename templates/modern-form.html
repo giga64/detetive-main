@@ -1,179 +1,138 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek | Nova Busca</title>
+    <title>Elite CRM | Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-soft: #64748b;
-            --border: #e2e8f0;
+            --primary: #000000;
+            --accent: #3b82f6; /* Azul sutil para foco */
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --bg: #f3f4f6;
+            --glass: rgba(255, 255, 255, 0.8);
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
+            background: radial-gradient(circle at top left, #e5e7eb, #f9fafb);
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        /* Navbar Minimalista */
-        nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
+            color: var(--text-main);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
-        .logo { font-weight: 600; font-size: 1.1rem; color: var(--text); letter-spacing: -0.02em; }
+        /* Animação de flutuação para o fundo */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 300px; height: 300px;
+            background: var(--accent);
+            filter: blur(120px);
+            opacity: 0.1;
+            top: 10%; left: 10%;
+            z-index: -1;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            width: 100%;
+            max-width: 380px;
+            animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-size: 1.75rem; font-weight: 600; margin: 0 0 0.5rem; letter-spacing: -0.04em; }
+        p { color: var(--text-sub); font-size: 0.875rem; margin-bottom: 2.5rem; line-height: 1.5; }
+
+        .field { margin-bottom: 1.5rem; position: relative; }
         
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-soft);
-            font-size: 0.875rem;
-            margin-left: 2rem;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--primary); }
-        .nav-links a.active { color: var(--text); font-weight: 500; }
-
-        /* Container Principal */
-        .container {
-            max-width: 600px;
-            margin: 4rem auto;
-            padding: 0 1.5rem;
-            animation: fadeIn 0.8s ease;
+        label { 
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase; 
+            letter-spacing: 0.1em; color: var(--text-sub); margin-bottom: 0.6rem; display: block;
         }
 
-        h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 2.5rem;
-            letter-spacing: -0.03em;
-            color: var(--text);
+        input {
+            width: 100%; padding: 0.9rem 1.2rem;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 12px;
+            font-size: 1rem; transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
-        .search-card {
-            background: var(--surface);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        }
-
-        .form-group { margin-bottom: 1.5rem; }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-soft);
-        }
-
-        input, select {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--bg);
-            font-size: 1rem;
-            color: var(--text);
-            transition: all 0.2s;
-            -webkit-appearance: none;
-        }
-
-        input:focus, select:focus {
+        input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-            background: var(--surface);
+            background: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
+        /* Botão com efeito de Brilho (Shimmer) */
         button {
-            width: 100%;
-            padding: 1rem;
-            background: var(--text); /* Botão preto/escuro é tendência minimalista */
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+            width: 100%; position: relative; overflow: hidden;
+            background: var(--primary); color: white;
+            padding: 1rem; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 500; cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             margin-top: 1rem;
         }
 
+        button::after {
+            content: ""; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg); transition: 0.8s;
+        }
+
         button:hover {
-            background: var(--primary);
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
         }
 
-        .error {
-            background: #fef2f2;
-            color: #dc2626;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-            border: 1px solid #fee2e2;
+        button:hover::after { left: 120%; }
+
+        button:active { transform: translateY(0); }
+
+        .history-link {
+            display: block; text-align: center; margin-top: 2rem;
+            font-size: 0.8rem; color: var(--text-sub);
+            text-decoration: none; transition: 0.3s;
+            font-weight: 500;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .history-link:hover { color: var(--primary); }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">OneSeek</div>
-        <div class="nav-links">
-            <a href="/" class="active">Busca</a>
-            <a href="/historico">Histórico</a>
-            <a href="/usuarios">Agentes</a>
-            <a href="/login" style="color: #ef4444;">Sair</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <h2>O que vamos investigar hoje?</h2>
+    <div class="card">
+        <h1>Elite Engine</h1>
+        <p>Acesse o núcleo de processamento do monstro com identificação segura.</p>
         
-        {% if erro %}
-            <div class="error">{{ erro }}</div>
-        {% endif %}
+        <form action="/consultar" method="post">
+            <div class="field">
+                <label>Identificador Alvo</label>
+                <input type="text" name="id_alvo" placeholder="ID do registro..." required>
+            </div>
+            <button type="submit">Iniciar Processamento</button>
+        </form>
 
-        <div class="search-card">
-            <form method="post" action="/consulta">
-                <div class="form-group">
-                    <label for="identificador">Dados do Alvo</label>
-                    <input type="text" id="identificador" name="identificador" placeholder="CPF, CNPJ, Placa ou Nome" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="tipo">Filtro Inteligente</label>
-                    <div style="position: relative;">
-                        <select id="tipo" name="tipo">
-                            <option value="auto">Detecção Automática</option>
-                            <option value="cpf">Pessoa Física (CPF)</option>
-                            <option value="cnpj">Pessoa Jurídica (CNPJ)</option>
-                            <option value="placa">Veículo (Placa)</option>
-                            <option value="nome">Nome Completo</option>
-                        </select>
-                        </div>
-                </div>
-                <button type="submit">Iniciar Investigação</button>
-            </form>
-        </div>
+        <a href="/historico" class="history-link">Auditar Histórico</a>
     </div>
 </body>
 </html>

@@ -1,150 +1,121 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso | OneSeek</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Acesso Restrito | Elite CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --surface: #ffffff;
+            --primary: #000000;
+            --accent: #3b82f6;
             --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --text-sub: #64748b;
+            --bg: #f8fafc;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            overflow: hidden;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
         }
 
-        .login-wrapper {
+        .login-card {
+            background: #ffffff;
+            padding: 3.5rem;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
             width: 100%;
             max-width: 400px;
-            padding: 2rem;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #f1f5f9;
+            animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .card {
-            background: var(--surface);
-            padding: 2.5rem;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+        @keyframes reveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        h1 {
-            font-weight: 600;
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
+        header { text-align: center; margin-bottom: 2.5rem; }
+        .logo-mark { 
+            width: 40px; height: 40px; background: #000; border-radius: 10px; 
+            margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 800; font-size: 1.2rem;
         }
 
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            margin-bottom: 2rem;
-        }
+        h1 { font-size: 1.5rem; font-weight: 600; margin: 0; letter-spacing: -0.03em; }
+        p { color: var(--text-sub); font-size: 0.875rem; margin-top: 0.5rem; }
 
-        .form-group { margin-bottom: 1.25rem; }
-
-        label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .field { margin-bottom: 1.2rem; }
+        label { 
+            display: block; font-size: 0.75rem; font-weight: 600; 
+            color: var(--text-sub); margin-bottom: 0.5rem; text-transform: uppercase;
         }
 
         input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            background: #fdfdfd;
+            width: 100%; padding: 0.85rem 1rem;
+            border: 1px solid #e2e8f0; border-radius: 12px;
+            font-size: 1rem; transition: all 0.3s ease; box-sizing: border-box;
+            background: #fbfcfd;
         }
 
         input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            background: #fff;
+            outline: none; border-color: var(--primary); background: #fff;
+            box-shadow: 0 0 0 4px rgba(0,0,0,0.03);
         }
 
         button {
-            width: 100%;
-            padding: 0.875rem;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.2s;
-            margin-top: 1rem;
+            width: 100%; background: var(--primary); color: white;
+            padding: 1rem; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 500; cursor: pointer;
+            transition: all 0.4s ease; margin-top: 1.5rem;
+            position: relative; overflow: hidden;
         }
 
-        button:hover { background-color: var(--primary-hover); }
-        button:active { transform: scale(0.98); }
-
-        .error {
-            background-color: #fef2f2;
-            color: #ef4444;
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            border: 1px solid #fee2e2;
+        button:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        /* Efeito de brilho elegante no botão */
+        button::after {
+            content: ""; position: absolute; top: -50%; left: -60%;
+            width: 20%; height: 200%; background: rgba(255,255,255,0.1);
+            transform: rotate(30deg); transition: 0.6s;
         }
+        button:hover::after { left: 120%; }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .error-msg {
+            background: #fef2f2; color: #b91c1c; padding: 0.75rem;
+            border-radius: 8px; font-size: 0.8rem; margin-bottom: 1.5rem;
+            border: 1px solid #fee2e2; text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="card">
-            <h1>OneSeek</h1>
-            <p class="subtitle">Faça login para continuar</p>
-            
-            {% if erro %}
-                <div class="error">{{ erro }}</div>
-            {% endif %}
+    <div class="login-card">
+        <header>
+            <div class="logo-mark">M</div>
+            <h1>Bem-vindo de volta</h1>
+            <p>Autentique-se para gerenciar o monstro.</p>
+        </header>
 
-            <form method="post" action="/login">
-                <div class="form-group">
-                    <label for="username">Usuário</label>
-                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="password">Senha</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" required>
-                </div>
-                <button type="submit">Entrar</button>
-            </form>
-        </div>
+        {% if erro %}
+        <div class="error-msg">{{ erro }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="field">
+                <label>Usuário</label>
+                <input type="text" name="username" placeholder="Seu usuário" required>
+            </div>
+            <div class="field">
+                <label>Senha</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit">Entrar no Sistema</button>
+        </form>
     </div>
 </body>
 </html>

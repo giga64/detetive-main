@@ -1,202 +1,63 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek | Histórico</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <title>Histórico | Elite CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-soft: #64748b;
-            --border: #e2e8f0;
-            --danger: #ef4444;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo { font-weight: 600; font-size: 1.1rem; color: var(--text); }
+        body { background: #fff; font-family: 'Inter', sans-serif; padding: 4rem 2rem; margin: 0; }
+        .max-w { max-width: 900px; margin: 0 auto; }
         
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-soft);
-            font-size: 0.875rem;
-            margin-left: 2rem;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--primary); }
-        .nav-links a.active { color: var(--text); font-weight: 500; }
-
-        .container {
-            max-width: 1000px;
-            margin: 3rem auto;
-            padding: 0 1.5rem;
-            animation: fadeIn 0.6s ease;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4rem; }
+        h1 { font-size: 2rem; font-weight: 600; letter-spacing: -0.04em; }
         
-        .subtitle {
-            color: var(--text-soft);
-            font-size: 0.875rem;
-            margin-bottom: 2rem;
+        .btn-back {
+            text-decoration: none; color: #000; font-size: 0.85rem; font-weight: 600;
+            padding: 0.6rem 1.2rem; border: 1px solid #e2e8f0; border-radius: 8px; transition: 0.3s;
         }
+        .btn-back:hover { background: #f8fafc; border-color: #000; }
 
-        .card {
-            background: var(--surface);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border);
-            overflow: hidden;
+        table { width: 100%; border-collapse: collapse; }
+        th { 
+            text-align: left; padding: 1rem; font-size: 0.7rem; text-transform: uppercase; 
+            letter-spacing: 0.1em; color: #64748b; border-bottom: 1px solid #f1f5f9;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        th {
-            background: #f1f5f9;
-            padding: 1rem 1.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: var(--text-soft);
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.875rem;
-            color: #334155;
-        }
-
-        tr:last-child td { border-bottom: none; }
+        td { padding: 1.5rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; color: #1e293b; }
         
-        tbody tr:hover {
-            background-color: #f8fafc;
-        }
+        tr { transition: all 0.2s; }
+        tr:hover td { background: #f9fafb; color: #3b82f6; cursor: default; }
 
-        /* Coluna de dados com fonte mono para melhor leitura de IDs/CPFs */
-        .mono-data {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--primary);
-            background: #eff6ff;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-        }
-
-        .empty-state {
-            padding: 3rem;
-            text-align: center;
-            color: var(--text-soft);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .status-pill {
+            padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem;
+            background: #f1f5f9; font-weight: 600;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">OneSeek</div>
-        <div class="nav-links">
-            <a href="/">Busca</a>
-            <a href="/historico" class="active">Histórico</a>
-            <a href="/usuarios">Agentes</a>
-            <a href="/login" style="color: var(--danger);">Sair</a>
-        </div>
-    </nav>
+    <div class="max-w">
+        <header>
+            <h1>Logs de Sistema</h1>
+            <a href="/" class="btn-back">Voltar ao Dashboard</a>
+        </header>
 
-    <div class="container">
-        <h2>Registro de Atividades</h2>
-        <p class="subtitle">Histórico completo de todas as consultas realizadas no sistema.</p>
-
-        <div class="card">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 200px;">Data/Hora</th>
-                        <th>Alvo Pesquisado</th>
-                        <th>Resumo do Resultado</th>
-                    </tr>
-                </thead>
-                <tbody id="history-body">
-                    <tr>
-                        <td colspan="3" class="empty-state">
-                            Carregando registros...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>ID Alvo</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for consulta in consultas %}
+                <tr>
+                    <td style="color: #94a3b8;">{{ consulta.data }}</td>
+                    <td><strong>{{ consulta.id_alvo }}</strong></td>
+                    <td><span class="status-pill">Sincronizado</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <script>
-        async function carregarHistorico() {
-            try {
-                const response = await fetch('/api/historico');
-                const tbody = document.getElementById('history-body');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    tbody.innerHTML = '';
-                    
-                    if(data.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhum registro encontrado.</td></tr>`;
-                        return;
-                    }
-
-                    data.forEach(item => {
-                        // Formatação simples de data se necessário, ou usar direto do back
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td style="color: var(--text-soft); font-size: 0.8rem;">${item.searched_at || 'N/A'}</td>
-                            <td><span class="mono-data">${item.identifier || 'N/A'}</span></td>
-                            <td style="color: var(--text-soft); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${item.response?.substring(0, 80) || 'Sem dados'}...
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="3" class="empty-state" style="color: var(--danger)">Erro ao carregar dados.</td></tr>`;
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                document.getElementById('history-body').innerHTML = 
-                    `<tr><td colspan="3" class="empty-state" style="color: var(--danger)">Erro de conexão.</td></tr>`;
-            }
-        }
-        carregarHistorico();
-    </script>
 </body>
 </html>

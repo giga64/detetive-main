@@ -1,170 +1,57 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek | Resultados</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>Result | Elite CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-soft: #64748b;
-            --border: #e2e8f0;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding-bottom: 4rem;
+            background: #f9fafb; font-family: 'Inter', sans-serif;
+            margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh;
         }
-
-        nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .logo { font-weight: 600; font-size: 1.1rem; }
-        
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-soft);
-            font-size: 0.875rem;
-            margin-left: 2rem;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--primary); }
 
         .container {
-            max-width: 800px;
-            margin: 3rem auto;
-            padding: 0 1.5rem;
-            animation: slideIn 0.5s ease-out;
+            background: #fff; padding: 3rem; border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; max-width: 500px;
+            animation: entry 0.6s ease;
         }
 
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
+        @keyframes entry { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .icon-check {
+            width: 48px; height: 48px; background: #10b981; color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem; font-size: 1.5rem;
         }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            background: #e0e7ff;
-            color: var(--primary);
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 2rem; letter-spacing: -0.02em; }
+
+        .data-grid {
+            background: #f8fafc; border: 1px solid #f1f5f9;
+            border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+            color: #334155; line-height: 1.6;
         }
 
-        h2 { font-size: 1.5rem; font-weight: 600; margin-top: 0.5rem; }
-
-        .result-card {
-            background: var(--surface);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border);
-            overflow: hidden;
+        .btn-return {
+            display: block; text-align: center; text-decoration: none;
+            background: #000; color: #fff; padding: 1rem; border-radius: 12px;
+            font-weight: 500; transition: 0.3s;
         }
 
-        .result-body {
-            padding: 2rem;
-            font-family: 'JetBrains Mono', monospace; /* Fonte mono apenas para os dados */
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: #334155;
-            white-space: pre-wrap;
-            background: #fafafa;
-            border-top: 1px solid var(--border);
-        }
-
-        .actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background: var(--text);
-            color: white;
-            border: none;
-        }
-        .btn-primary:hover { background: var(--primary); transform: translateY(-2px); }
-
-        .btn-secondary {
-            background: white;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-        .btn-secondary:hover { background: #f1f5f9; }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .btn-return:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">OneSeek</div>
-        <div class="nav-links">
-            <a href="/">Nova Busca</a>
-            <a href="/historico">Histórico</a>
-            <a href="/login">Sair</a>
-        </div>
-    </nav>
-
     <div class="container">
-        <div class="header-actions">
-            <div>
-                <span class="badge">Investigação Concluída</span>
-                <h2>Resultado da Busca</h2>
-                <p style="color: var(--text-soft); margin-top: 0.25rem;">Alvo: {{ identifier }}</p>
-            </div>
+        <div class="icon-check">✓</div>
+        <h1>Extração Concluída</h1>
+        <div class="data-grid">
+            <span style="color: #64748b;">// ID: {{ id_alvo }}</span><br><br>
+            {{ resultado }}
         </div>
-
-        <div class="result-card">
-            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: white;">
-                <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-soft);">RELATÓRIO DE DADOS</span>
-            </div>
-            <div class="result-body">{{ resultado }}</div>
-        </div>
-
-        <div class="actions">
-            <button class="btn btn-secondary" onclick="history.back()">Voltar</button>
-            <a href="/" class="btn btn-primary">Nova Investigação</a>
-        </div>
+        <a href="/" class="btn-return">Nova Extração</a>
     </div>
 </body>
 </html>

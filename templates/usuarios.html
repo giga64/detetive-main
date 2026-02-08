@@ -1,247 +1,83 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OneSeek | Equipe</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Usuários | Elite CRM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-soft: #64748b;
-            --border: #e2e8f0;
-            --danger: #ef4444;
-            --success-bg: #dcfce7;
-            --success-text: #166534;
+        body { background: #f8fafc; font-family: 'Inter', sans-serif; color: #1e293b; margin: 0; padding: 3rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 3rem; animation: slideDown 0.5s ease;
         }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo { font-weight: 600; font-size: 1.1rem; }
+        h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.04em; margin: 0; }
         
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-soft);
-            font-size: 0.875rem;
-            margin-left: 2rem;
-            transition: color 0.2s;
+        .btn-action {
+            text-decoration: none; padding: 0.7rem 1.2rem; border-radius: 10px;
+            font-size: 0.85rem; font-weight: 600; transition: 0.3s;
         }
-        .nav-links a:hover { color: var(--primary); }
-        .nav-links a.active { color: var(--text); font-weight: 500; }
+        .btn-primary { background: #000; color: #fff; }
+        .btn-outline { border: 1px solid #e2e8f0; color: #64748b; background: #fff; }
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-        .container {
-            max-width: 900px;
-            margin: 3rem auto;
-            padding: 0 1.5rem;
-            display: grid;
-            gap: 2rem;
-            animation: fadeIn 0.6s ease;
+        .user-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem; margin-top: 2rem;
         }
 
-        /* Área de Criação de Usuário */
-        .create-card {
-            background: var(--surface);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: flex-end;
-            gap: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        .user-card {
+            background: #fff; padding: 1.5rem; border-radius: 20px;
+            border: 1px solid #f1f5f9; transition: 0.3s;
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .user-card:hover { border-color: #000; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
+
+        .avatar {
+            width: 48px; height: 48px; background: #f1f5f9; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; color: #64748b; font-size: 1.1rem;
         }
 
-        .form-group { flex: 1; }
+        .user-info { flex: 1; }
+        .user-info .name { display: block; font-weight: 600; font-size: 0.95rem; }
+        .user-info .role { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-soft);
-            margin-bottom: 0.4rem;
-            text-transform: uppercase;
-        }
-
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 0.6rem 0.8rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        input:focus { border-color: var(--primary); }
-
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            height: 40px; /* Alinha com os inputs */
-            padding-bottom: 2px;
-        }
-
-        button {
-            padding: 0.6rem 1.2rem;
-            background: var(--text);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.9; }
-
-        /* Lista de Usuários */
-        .list-header { margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
-
-        .user-table {
-            width: 100%;
-            background: var(--surface);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            border-collapse: collapse;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        .user-table th {
-            text-align: left;
-            padding: 1rem 1.5rem;
-            background: #f8fafc;
-            font-size: 0.75rem;
-            color: var(--text-soft);
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .user-table td {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
-        }
-
-        .user-table tr:last-child td { border-bottom: none; }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 99px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .badge-admin { background: #e0e7ff; color: var(--primary); }
-        .badge-agent { background: #f1f5f9; color: var(--text-soft); }
-
-        .btn-delete {
-            color: var(--danger);
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 500;
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            background: #fef2f2;
-            transition: background 0.2s;
-        }
-        .btn-delete:hover { background: #fee2e2; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .badge-active { 
+            width: 8px; height: 8px; background: #10b981; border-radius: 50%; 
+            display: inline-block; margin-right: 5px;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <div class="logo">OneSeek</div>
-        <div class="nav-links">
-            <a href="/">Busca</a>
-            <a href="/historico">Histórico</a>
-            <a href="/usuarios" class="active">Agentes</a>
-            <a href="/login" style="color: var(--danger);">Sair</a>
-        </div>
-    </nav>
-
     <div class="container">
-        
-        <div>
-            <h2>Gerenciamento de Equipe</h2>
-            <p style="color: var(--text-soft); margin-bottom: 1.5rem;">Adicione novos agentes ou remova acessos existentes.</p>
-            
-            <form method="post" action="/usuarios/novo" class="create-card">
-                <div class="form-group">
-                    <label for="new_user">Nome do Agente</label>
-                    <input type="text" id="new_user" name="new_user" placeholder="ex: joao.silva" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="new_pass">Senha Temporária</label>
-                    <input type="password" id="new_pass" name="new_pass" placeholder="••••••" required>
-                </div>
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="admin" name="admin" value="on" style="margin-right: 0.5rem;">
-                    <label for="admin" style="margin: 0; cursor: pointer;">Admin</label>
-                </div>
-                <button type="submit">Adicionar Membro</button>
-            </form>
-        </div>
+        <header>
+            <div>
+                <h1>Gestão de Acesso</h1>
+                <p style="color: #64748b; margin: 5px 0 0; font-size: 0.9rem;">Controle quem pode operar o motor de dados.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="/" class="btn-action btn-outline">Dashboard</a>
+                <a href="#" class="btn-action btn-primary">+ Novo Operador</a>
+            </div>
+        </header>
 
-        <div>
-            <div class="list-header">Membros Ativos</div>
-            <table class="user-table">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">ID</th>
-                        <th>Usuário</th>
-                        <th>Permissão</th>
-                        <th style="text-align: right;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td style="color: var(--text-soft);">#{{ user[0] }}</td>
-                        <td style="font-weight: 500;">{{ user[1] }}</td>
-                        <td>
-                            {% if user[2] == 1 %}
-                                <span class="badge badge-admin">Administrador</span>
-                            {% else %}
-                                <span class="badge badge-agent">Agente</span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: right;">
-                            {% if user[2] == 0 %}
-                                <a href="/usuarios/deletar/{{ user[0] }}" class="btn-delete" onclick="return confirm('Tem certeza que deseja remover este agente?')">Remover</a>
-                            {% else %}
-                                <span style="color: #cbd5e1; font-size: 0.8rem;">Bloqueado</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="user-grid">
+            {% for usuario in usuarios %}
+            <div class="user-card">
+                <div class="avatar">{{ usuario.username[0] | upper }}</div>
+                <div class="user-info">
+                    <span class="name">{{ usuario.username }}</span>
+                    <span class="role"><span class="badge-active"></span> Operador de Elite</span>
+                </div>
+            </div>
+            {% else %}
+            <p style="color: #94a3b8; grid-column: 1/-1; text-align: center; padding: 3rem;">Nenhum usuário cadastrado.</p>
+            {% endfor %}
         </div>
-
     </div>
 </body>
 </html>
