@@ -339,7 +339,23 @@
     
     .history-button-container {
       margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
       animation: fadeInUp 0.8s ease-out 0.4s backwards;
+    }
+
+    .btn-admin {
+      border-color: rgba(16,185,129,0.6);
+      color: #10b981;
+      background: rgba(16,185,129,0.12);
+    }
+
+    .btn-admin:hover {
+      background: rgba(16,185,129,0.2);
+      border-color: rgba(16,185,129,0.85);
+      box-shadow: 0 0 20px rgba(16,185,129,0.45);
     }
     
     .btn-historico {
@@ -478,6 +494,9 @@
       <!-- History Button -->
       <div class="history-button-container">
         <a href="/historico" class="btn-historico">Ver Histórico</a>
+        {% if request.cookies.get('is_admin') == '1' %}
+          <a href="/usuarios" class="btn-historico btn-admin">Gerenciar Usuarios</a>
+        {% endif %}
       </div>
     </div>
   </div>
