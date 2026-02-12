@@ -299,7 +299,7 @@
                 <p class="header-subtitle">Gestão de Acesso ao Sistema</p>
             </div>
             <div class="header-actions">
-                <a href="/" class="btn btn-secondary">← Dashboard</a>
+                <a href="/" class="btn btn-secondary">Dashboard</a>
                 <a href="#" class="btn btn-primary">+ Novo Operador</a>
             </div>
         </header>
@@ -307,17 +307,17 @@
         <div class="user-grid">
             {% for usuario in usuarios %}
             <div class="user-card">
-                <div class="avatar">{{ usuario.username[0] | upper }}</div>
-                <span class="user-name">{{ usuario.username }}</span>
+                <div class="avatar">{{ usuario[1][0] | upper }}</div>
+                <span class="user-name">{{ usuario[1] }}</span>
                 <div class="user-role">
                     <span class="status-indicator"></span>
                     Operador Ativo
                 </div>
-                <span class="user-badge">🔐 Permissions</span>
+                <span class="user-badge">Permissions</span>
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-icon">👤</div>
+                <div class="empty-icon">Operador</div>
                 <p>Nenhum operador cadastrado</p>
                 <p class="hint">Comece criando seu primeiro operador do sistema.</p>
                 <a href="#">+ Criar Operador</a>
