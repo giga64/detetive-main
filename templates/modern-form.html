@@ -495,7 +495,7 @@
       <div class="history-button-container">
         <a href="/historico" class="btn-historico">Ver Histórico</a>
         {% if request.cookies.get('is_admin') == '1' %}
-          <a href="/usuarios" class="btn-historico btn-admin">Gerenciar Usuarios</a>
+          <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">Gerenciar Usuarios</a>
         {% endif %}
       </div>
     </div>
