@@ -268,7 +268,10 @@ async def do_consulta(request: Request):
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
     if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
-    return templates.TemplateResponse("historico.html", {"request": request})
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    searches = cursor.fetchall()
+    consultas = [{"id_alvo": s[1], "data": s[3], "response": s[2]} for s in searches]
+    return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
 
 @app.get("/api/historico")
 def api_historico(request: Request):

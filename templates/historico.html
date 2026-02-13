@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arquivo Morto | Detetive</title>
+  <title>Histórico | Detetive</title>
   <link rel="icon" href="/static/favicon.ico">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -173,7 +173,8 @@
       color: #64748b;
     }
 
-    .empty-icon {
+    .empty-icon,
+    .archive-icon {
       display: none;
     }
 
@@ -249,7 +250,7 @@
   
   <div class="container">
     <header>
-      <h1>ARQUIVO MORTO</h1>
+      <h1>HISTÓRICO</h1>
       <a href="/" class="btn-back">← Painel Principal</a>
     </header>
     
@@ -259,11 +260,10 @@
         <div class="archive-card">
           <div class="archive-header">
             <div class="archive-info">
-              <div class="archive-icon">🔎</div>
+              <div class="archive-icon"></div>
               <div class="archive-id">{{ consulta.id_alvo }}</div>
               <div class="archive-meta">
                 <span class="meta-tag">
-                  <span>📅</span>
                   <span>{{ consulta.data }}</span>
                 </span>
               </div>
