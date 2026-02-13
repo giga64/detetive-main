@@ -380,6 +380,33 @@
             flex: 1;
         }
 
+        .toggle-password {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .toggle-password:hover {
+            color: #06b6d4;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
@@ -518,7 +545,12 @@
                 </div>
                 <div class="form-group">
                     <label for="new_pass">Senha</label>
-                    <input type="password" id="new_pass" name="new_pass" placeholder="Digite a senha" required>
+                    <div style="position: relative;">
+                        <input type="password" id="new_pass" name="new_pass" placeholder="Digite a senha" required style="padding-right: 3rem;">
+                        <button type="button" onclick="togglePassword()" class="toggle-password" title="Mostrar/Ocultar senha">
+                            <span id="eyeIcon">👁️</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group checkbox-group">
                     <label>
@@ -682,6 +714,19 @@
         function confirmDelete(userId, username) {
             if (confirm(`Tem certeza que deseja remover o operador "${username}"?`)) {
                 window.location.href = `/usuarios/deletar/${userId}`;
+            }
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('new_pass');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = '🔒';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = '👁️';
             }
         }
 

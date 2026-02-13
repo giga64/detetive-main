@@ -55,9 +55,9 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-# Criar admin padrão se não existir (Usuário: admin | Senha: admin123)
+# Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
 cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
-               ("admin", "admin123", 1))
+               ("admin", "admin6464", 1))
 conn.commit()
 
 # ----------------------
