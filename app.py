@@ -58,6 +58,8 @@ conn.commit()
 # Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
 cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
                ("admin", "admin6464", 1))
+# Atualizar senha do admin caso já exista
+cursor.execute("UPDATE users SET password = ? WHERE username = ?", ("admin6464", "admin"))
 conn.commit()
 
 # ----------------------
