@@ -209,6 +209,177 @@
             margin-bottom: 1rem;
         }
 
+        .admin-badge {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: rgba(251, 191, 36, 0.4);
+            color: #fbbf24;
+        }
+
+        .btn-delete {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1.5px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            border-radius: 0.4rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.8);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            border: 2px solid rgba(6, 182, 212, 0.4);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(6, 182, 212, 0.3);
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .user-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .user-form label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-form input[type="text"],
+        .user-form input[type="password"] {
+            width: 100%;
+            padding: 0.9rem 1.1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1.5px solid rgba(6, 182, 212, 0.4);
+            border-radius: 0.6rem;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-form input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.8rem;
+            cursor: pointer;
+            accent-color: #06b6d4;
+        }
+
+        .checkbox-group span {
+            text-transform: none;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .form-actions .btn {
+            flex: 1;
+        }
+
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
@@ -300,7 +471,7 @@
             </div>
             <div class="header-actions">
                 <a href="/" class="btn btn-secondary">Dashboard</a>
-                <a href="#" class="btn btn-primary">+ Novo Operador</a>
+                <button onclick="openModal()" class="btn btn-primary">+ Novo Operador</button>
             </div>
         </header>
 
@@ -311,18 +482,55 @@
                 <span class="user-name">{{ usuario[1] }}</span>
                 <div class="user-role">
                     <span class="status-indicator"></span>
-                    Operador Ativo
+                    {% if usuario[2] == 1 %}Administrador{% else %}Operador{% endif %}
                 </div>
-                <span class="user-badge">Permissions</span>
+                {% if usuario[2] == 1 %}
+                <span class="user-badge admin-badge">Admin</span>
+                {% else %}
+                <span class="user-badge">Operador</span>
+                {% endif %}
+                {% if usuario[2] == 0 %}
+                <button onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-delete">Remover</button>
+                {% endif %}
             </div>
             {% else %}
             <div class="empty-state">
                 <div class="empty-icon">Operador</div>
                 <p>Nenhum operador cadastrado</p>
                 <p class="hint">Comece criando seu primeiro operador do sistema.</p>
-                <a href="#">+ Criar Operador</a>
+                <button onclick="openModal()" class="btn btn-primary">+ Criar Operador</button>
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Modal para criar usuário -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Novo Operador</h2>
+                <button onclick="closeModal()" class="close-btn">&times;</button>
+            </div>
+            <form action="/usuarios/novo" method="post" class="user-form">
+                <div class="form-group">
+                    <label for="new_user">Nome de Usuário</label>
+                    <input type="text" id="new_user" name="new_user" placeholder="Digite o username" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_pass">Senha</label>
+                    <input type="password" id="new_pass" name="new_pass" placeholder="Digite a senha" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" name="admin" value="1">
+                        <span>Definir como Administrador</span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Criar Operador</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -460,6 +668,35 @@
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+        });
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        function confirmDelete(userId, username) {
+            if (confirm(`Tem certeza que deseja remover o operador "${username}"?`)) {
+                window.location.href = `/usuarios/deletar/${userId}`;
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('userModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
         });
     </script>
 </body>
