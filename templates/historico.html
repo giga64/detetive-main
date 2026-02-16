@@ -227,9 +227,9 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      border: 1.5px solid rgba(100, 116, 139, 0.4);
       background: rgba(30, 41, 59, 0.5);
-      color: #94a3b8;
+      color: #64748b;
       font-size: 1.2rem;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -240,13 +240,20 @@
     
     .action-btn:hover {
       transform: scale(1.1);
-      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+      box-shadow: 0 0 15px rgba(100, 116, 139, 0.4);
+      border-color: rgba(100, 116, 139, 0.6);
     }
     
     .favorite-btn.active {
       background: rgba(251, 191, 36, 0.25);
       border-color: rgba(251, 191, 36, 0.6);
       color: #fbbf24;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+    }
+    
+    .favorite-btn.active:hover {
+      background: rgba(251, 191, 36, 0.35);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
     }
     
     .note-btn:hover {
@@ -484,13 +491,19 @@
   
   <div class="container">
     <header>
-      <h1>HISTÓRICO</h1>
+      <h1>{% if is_favorites %}⭐ FAVORITOS{% else %}HISTÓRICO{% endif %}</h1>
       <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         {% if consultas %}
+        {% if not is_favorites %}
         <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
           <button type="submit" class="btn-clear">Limpar Histórico</button>
         </form>
+        {% endif %}
+        {% if is_favorites %}
+        <a href="/historico" class="btn-back" style="background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.5); color: #06b6d4;">📋 Histórico Completo</a>
+        {% else %}
         <a href="/favoritos" class="btn-back" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #fbbf24;">⭐ Favoritos</a>
+        {% endif %}
         <a href="/historico/exportar/csv" class="btn-back" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">Exportar CSV</a>
         <a href="/historico/exportar/json" class="btn-back" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.5); color: #a855f7;">Exportar JSON</a>
         {% endif %}
@@ -725,8 +738,8 @@
         
         if (data.success) {
           button.classList.toggle('active');
-          showToast(data.message, 'success');
-          setTimeout(() => location.reload(), 800);
+          const message = isActive ? '⭐ Removido dos favoritos' : '⭐ Adicionado aos favoritos';
+          showToast(message, 'success');
         } else {
           showToast(data.error || 'Erro ao processar favorito', 'error');
         }

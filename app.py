@@ -1164,7 +1164,30 @@ async def get_favorites(request: Request):
     """, (username,))
     favorites = cursor.fetchall()
     
-    consultas = [{"id": f[0], "id_alvo": f[1], "response": f[2], "data": format_timestamp_br(f[3]), "is_favorite": True} for f in favorites]
+    consultas = []
+    for f in favorites:
+        # Buscar notas
+        cursor.execute("SELECT note, created_at FROM notes WHERE search_id = ? ORDER BY created_at DESC LIMIT 1", (f[0],))
+        note_row = cursor.fetchone()
+        note_text = note_row[0] if note_row else None
+        note_date = format_timestamp_br(note_row[1]) if note_row else None
+        
+        # Buscar tags
+        cursor.execute("SELECT tag_name FROM tags WHERE search_id = ? ORDER BY created_at", (f[0],))
+        tags_rows = cursor.fetchall()
+        tags_list = [t[0] for t in tags_rows]
+        
+        consultas.append({
+            "id": f[0], 
+            "id_alvo": f[1], 
+            "data": format_timestamp_br(f[3]), 
+            "response": f[2],
+            "is_favorite": True,
+            "note": note_text,
+            "note_date": note_date,
+            "tags": tags_list
+        })
+    
     return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas, "is_favorites": True})
 
 # ----------------------
@@ -1469,24 +1492,24 @@ async def filtrar_historico(request: Request, q: str = "", periodo: str = "30", 
     username = request.cookies.get("auth_user")
     
     # Construir query com filtros
-    where_clauses = ["username = ?"]
-    params = [username]
+    where_clauses = ["s.username = ?"]
+    params = [username, username]  # username para WHERE e para LEFT JOIN
     
     # Filtro de período
     if periodo == "7":
-        where_clauses.append("DATE(searched_at) >= DATE('now', '-7 days')")
+        where_clauses.append("DATE(s.searched_at) >= DATE('now', '-7 days')")
     elif periodo == "30":
-        where_clauses.append("DATE(searched_at) >= DATE('now', '-30 days')")
+        where_clauses.append("DATE(s.searched_at) >= DATE('now', '-30 days')")
     elif periodo == "90":
-        where_clauses.append("DATE(searched_at) >= DATE('now', '-90 days')")
+        where_clauses.append("DATE(s.searched_at) >= DATE('now', '-90 days')")
     
     # Filtro de busca
     if q:
-        where_clauses.append("(identifier LIKE ? OR response LIKE ?)")
+        where_clauses.append("(s.identifier LIKE ? OR s.response LIKE ?)")
         params.extend([f"%{q}%", f"%{q}%"])
     
     # Ordenação
-    order_by = "searched_at DESC" if ordem == "desc" else "searched_at ASC"
+    order_by = "s.searched_at DESC" if ordem == "desc" else "s.searched_at ASC"
     
     where_sql = " AND ".join(where_clauses)
     
@@ -1498,10 +1521,33 @@ async def filtrar_historico(request: Request, q: str = "", periodo: str = "30", 
         WHERE {where_sql}
         ORDER BY {order_by}
         LIMIT 100
-    """, [username] + params)
+    """, params)
     
     searches = cursor.fetchall()
-    consultas = [{"id": s[0], "id_alvo": s[1], "response": s[2], "data": format_timestamp_br(s[3]), "is_favorite": s[4]} for s in searches]
+    
+    consultas = []
+    for s in searches:
+        # Buscar notas
+        cursor.execute("SELECT note, created_at FROM notes WHERE search_id = ? ORDER BY created_at DESC LIMIT 1", (s[0],))
+        note_row = cursor.fetchone()
+        note_text = note_row[0] if note_row else None
+        note_date = format_timestamp_br(note_row[1]) if note_row else None
+        
+        # Buscar tags
+        cursor.execute("SELECT tag_name FROM tags WHERE search_id = ? ORDER BY created_at", (s[0],))
+        tags_rows = cursor.fetchall()
+        tags_list = [t[0] for t in tags_rows]
+        
+        consultas.append({
+            "id": s[0], 
+            "id_alvo": s[1], 
+            "data": format_timestamp_br(s[3]), 
+            "response": s[2],
+            "is_favorite": s[4] == 1,
+            "note": note_text,
+            "note_date": note_date,
+            "tags": tags_list
+        })
     
     return templates.TemplateResponse("historico.html", {
         "request": request, 
