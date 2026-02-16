@@ -45,6 +45,19 @@ CREATE TABLE IF NOT EXISTS searches (
 )
 """)
 
+# Migração: adicionar colunas se não existirem
+try:
+    cursor.execute("SELECT response FROM searches LIMIT 1")
+except sqlite3.OperationalError:
+    cursor.execute("ALTER TABLE searches ADD COLUMN response TEXT")
+    conn.commit()
+
+try:
+    cursor.execute("SELECT username FROM searches LIMIT 1")
+except sqlite3.OperationalError:
+    cursor.execute("ALTER TABLE searches ADD COLUMN username TEXT")
+    conn.commit()
+
 # Tabela de Usuários
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
