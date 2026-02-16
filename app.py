@@ -330,6 +330,18 @@ def record_audit_log(action: str, username: str, ip_address: str, details: str =
     except:
         pass  # Silenciar erros de auditoria
 
+def format_timestamp_br(timestamp_str: str) -> str:
+    """Converte timestamp UTC para horário de Brasília (UTC-3) e formata para padrão brasileiro"""
+    try:
+        # Parse do timestamp do banco (formato: YYYY-MM-DD HH:MM:SS)
+        dt_utc = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+        # Converter para horário de Brasília (UTC-3)
+        dt_brasilia = dt_utc - timedelta(hours=3)
+        # Formatar no padrão brasileiro: dd/mm/yyyy HH:MM:SS
+        return dt_brasilia.strftime("%d/%m/%Y %H:%M:%S")
+    except:
+        return timestamp_str  # Retorna original se houver erro
+
 # ----------------------
 # Rotas de Autenticação
 # ----------------------
@@ -534,7 +546,7 @@ def historico(request: Request):
     username = request.cookies.get("auth_user")
     cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
     searches = cursor.fetchall()
-    consultas = [{"id": s[0], "id_alvo": s[1], "data": s[3], "response": s[2]} for s in searches]
+    consultas = [{"id": s[0], "id_alvo": s[1], "data": format_timestamp_br(s[3]), "response": s[2]} for s in searches]
     return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
 
 @app.post("/historico/limpar")
@@ -574,7 +586,7 @@ async def export_historico_csv(request: Request):
     writer = csv.writer(output)
     writer.writerow(["ID", "Identificador", "Resposta", "Data"])
     for row in searches:
-        writer.writerow(row)
+        writer.writerow([row[0], row[1], row[2], format_timestamp_br(row[3])])
     
     client_ip = get_client_ip(request)
     record_audit_log("EXPORT_CSV", username, client_ip, f"{len(searches)} registros exportados")
@@ -598,7 +610,7 @@ async def export_historico_json(request: Request):
     cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC", (username,))
     searches = cursor.fetchall()
     
-    data = [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
+    data = [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": format_timestamp_br(s[3])} for s in searches]
     
     client_ip = get_client_ip(request)
     record_audit_log("EXPORT_JSON", username, client_ip, f"{len(searches)} registros exportados")
@@ -651,7 +663,7 @@ async def admin_logs(request: Request):
             "action": l[1],
             "username": l[2],
             "ip": l[3],
-            "timestamp": l[4],
+            "timestamp": format_timestamp_br(l[4]),
             "details": l[5]
         }
         for l in logs
