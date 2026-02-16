@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Operadores | Detetive</title>
-    <link rel="icon" href="/static/favicon.png" type="image/png">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -120,6 +122,27 @@
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
             animation: fadeInUp 0.8s ease-out 0.2s backwards;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .user-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .user-grid::-webkit-scrollbar-track {
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 4px;
+        }
+
+        .user-grid::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.4);
+            border-radius: 4px;
+        }
+
+        .user-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 182, 212, 0.6);
         }
 
         @keyframes fadeInUp {
@@ -215,25 +238,49 @@
             color: #fbbf24;
         }
 
-        .btn-delete {
-            margin-top: 0.5rem;
-            padding: 0.5rem 1.2rem;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1.5px solid rgba(239, 68, 68, 0.5);
-            color: #ef4444;
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-delete, .btn-edit {
+            flex: 1;
+            min-width: 100px;
+            padding: 0.5rem 1rem;
             border-radius: 0.4rem;
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border: 1.5px solid;
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
         }
 
         .btn-delete:hover {
             background: rgba(239, 68, 68, 0.25);
             border-color: rgba(239, 68, 68, 0.8);
             box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #3b82f6;
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: rgba(59, 130, 246, 0.8);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
 
         .modal {
@@ -516,9 +563,12 @@
                 {% else %}
                 <span class="user-badge">Operador</span>
                 {% endif %}
-                {% if usuario[2] == 0 %}
-                <button onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-delete">Remover</button>
-                {% endif %}
+                <div class="user-actions">
+                    <button onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-edit">Alterar Senha</button>
+                    {% if usuario[2] == 0 %}
+                    <button onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-delete">Remover</button>
+                    {% endif %}
+                </div>
             </div>
             {% else %}
             <div class="empty-state">
@@ -561,6 +611,36 @@
                 <div class="form-actions">
                     <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Criar Operador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para alterar senha -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Alterar Senha</h2>
+                <button onclick="closePasswordModal()" class="close-btn">&times;</button>
+            </div>
+            <form id="passwordForm" action="/usuarios/alterar-senha" method="post" class="user-form">
+                <input type="hidden" id="change_user_id" name="user_id">
+                <div class="form-group">
+                    <label>Usuário</label>
+                    <input type="text" id="change_username" readonly style="background: rgba(30, 41, 59, 0.3); cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label for="change_pass">Nova Senha</label>
+                    <div style="position: relative;">
+                        <input type="password" id="change_pass" name="new_pass" placeholder="Digite a nova senha" required style="padding-right: 3rem;">
+                        <button type="button" onclick="toggleChangePassword()" class="toggle-password" title="Mostrar/Ocultar senha">
+                            <span id="eyeIconChange">👁️</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closePasswordModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
                 </div>
             </form>
         </div>
@@ -730,6 +810,30 @@
             }
         }
 
+        function openPasswordModal(userId, username) {
+            document.getElementById('change_user_id').value = userId;
+            document.getElementById('change_username').value = username;
+            document.getElementById('change_pass').value = '';
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+        }
+
+        function toggleChangePassword() {
+            const passwordInput = document.getElementById('change_pass');
+            const eyeIcon = document.getElementById('eyeIconChange');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = '🔒';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+
         // Close modal on outside click
         document.getElementById('userModal')?.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -737,10 +841,17 @@
             }
         });
 
+        document.getElementById('passwordModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePasswordModal();
+            }
+        });
+
         // Close modal on ESC key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal();
+                closePasswordModal();
             }
         });
     </script>

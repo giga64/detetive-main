@@ -281,10 +281,11 @@ def api_historico(request: Request):
     return [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
 
 # ----------------------
-# Gestão de Usuários
+# Gestão de Usuários (Apenas Admin)
 # ----------------------
 @app.get("/usuarios", response_class=HTMLResponse)
 async def list_users(request: Request):
+    # Apenas admin pode gerenciar usuários
     if request.cookies.get("is_admin") != "1": 
         return RedirectResponse(url="/")
     cursor.execute("SELECT id, username, is_admin FROM users")
@@ -295,20 +296,36 @@ async def list_users(request: Request):
 
 @app.post("/usuarios/novo")
 async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None)):
-    if request.cookies.get("is_admin") == "1":
-        try:
-            cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
-                         (new_user, new_pass, 1 if admin else 0))
-            conn.commit()
-        except: 
-            pass
+    # Apenas admin pode criar usuários
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/", status_code=303)
+    try:
+        cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
+                     (new_user, new_pass, 1 if admin else 0))
+        conn.commit()
+    except: 
+        pass
     return RedirectResponse(url="/usuarios", status_code=303)
 
 @app.get("/usuarios/deletar/{user_id}")
 async def delete_user(request: Request, user_id: int):
-    if request.cookies.get("is_admin") == "1":
-        cursor.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
+    # Apenas admin pode deletar usuários (exceto outros admins)
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/", status_code=303)
+    cursor.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
+    conn.commit()
+    return RedirectResponse(url="/usuarios", status_code=303)
+
+@app.post("/usuarios/alterar-senha")
+async def change_password(request: Request, user_id: int = Form(...), new_pass: str = Form(...)):
+    # Apenas admin pode alterar senhas de usuários
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/", status_code=303)
+    try:
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pass, user_id))
         conn.commit()
+    except:
+        pass
     return RedirectResponse(url="/usuarios", status_code=303)
 
 # ----------------------
