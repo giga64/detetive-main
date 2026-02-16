@@ -99,7 +99,7 @@ conn.commit()
 # ----------------------
 # Sistema de Rate Limiting e Expiração
 # ----------------------
-SESSION_TIMEOUT = 2 * 60 * 60  # 2 horas em segundos
+SESSION_TIMEOUT = 30 * 60  # 30 minutos em segundos
 MAX_LOGIN_ATTEMPTS = 5
 LOGIN_ATTEMPT_WINDOW = 15 * 60  # 15 minutos em segundos
 
