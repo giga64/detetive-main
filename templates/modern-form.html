@@ -59,6 +59,33 @@
       justify-content: center;
       padding: 3rem 1rem;
     }
+
+    .logout-btn {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      padding: 0.6rem 1.2rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      color: #ef4444;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.8);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+    }
     
     .detective-header {
       text-align: center;
@@ -425,6 +452,7 @@
   </style>
 </head>
 <body>
+  <a href="/logout" class="logout-btn">Sair</a>
   <!-- Canvas para fundo interativo -->
   <canvas id="detective-canvas"></canvas>
   

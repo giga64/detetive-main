@@ -200,6 +200,13 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
         return response
     return templates.TemplateResponse("login.html", {"request": request, "erro": "ACESSO NEGADO"})
 
+@app.get("/logout")
+async def logout(request: Request):
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(key="auth_user")
+    response.delete_cookie(key="is_admin")
+    return response
+
 # ----------------------
 # Rotas do Sistema
 # ----------------------
