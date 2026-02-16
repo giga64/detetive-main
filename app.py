@@ -607,6 +607,78 @@ def form(request: Request):
         "stats": stats
     })
 
+@app.get("/admin/dashboard", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    """Dashboard administrativo com estatísticas e gráficos"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    # Verificar se é admin
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/")
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Registrar acesso ao dashboard
+    record_audit_log("ACCESS_ADMIN_DASHBOARD", username, client_ip, "Acessou dashboard administrativo")
+    
+    # Obter estatísticas globais (admin)
+    stats = get_user_statistics(username, is_admin=True)
+    
+    # Obter dados adicionais para gráficos
+    # Consultas dos últimos 30 dias
+    cursor.execute("""
+        SELECT DATE(timestamp) as dia, COUNT(*) as total
+        FROM searches
+        WHERE DATE(timestamp) >= DATE('now', '-30 days')
+        GROUP BY DATE(timestamp)
+        ORDER BY dia
+    """)
+    consultas_30_dias = cursor.fetchall()
+    
+    # Top 10 usuários
+    cursor.execute("""
+        SELECT username, COUNT(*) as total
+        FROM searches
+        GROUP BY username
+        ORDER BY total DESC
+        LIMIT 10
+    """)
+    top_usuarios = cursor.fetchall()
+    
+    # Consultas por hora do dia
+    cursor.execute("""
+        SELECT CAST(strftime('%H', timestamp) AS INTEGER) as hora, COUNT(*) as total
+        FROM searches
+        GROUP BY hora
+        ORDER BY hora
+    """)
+    consultas_por_hora = cursor.fetchall()
+    
+    # Total de usuários
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_usuarios = cursor.fetchone()[0]
+    
+    # Adicionar dados aos stats
+    stats['consultas_ultimos_30_dias'] = [(row[0], row[1]) for row in consultas_30_dias]
+    stats['top_usuarios'] = top_usuarios
+    stats['consultas_por_hora'] = consultas_por_hora
+    stats['total_usuarios'] = total_usuarios
+    
+    return templates.TemplateResponse("admin_dashboard.html", {
+        "request": request,
+        "stats": stats
+    })
+
 @app.post("/consulta", response_class=HTMLResponse)
 async def do_consulta(request: Request):
     if not request.cookies.get("auth_user"): 
@@ -714,9 +786,33 @@ def historico(request: Request):
         return response
     
     username = request.cookies.get("auth_user")
-    cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
+    cursor.execute("SELECT id, identifier, response, searched_at, is_favorite FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
     searches = cursor.fetchall()
-    consultas = [{"id": s[0], "id_alvo": s[1], "data": format_timestamp_br(s[3]), "response": s[2]} for s in searches]
+    
+    consultas = []
+    for s in searches:
+        # Buscar notas
+        cursor.execute("SELECT note, created_at FROM notes WHERE search_id = ? ORDER BY created_at DESC LIMIT 1", (s[0],))
+        note_row = cursor.fetchone()
+        note_text = note_row[0] if note_row else None
+        note_date = format_timestamp_br(note_row[1]) if note_row else None
+        
+        # Buscar tags
+        cursor.execute("SELECT tag FROM tags WHERE search_id = ? ORDER BY created_at", (s[0],))
+        tags_rows = cursor.fetchall()
+        tags_list = [t[0] for t in tags_rows]
+        
+        consultas.append({
+            "id": s[0], 
+            "id_alvo": s[1], 
+            "data": format_timestamp_br(s[3]), 
+            "response": s[2],
+            "is_favorite": s[4] == 1,
+            "note": note_text,
+            "note_date": note_date,
+            "tags": tags_list
+        })
+    
     return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
 
 @app.post("/historico/limpar")

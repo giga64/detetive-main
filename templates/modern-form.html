@@ -632,44 +632,6 @@
         <p class="subtitle">Sistema Interno</p>
       </div>
       
-      <!-- Dashboard de Estatísticas -->
-      {% if stats %}
-      <div class="stats-dashboard">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-value">{{ stats.total_consultas }}</div>
-            <div class="stat-label">Total de Consultas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">📅</div>
-            <div class="stat-value">{{ stats.consultas_hoje }}</div>
-            <div class="stat-label">Hoje</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-value">{{ stats.consultas_semana }}</div>
-            <div class="stat-label">Esta Semana</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">📆</div>
-            <div class="stat-value">{{ stats.consultas_mes }}</div>
-            <div class="stat-label">Este Mês</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⏰</div>
-            <div class="stat-value">{{ stats.horario_pico }}</div>
-            <div class="stat-label">Horário de Pico</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-value">{{ stats.total_favoritos }}</div>
-            <div class="stat-label">favoritos</div>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-      
       <!-- Form -->
       <form class="investigation-form" action="/consulta" method="post">
         <!-- CSRF Token -->
@@ -733,6 +695,7 @@
       <div class="history-button-container">
         <a href="/historico" class="btn-historico">Ver Histórico</a>
         {% if request.cookies.get('is_admin') == '1' %}
+          <a href="/admin/dashboard" class="btn-historico btn-admin">📊 Dashboard</a>
           <a href="/admin/logs" class="btn-historico btn-admin">Ver Logs</a>
           <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">Gerenciar Usuarios</a>
         {% endif %}

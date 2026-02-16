@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Administrativo | ONESEEK</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
+  <link rel="apple-touch-icon" href="/static/favicon.png">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    #detective-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      min-height: 100vh;
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      padding: 0.6rem 1.2rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      color: #ef4444;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      animation: fadeInDown 0.8s ease-out;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-back {
+      display: inline-block;
+      text-decoration: none;
+      color: #06b6d4;
+      border: 1.5px solid rgba(6, 182, 212, 0.5);
+      padding: 0.8rem 1.8rem;
+      border-radius: 0.6rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+    }
+
+    .btn-back:hover {
+      background: rgba(6, 182, 212, 0.25);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+      border-color: rgba(6, 182, 212, 0.8);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card {
+      background: transparent;
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 1rem;
+      padding: 2rem 1.5rem;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(6, 182, 212, 0.6);
+      box-shadow: 0 0 30px rgba(6, 182, 212, 0.25);
+      transform: translateY(-5px);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #06b6d4;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .stat-sublabel {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.3rem;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-container {
+      background: transparent;
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 1rem;
+      padding: 2rem;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .chart-container:hover {
+      border-color: rgba(6, 182, 212, 0.5);
+      box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+    }
+
+    .chart-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #06b6d4;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 300px;
+    }
+
+    .chart-wrapper.tall {
+      height: 400px;
+    }
+
+    /* Top Users Table */
+    .top-users-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .top-users-table th {
+      background: rgba(6, 182, 212, 0.1);
+      color: #06b6d4;
+      padding: 0.8rem;
+      text-align: left;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .top-users-table td {
+      padding: 0.8rem;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+    }
+
+    .top-users-table tr:hover {
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    .rank-badge {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      border-radius: 50%;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .rank-1 {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #000;
+    }
+
+    .rank-2 {
+      background: linear-gradient(135deg, #94a3b8, #64748b);
+      color: #fff;
+    }
+
+    .rank-3 {
+      background: linear-gradient(135deg, #fb923c, #f97316);
+      color: #000;
+    }
+
+    .rank-default {
+      background: rgba(6, 182, 212, 0.2);
+      color: #06b6d4;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .stat-card {
+        padding: 1.5rem 1rem;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="/logout" class="logout-btn">Sair</a>
+  <canvas id="detective-canvas"></canvas>
+  
+  <div class="container">
+    <header>
+      <h1>📊 DASHBOARD ADMINISTRATIVO</h1>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/" class="btn-back">← Painel Principal</a>
+        <a href="/admin/logs" class="btn-back">Ver Logs</a>
+        <a href="/usuarios" class="btn-back">Usuários</a>
+      </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">📊</span>
+        <span class="stat-value">{{ stats.total_consultas }}</span>
+        <div class="stat-label">Total de Consultas</div>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-icon">📅</span>
+        <span class="stat-value">{{ stats.consultas_hoje }}</span>
+        <div class="stat-label">Consultas Hoje</div>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-icon">📈</span>
+        <span class="stat-value">{{ stats.consultas_semana }}</span>
+        <div class="stat-label">Últimos 7 Dias</div>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-icon">📆</span>
+        <span class="stat-value">{{ stats.consultas_mes }}</span>
+        <div class="stat-label">Últimos 30 Dias</div>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-icon">⏰</span>
+        <span class="stat-value">{{ stats.horario_pico }}</span>
+        <div class="stat-label">Horário de Pico</div>
+        <div class="stat-sublabel">{{ stats.consultas_pico }} consultas</div>
+      </div>
+      
+      <div class="stat-card">
+        <span class="stat-icon">👥</span>
+        <span class="stat-value">{{ stats.total_usuarios }}</span>
+        <div class="stat-label">Usuários Ativos</div>
+      </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+      <!-- Consultas por Dia -->
+      <div class="chart-container" style="grid-column: 1 / -1;">
+        <h3 class="chart-title">📈 Consultas nos Últimos 30 Dias</h3>
+        <div class="chart-wrapper tall">
+          <canvas id="consultasPorDiaChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Usuários -->
+      <div class="chart-container">
+        <h3 class="chart-title">👥 Top 10 Usuários Mais Ativos</h3>
+        <div class="chart-wrapper">
+          <canvas id="topUsuariosChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Distribuição por Horário -->
+      <div class="chart-container">
+        <h3 class="chart-title">🕐 Distribuição por Horário</h3>
+        <div class="chart-wrapper">
+          <canvas id="horarioChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Users Table -->
+    {% if stats.top_usuarios %}
+    <div class="chart-container" style="margin-top: 2rem;">
+      <h3 class="chart-title">🏆 Ranking de Usuários</h3>
+      <table class="top-users-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Usuário</th>
+            <th>Consultas</th>
+            <th>% do Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario in stats.top_usuarios[:10] %}
+          <tr>
+            <td>
+              <span class="rank-badge rank-{% if loop.index <= 3 %}{{ loop.index }}{% else %}default{% endif %}">
+                #{{ loop.index }}
+              </span>
+            </td>
+            <td><strong>{{ usuario[0] }}</strong></td>
+            <td>{{ usuario[1] }} consultas</td>
+            <td>{{ "%.1f"|format((usuario[1] / stats.total_consultas * 100) if stats.total_consultas > 0 else 0) }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    // Canvas animation
+    const canvas = document.getElementById('detective-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = [];
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 0.5;
+        this.opacity = Math.random() * 0.5 + 0.2;
+        this.color = Math.random() > 0.5 ? '#06b6d4' : '#0ea5a4';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
+        
+        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+        
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 150) {
+          const angle = Math.atan2(dy, dx);
+          this.vx += Math.cos(angle) * 0.1;
+          this.vy += Math.sin(angle) * 0.1;
+          this.opacity = Math.min(1, this.opacity + 0.05);
+        } else {
+          this.opacity = Math.max(0.2, this.opacity - 0.02);
+        }
+        
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 2) {
+          this.vx = (this.vx / speed) * 2;
+          this.vy = (this.vy / speed) * 2;
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    for (let i = 0; i < 50; i++) particles.push(new Particle());
+
+    function drawConnections() {
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+      ctx.lineWidth = 1;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 100) {
+            ctx.globalAlpha = (1 - distance / 100) * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function animate() {
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
+      gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.03)';
+      ctx.lineWidth = 0.5;
+      const gridSize = 50;
+      
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      for (let p of particles) {
+        p.update();
+        p.draw();
+      }
+      
+      drawConnections();
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // ===========================
+    // CHART.JS CONFIGURATION
+    // ===========================
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = 'rgba(6, 182, 212, 0.1)';
+    
+    // Dados dos gráficos
+    const consultasPorDia = {{ stats.consultas_ultimos_30_dias | tojson }};
+    const topUsuarios = {{ stats.top_usuarios[:10] | tojson }};
+    const consultasPorHora = {{ stats.consultas_por_hora | tojson }};
+
+    // Gráfico de Consultas por Dia (Linha)
+    new Chart(document.getElementById('consultasPorDiaChart'), {
+      type: 'line',
+      data: {
+        labels: consultasPorDia.map(d => d[0]),
+        datasets: [{
+          label: 'Consultas',
+          data: consultasPorDia.map(d => d[1]),
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#06b6d4',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#06b6d4',
+            bodyColor: '#e2e8f0',
+            borderColor: '#06b6d4',
+            borderWidth: 1,
+            padding: 12,
+            displayColors: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(6, 182, 212, 0.1)' },
+            ticks: { color: '#94a3b8' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { 
+              color: '#94a3b8',
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        }
+      }
+    });
+
+    // Gráfico de Top Usuários (Barra Horizontal)
+    new Chart(document.getElementById('topUsuariosChart'), {
+      type: 'bar',
+      data: {
+        labels: topUsuarios.map(u => u[0]),
+        datasets: [{
+          label: 'Consultas',
+          data: topUsuarios.map(u => u[1]),
+          backgroundColor: [
+            '#fbbf24', '#94a3b8', '#fb923c', 
+            '#06b6d4', '#06b6d4', '#06b6d4',
+            '#0ea5a4', '#0ea5a4', '#0ea5a4', '#0ea5a4'
+          ],
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#06b6d4',
+            bodyColor: '#e2e8f0',
+            borderColor: '#06b6d4',
+            borderWidth: 1,
+            padding: 12
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: { color: 'rgba(6, 182, 212, 0.1)' },
+            ticks: { color: '#94a3b8' }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8' }
+          }
+        }
+      }
+    });
+
+    // Gráfico de Horário (Rosca)
+    new Chart(document.getElementById('horarioChart'), {
+      type: 'doughnut',
+      data: {
+        labels: consultasPorHora.map(h => h[0] + ':00'),
+        datasets: [{
+          data: consultasPorHora.map(h => h[1]),
+          backgroundColor: [
+            '#06b6d4', '#0ea5a4', '#14b8a6', '#22d3ee',
+            '#38bdf8', '#60a5fa', '#818cf8', '#a78bfa',
+            '#c084fc', '#e879f9', '#f472b6', '#fb7185',
+            '#fbbf24', '#fb923c', '#f97316', '#ef4444',
+            '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d',
+            '#78350f', '#713f12', '#854d0e', '#a16207'
+          ],
+          borderColor: '#0f172a',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#94a3b8',
+              padding: 10,
+              font: { size: 11 }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#06b6d4',
+            bodyColor: '#e2e8f0',
+            borderColor: '#06b6d4',
+            borderWidth: 1,
+            padding: 12
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

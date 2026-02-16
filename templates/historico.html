@@ -338,6 +338,74 @@
       font-size: 0.6rem;
     }
 
+    /* Tags Display */
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tag-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.8rem;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 0.4rem;
+      color: #a855f7;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .tag-item::before {
+      content: '🏷️';
+      font-size: 0.8rem;
+    }
+
+    /* Note Display */
+    .note-container {
+      background: rgba(251, 191, 36, 0.1);
+      border-left: 3px solid rgba(251, 191, 36, 0.5);
+      border-radius: 0.4rem;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .note-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      color: #fbbf24;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .note-header::before {
+      content: '📝';
+      font-size: 1rem;
+    }
+
+    .note-text {
+      color: #fef3c7;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .note-date {
+      font-size: 0.7rem;
+      color: #fbbf24;
+      opacity: 0.7;
+      margin-top: 0.5rem;
+    }
+
     .empty-state {
       text-align: center;
       padding: 4rem 2rem;
@@ -457,6 +525,27 @@
         <div class="archive-card" data-search-id="{{ consulta.id }}">
           <div class="archive-id">{{ consulta.id_alvo }}</div>
           <div class="archive-result">{{ consulta.response }}</div>
+          
+          <!-- Nota -->
+          {% if consulta.note %}
+          <div class="note-container">
+            <div class="note-header">Nota</div>
+            <div class="note-text">{{ consulta.note }}</div>
+            {% if consulta.note_date %}
+            <div class="note-date">Adicionada em {{ consulta.note_date }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          
+          <!-- Tags -->
+          {% if consulta.tags %}
+          <div class="tags-container">
+            {% for tag in consulta.tags %}
+            <span class="tag-item">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
           <div class="archive-meta">
             <span class="meta-tag">
               <span>{{ consulta.data }}</span>
@@ -637,6 +726,7 @@
         if (data.success) {
           button.classList.toggle('active');
           showToast(data.message, 'success');
+          setTimeout(() => location.reload(), 800);
         } else {
           showToast(data.error || 'Erro ao processar favorito', 'error');
         }
@@ -664,6 +754,7 @@
           
           if (data.success) {
             showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 800);
           } else {
             showToast(data.error || 'Erro ao salvar nota', 'error');
           }
@@ -692,6 +783,7 @@
           
           if (data.success) {
             showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 800);
           } else {
             showToast(data.error || 'Erro ao adicionar tag', 'error');
           }
