@@ -96,6 +96,57 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 """)
 conn.commit()
 
+# Tabela de Favoritos
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    search_id INTEGER,
+    username TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (search_id) REFERENCES searches(id)
+)
+""")
+conn.commit()
+
+# Tabela de Notas/Comentários
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    search_id INTEGER,
+    username TEXT,
+    note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (search_id) REFERENCES searches(id)
+)
+""")
+conn.commit()
+
+# Tabela de Tags
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    search_id INTEGER,
+    tag_name TEXT,
+    username TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (search_id) REFERENCES searches(id)
+)
+""")
+conn.commit()
+
+# Tabela de Configurações do Usuário
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS user_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    dark_mode INTEGER DEFAULT 0,
+    notifications_enabled INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+""")
+conn.commit()
+
 # ----------------------
 # Sistema de Rate Limiting e Expiração
 # ----------------------
@@ -342,6 +393,114 @@ def format_timestamp_br(timestamp_str: str) -> str:
     except:
         return timestamp_str  # Retorna original se houver erro
 
+def get_user_statistics(username: str, is_admin: bool = False):
+    """Retorna estatísticas do usuário ou sistema (se admin)"""
+    stats = {}
+    
+    try:
+        # Total de consultas
+        if is_admin:
+            cursor.execute("SELECT COUNT(*) FROM searches")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE username = ?", (username,))
+        stats['total_consultas'] = cursor.fetchone()[0]
+        
+        # Consultas hoje
+        if is_admin:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE DATE(searched_at) = DATE('now', 'localtime')")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE username = ? AND DATE(searched_at) = DATE('now', 'localtime')", (username,))
+        stats['consultas_hoje'] = cursor.fetchone()[0]
+        
+        # Consultas esta semana
+        if is_admin:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE DATE(searched_at) >= DATE('now', 'localtime', '-7 days')")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE username = ? AND DATE(searched_at) >= DATE('now', 'localtime', '-7 days')", (username,))
+        stats['consultas_semana'] = cursor.fetchone()[0]
+        
+        # Consultas este mês
+        if is_admin:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE DATE(searched_at) >= DATE('now', 'localtime', '-30 days')")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM searches WHERE username = ? AND DATE(searched_at) >= DATE('now', 'localtime', '-30 days')", (username,))
+        stats['consultas_mes'] = cursor.fetchone()[0]
+        
+        # Consultas por dia (últimos 7 dias)
+        if is_admin:
+            cursor.execute("""
+                SELECT DATE(searched_at) as data, COUNT(*) as total 
+                FROM searches 
+                WHERE DATE(searched_at) >= DATE('now', 'localtime', '-7 days')
+                GROUP BY DATE(searched_at)
+                ORDER BY data DESC
+            """)
+        else:
+            cursor.execute("""
+                SELECT DATE(searched_at) as data, COUNT(*) as total 
+                FROM searches 
+                WHERE username = ? AND DATE(searched_at) >= DATE('now', 'localtime', '-7 days')
+                GROUP BY DATE(searched_at)
+                ORDER BY data DESC
+            """, (username,))
+        stats['consultas_por_dia'] = cursor.fetchall()
+        
+        # Horário de pico (hora com mais consultas)
+        if is_admin:
+            cursor.execute("""
+                SELECT strftime('%H', searched_at) as hora, COUNT(*) as total
+                FROM searches
+                GROUP BY hora
+                ORDER BY total DESC
+                LIMIT 1
+            """)
+        else:
+            cursor.execute("""
+                SELECT strftime('%H', searched_at) as hora, COUNT(*) as total
+                FROM searches
+                WHERE username = ?
+                GROUP BY hora
+                ORDER BY total DESC
+                LIMIT 1
+            """, (username,))
+        pico = cursor.fetchone()
+        stats['horario_pico'] = f"{pico[0]}:00" if pico else "N/A"
+        stats['consultas_pico'] = pico[1] if pico else 0
+        
+        # Se for admin, busca top usuários
+        if is_admin:
+            cursor.execute("""
+                SELECT username, COUNT(*) as total
+                FROM searches
+                WHERE username IS NOT NULL
+                GROUP BY username
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+            stats['top_usuarios'] = cursor.fetchall()
+        else:
+            stats['top_usuarios'] = []
+        
+        # Total de favoritos
+        cursor.execute("SELECT COUNT(*) FROM favorites WHERE username = ?", (username,))
+        stats['total_favoritos'] = cursor.fetchone()[0]
+        
+    except Exception as e:
+        # Em caso de erro, retorna estatísticas zeradas
+        stats = {
+            'total_consultas': 0,
+            'consultas_hoje': 0,
+            'consultas_semana': 0,
+            'consultas_mes': 0,
+            'consultas_por_dia': [],
+            'horario_pico': 'N/A',
+            'consultas_pico': 0,
+            'top_usuarios': [],
+            'total_favoritos': 0
+        }
+    
+    return stats
+
 # ----------------------
 # Rotas de Autenticação
 # ----------------------
@@ -434,8 +593,19 @@ def form(request: Request):
         response.delete_cookie("auth_time")
         return response
     
+    # Obter estatísticas para o dashboard
+    username = request.cookies.get("auth_user")
+    is_admin = request.cookies.get("is_admin") == "1"
+    
+    # Estatísticas do usuário
+    stats = get_user_statistics(username, is_admin)
+    
     csrf_token = get_or_create_csrf_token(request)
-    return templates.TemplateResponse("modern-form.html", {"request": request, "csrf_token": csrf_token})
+    return templates.TemplateResponse("modern-form.html", {
+        "request": request, 
+        "csrf_token": csrf_token,
+        "stats": stats
+    })
 
 @app.post("/consulta", response_class=HTMLResponse)
 async def do_consulta(request: Request):
@@ -837,6 +1007,405 @@ async def test_telegram(request: Request):
             "error": str(e),
             "fix": "Verifique STRING_SESSION, API_ID e API_HASH"
         }
+
+# ----------------------
+# ROTAS DE FAVORITOS
+# ----------------------
+@app.post("/favoritos/adicionar/{search_id}")
+async def add_favorite(request: Request, search_id: int):
+    """Adiciona uma consulta aos favoritos"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    try:
+        cursor.execute("INSERT INTO favorites (search_id, username) VALUES (?, ?)", (search_id, username))
+        conn.commit()
+        client_ip = get_client_ip(request)
+        record_audit_log("ADD_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
+        return {"success": True, "message": "Adicionado aos favoritos"}
+    except:
+        return {"success": False, "error": "Erro ao adicionar favorito"}
+
+@app.post("/favoritos/remover/{search_id}")
+async def remove_favorite(request: Request, search_id: int):
+    """Remove uma consulta dos favoritos"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    try:
+        cursor.execute("DELETE FROM favorites WHERE search_id = ? AND username = ?", (search_id, username))
+        conn.commit()
+        client_ip = get_client_ip(request)
+        record_audit_log("REMOVE_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
+        return {"success": True, "message": "Removido dos favoritos"}
+    except:
+        return {"success": False, "error": "Erro ao remover favorito"}
+
+@app.get("/favoritos")
+async def get_favorites(request: Request):
+    """Retorna lista de favoritos do usuário"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("""
+        SELECT s.id, s.identifier, s.response, s.searched_at, 
+               CASE WHEN f.id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+        FROM searches s
+        INNER JOIN favorites f ON s.id = f.search_id
+        WHERE f.username = ?
+        ORDER BY f.created_at DESC
+    """, (username,))
+    favorites = cursor.fetchall()
+    
+    consultas = [{"id": f[0], "id_alvo": f[1], "response": f[2], "data": format_timestamp_br(f[3]), "is_favorite": True} for f in favorites]
+    return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas, "is_favorites": True})
+
+# ----------------------
+# ROTAS DE NOTAS/COMENTÁRIOS
+# ----------------------
+@app.post("/notas/adicionar")
+async def add_note(request: Request, search_id: int = Form(...), note: str = Form(...)):
+    """Adiciona ou atualiza nota em uma consulta"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    try:
+        # Verificar se já existe nota
+        cursor.execute("SELECT id FROM notes WHERE search_id = ? AND username = ?", (search_id, username))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Atualizar nota existente
+            cursor.execute("UPDATE notes SET note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (note, existing[0]))
+        else:
+            # Criar nova nota
+            cursor.execute("INSERT INTO notes (search_id, username, note) VALUES (?, ?, ?)", (search_id, username, note))
+        
+        conn.commit()
+        client_ip = get_client_ip(request)
+        record_audit_log("ADD_NOTE", username, client_ip, f"Consulta ID: {search_id}")
+        return {"success": True, "message": "Nota salva com sucesso"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/notas/{search_id}")
+async def get_note(request: Request, search_id: int):
+    """Retorna nota de uma consulta"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("SELECT note, updated_at FROM notes WHERE search_id = ? AND username = ?", (search_id, username))
+    note = cursor.fetchone()
+    
+    if note:
+        return {"success": True, "note": note[0], "updated_at": format_timestamp_br(note[1])}
+    return {"success": False, "note": ""}
+
+@app.delete("/notas/{search_id}")
+async def delete_note(request: Request, search_id: int):
+    """Deleta nota de uma consulta"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("DELETE FROM notes WHERE search_id = ? AND username = ?", (search_id, username))
+    conn.commit()
+    client_ip = get_client_ip(request)
+    record_audit_log("DELETE_NOTE", username, client_ip, f"Consulta ID: {search_id}")
+    return {"success": True, "message": "Nota deletada"}
+
+# ----------------------
+# ROTAS DE TAGS
+# ----------------------
+@app.post("/tags/adicionar")
+async def add_tag(request: Request, search_id: int = Form(...), tag_name: str = Form(...)):
+    """Adiciona tag a uma consulta"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    try:
+        cursor.execute("INSERT INTO tags (search_id, tag_name, username) VALUES (?, ?, ?)", (search_id, tag_name, username))
+        conn.commit()
+        client_ip = get_client_ip(request)
+        record_audit_log("ADD_TAG", username, client_ip, f"Consulta ID: {search_id}, Tag: {tag_name}")
+        return {"success": True, "message": "Tag adicionada"}
+    except:
+        return {"success": False, "error": "Erro ao adicionar tag"}
+
+@app.delete("/tags/{tag_id}")
+async def remove_tag(request: Request, tag_id: int):
+    """Remove uma tag"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("DELETE FROM tags WHERE id = ? AND username = ?", (tag_id, username))
+    conn.commit()
+    client_ip = get_client_ip(request)
+    record_audit_log("REMOVE_TAG", username, client_ip, f"Tag ID: {tag_id}")
+    return {"success": True, "message": "Tag removida"}
+
+@app.get("/tags/{search_id}")
+async def get_tags(request: Request, search_id: int):
+    """Retorna tags de uma consulta"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "tags": []}
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("SELECT id, tag_name FROM tags WHERE search_id = ? AND username = ?", (search_id, username))
+    tags = cursor.fetchall()
+    return {"success": True, "tags": [{"id": t[0], "name": t[1]} for t in tags]}
+
+# ----------------------
+# RELATÓRIOS AUTOMATIZADOS
+# ----------------------
+@app.get("/relatorios/mensal")
+async def relatorio_mensal(request: Request):
+    """Gera relatório mensal de uso"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    username = request.cookies.get("auth_user")
+    
+    # Consultas por mês
+    cursor.execute("""
+        SELECT strftime('%Y-%m', searched_at) as mes, COUNT(*) as total
+        FROM searches
+        WHERE searched_at >= DATE('now', '-12 months')
+        GROUP BY mes
+        ORDER BY mes DESC
+    """)
+    consultas_mes = cursor.fetchall()
+    
+    # Usuários mais ativos no mês atual
+    cursor.execute("""
+        SELECT username, COUNT(*) as total
+        FROM searches
+        WHERE strftime('%Y-%m', searched_at) = strftime('%Y-%m', 'now')
+        GROUP BY username
+        ORDER BY total DESC
+        LIMIT 10
+    """)
+    usuarios_ativos = cursor.fetchall()
+    
+    # Logs de auditoria críticos
+    cursor.execute("""
+        SELECT action, COUNT(*) as total
+        FROM audit_logs
+        WHERE strftime('%Y-%m', timestamp) = strftime('%Y-%m', 'now')
+        GROUP BY action
+        ORDER BY total DESC
+    """)
+    logs_resumo = cursor.fetchall()
+    
+    client_ip = get_client_ip(request)
+    record_audit_log("GENERATE_MONTHLY_REPORT", username, client_ip, "Relatório mensal gerado")
+    
+    return {
+        "consultas_por_mes": consultas_mes,
+        "usuarios_ativos": usuarios_ativos,
+        "logs_resumo": logs_resumo
+    }
+
+@app.get("/relatorios/usuario/{target_username}")
+async def relatorio_usuario(request: Request, target_username: str):
+    """Gera relatório de atividades de um usuário específico"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    username = request.cookies.get("auth_user")
+    
+    # Total de consultas
+    cursor.execute("SELECT COUNT(*) FROM searches WHERE username = ?", (target_username,))
+    total_consultas = cursor.fetchone()[0]
+    
+    # Consultas por dia
+    cursor.execute("""
+        SELECT DATE(searched_at) as data, COUNT(*) as total
+        FROM searches
+        WHERE username = ?
+        GROUP BY data
+        ORDER BY data DESC
+        LIMIT 30
+    """, (target_username,))
+    consultas_por_dia = cursor.fetchall()
+    
+    # Logs de auditoria
+    cursor.execute("""
+        SELECT action, timestamp, details
+        FROM audit_logs
+        WHERE username = ?
+        ORDER BY timestamp DESC
+        LIMIT 50
+    """, (target_username,))
+    logs = cursor.fetchall()
+    
+    client_ip = get_client_ip(request)
+    record_audit_log("GENERATE_USER_REPORT", username, client_ip, f"Relatório de: {target_username}")
+    
+    return {
+        "username": target_username,
+        "total_consultas": total_consultas,
+        "consultas_por_dia": consultas_por_dia,
+        "logs": logs
+    }
+
+# ----------------------
+# BACKUP E MANUTENÇÃO
+# ----------------------
+@app.get("/admin/backup")
+async def backup_database(request: Request):
+    """Cria backup do banco de dados"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    username = request.cookies.get("auth_user")
+    
+    try:
+        import shutil
+        from datetime import datetime as dt
+        
+        # Nome do arquivo de backup
+        timestamp = dt.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = f"{DB_FILE}.backup_{timestamp}.db"
+        
+        # Copiar banco de dados
+        shutil.copy2(DB_FILE, backup_file)
+        
+        client_ip = get_client_ip(request)
+        record_audit_log("DATABASE_BACKUP", username, client_ip, f"Backup criado: {backup_file}")
+        
+        return {"success": True, "backup_file": backup_file, "message": "Backup criado com sucesso"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.post("/admin/cleanup")
+async def cleanup_old_logs(request: Request, days: int = Form(90)):
+    """Remove logs antigos do banco de dados"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    username = request.cookies.get("auth_user")
+    
+    try:
+        # Remover logs de auditoria antigos
+        cursor.execute("DELETE FROM audit_logs WHERE timestamp < datetime('now', ?)", (f'-{days} days',))
+        deleted_logs = cursor.rowcount
+        
+        conn.commit()
+        
+        client_ip = get_client_ip(request)
+        record_audit_log("CLEANUP_LOGS", username, client_ip, f"Removidos {deleted_logs} logs com mais de {days} dias")
+        
+        return {"success": True, "deleted": deleted_logs, "message": f"Removidos {deleted_logs} logs antigos"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/admin/health")
+async def health_check(request: Request):
+    """Verifica saúde do sistema"""
+    if not request.cookies.get("auth_user"):
+        return {"status": "unauthorized"}
+    
+    try:
+        # Verificar banco de dados
+        cursor.execute("SELECT COUNT(*) FROM searches")
+        total_searches = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM audit_logs")
+        total_logs = cursor.fetchone()[0]
+        
+        # Tamanho do banco
+        import os
+        db_size = os.path.getsize(DB_FILE) / (1024 * 1024)  # MB
+        
+        return {
+            "status": "healthy",
+            "database": {
+                "size_mb": round(db_size, 2),
+                "total_searches": total_searches,
+                "total_users": total_users,
+                "total_logs": total_logs
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
+
+# ----------------------
+# FILTROS NO HISTÓRICO
+# ----------------------
+@app.get("/historico/filtrar")
+async def filtrar_historico(request: Request, q: str = "", periodo: str = "30", ordem: str = "desc"):
+    """Filtra histórico por termo de busca e período"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    username = request.cookies.get("auth_user")
+    
+    # Construir query com filtros
+    where_clauses = ["username = ?"]
+    params = [username]
+    
+    # Filtro de período
+    if periodo == "7":
+        where_clauses.append("DATE(searched_at) >= DATE('now', '-7 days')")
+    elif periodo == "30":
+        where_clauses.append("DATE(searched_at) >= DATE('now', '-30 days')")
+    elif periodo == "90":
+        where_clauses.append("DATE(searched_at) >= DATE('now', '-90 days')")
+    
+    # Filtro de busca
+    if q:
+        where_clauses.append("(identifier LIKE ? OR response LIKE ?)")
+        params.extend([f"%{q}%", f"%{q}%"])
+    
+    # Ordenação
+    order_by = "searched_at DESC" if ordem == "desc" else "searched_at ASC"
+    
+    where_sql = " AND ".join(where_clauses)
+    
+    cursor.execute(f"""
+        SELECT s.id, s.identifier, s.response, s.searched_at,
+               CASE WHEN f.id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+        FROM searches s
+        LEFT JOIN favorites f ON s.id = f.search_id AND f.username = ?
+        WHERE {where_sql}
+        ORDER BY {order_by}
+        LIMIT 100
+    """, [username] + params)
+    
+    searches = cursor.fetchall()
+    consultas = [{"id": s[0], "id_alvo": s[1], "response": s[2], "data": format_timestamp_br(s[3]), "is_favorite": s[4]} for s in searches]
+    
+    return templates.TemplateResponse("historico.html", {
+        "request": request, 
+        "consultas": consultas,
+        "filtro_q": q,
+        "filtro_periodo": periodo,
+        "filtro_ordem": ordem
+    })
 
 if __name__ == "__main__":
     import uvicorn

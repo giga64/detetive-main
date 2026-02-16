@@ -119,6 +119,82 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Filtros de Pesquisa */
+    .filter-section {
+      width: 100%;
+      margin-bottom: 2rem;
+    }
+    
+    .filter-form {
+      background: transparent;
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(5px);
+    }
+    
+    .filter-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .filter-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.8rem 1.2rem;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      border-radius: 0.6rem;
+      color: #ffffff;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-input:focus {
+      outline: none;
+      border-color: #06b6d4;
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+    
+    .filter-select {
+      padding: 0.8rem 1.2rem;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      border-radius: 0.6rem;
+      color: #ffffff;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-select:focus {
+      outline: none;
+      border-color: #06b6d4;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+    
+    .filter-btn {
+      padding: 0.8rem 1.5rem;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1.5px solid rgba(6, 182, 212, 0.5);
+      border-radius: 0.6rem;
+      color: #06b6d4;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .filter-btn:hover {
+      background: rgba(6, 182, 212, 0.25);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+    }
+
     .archive-card {
       background: transparent;
       border: 2px solid rgba(6, 182, 212, 0.3);
@@ -128,6 +204,7 @@
       box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.05);
       margin-bottom: 1.5rem;
       transition: all 0.4s ease;
+      position: relative;
     }
 
     .archive-card:hover {
@@ -135,6 +212,53 @@
       box-shadow: 0 0 40px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.1);
       transform: translateY(-3px);
       backdrop-filter: blur(10px);
+    }
+    
+    /* Botões de Ação do Archive Card */
+    .archive-actions {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      background: rgba(30, 41, 59, 0.5);
+      color: #94a3b8;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .action-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+    
+    .favorite-btn.active {
+      background: rgba(251, 191, 36, 0.25);
+      border-color: rgba(251, 191, 36, 0.6);
+      color: #fbbf24;
+    }
+    
+    .note-btn:hover {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: rgba(59, 130, 246, 0.6);
+      color: #3b82f6;
+    }
+    
+    .tag-btn:hover {
+      background: rgba(168, 85, 247, 0.25);
+      border-color: rgba(168, 85, 247, 0.6);
+      color: #a855f7;
     }
 
     .archive-id {
@@ -298,6 +422,7 @@
         <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
           <button type="submit" class="btn-clear">Limpar Histórico</button>
         </form>
+        <a href="/favoritos" class="btn-back" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #fbbf24;">⭐ Favoritos</a>
         <a href="/historico/exportar/csv" class="btn-back" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">Exportar CSV</a>
         <a href="/historico/exportar/json" class="btn-back" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.5); color: #a855f7;">Exportar JSON</a>
         {% endif %}
@@ -305,10 +430,31 @@
       </div>
     </header>
     
+    <!-- Filtros de Pesquisa -->
+    <div class="filter-section">
+      <form action="/historico/filtrar" method="get" class="filter-form">
+        <div class="filter-row">
+          <input type="text" name="q" placeholder="Buscar por CPF, CNPJ, telefone..." value="{{ filtro_q or '' }}" class="filter-input">
+          <select name="periodo" class="filter-select">
+            <option value="7" {% if filtro_periodo == '7' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="30" {% if filtro_periodo == '30' or not filtro_periodo %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="90" {% if filtro_periodo == '90' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="all" {% if filtro_periodo == 'all' %}selected{% endif %}>Todos</option>
+          </select>
+          <select name="ordem" class="filter-select">
+            <option value="desc" {% if filtro_ordem == 'desc' or not filtro_ordem %}selected{% endif %}>Mais recentes</option>
+            <option value="asc" {% if filtro_ordem == 'asc' %}selected{% endif %}>Mais antigos</option>
+          </select>
+          <button type="submit" class="filter-btn">🔍 Filtrar</button>
+          <a href="/historico" class="filter-btn" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.5);">🔄 Limpar</a>
+        </div>
+      </form>
+    </div>
+    
     <div class="archive-content">
       {% if consultas %}
         {% for consulta in consultas %}
-        <div class="archive-card">
+        <div class="archive-card" data-search-id="{{ consulta.id }}">
           <div class="archive-id">{{ consulta.id_alvo }}</div>
           <div class="archive-result">{{ consulta.response }}</div>
           <div class="archive-meta">
@@ -316,6 +462,18 @@
               <span>{{ consulta.data }}</span>
             </span>
             <span class="status-badge">Completo</span>
+          </div>
+          <!-- Botões de Ação -->
+          <div class="archive-actions">
+            <button onclick="toggleFavorite({{ consulta.id }}, this)" class="action-btn favorite-btn {% if consulta.is_favorite %}active{% endif %}" title="Favorito">
+              ⭐
+            </button>
+            <button onclick="openNoteModal({{ consulta.id }})" class="action-btn note-btn" title="Adicionar Nota">
+              📝
+            </button>
+            <button onclick="openTagModal({{ consulta.id }})" class="action-btn tag-btn" title="Adicionar Tag">
+              🏷️
+            </button>
           </div>
         </div>
         {% endfor %}
@@ -464,6 +622,116 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     });
+    
+    // ===========================
+    // FAVORITOS
+    // ===========================
+    async function toggleFavorite(searchId, button) {
+      const isActive = button.classList.contains('active');
+      const endpoint = isActive ? `/favoritos/remover/${searchId}` : `/favoritos/adicionar/${searchId}`;
+      
+      try {
+        const response = await fetch(endpoint, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          button.classList.toggle('active');
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.error || 'Erro ao processar favorito', 'error');
+        }
+      } catch (error) {
+        showToast('Erro ao conectar com o servidor', 'error');
+      }
+    }
+    
+    // ===========================
+    // NOTAS
+    // ===========================
+    async function openNoteModal(searchId) {
+      const note = prompt('Digite sua nota para esta consulta:');
+      if (note !== null && note.trim() !== '') {
+        const formData = new FormData();
+        formData.append('search_id', searchId);
+        formData.append('note', note);
+        
+        try {
+          const response = await fetch('/notas/adicionar', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            showToast(data.message, 'success');
+          } else {
+            showToast(data.error || 'Erro ao salvar nota', 'error');
+          }
+        } catch (error) {
+          showToast('Erro ao conectar com o servidor', 'error');
+        }
+      }
+    }
+    
+    // ===========================
+    // TAGS
+    // ===========================
+    async function openTagModal(searchId) {
+      const tag = prompt('Digite a tag para esta consulta:');
+      if (tag !== null && tag.trim() !== '') {
+        const formData = new FormData();
+        formData.append('search_id', searchId);
+        formData.append('tag_name', tag);
+        
+        try {
+          const response = await fetch('/tags/adicionar', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            showToast(data.message, 'success');
+          } else {
+            showToast(data.error || 'Erro ao adicionar tag', 'error');
+          }
+        } catch (error) {
+          showToast('Erro ao conectar com o servidor', 'error');
+        }
+      }
+    }
+    
+    // ===========================
+    // TOAST NOTIFICATIONS
+    // ===========================
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification ${type}`;
+      toast.style.cssText = `
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(15, 23, 42, 0.95);
+        border: 2px solid ${type === 'success' ? 'rgba(16,185,129,0.5)' : type === 'error' ? 'rgba(239,68,68,0.5)' : 'rgba(6,182,212,0.5)'};
+        border-radius: 0.8rem;
+        padding: 1rem 1.5rem;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        z-index: 10000;
+        animation: slideIn 0.4s ease-out;
+      `;
+      toast.textContent = message;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
   </script>
 </body>
 </html>

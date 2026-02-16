@@ -130,6 +130,173 @@
       text-transform: uppercase;
     }
     
+    /* Dashboard de Estatísticas */
+    .stats-dashboard {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 2rem;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .stat-card {
+      background: transparent;
+      border: 2px solid rgba(6,182,212,0.3);
+      border-radius: 1rem;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 20px rgba(6,182,212,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      border-color: rgba(6,182,212,0.6);
+      box-shadow: 0 0 30px rgba(6,182,212,0.25);
+      transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #06b6d4;
+      margin-bottom: 0.3rem;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .toast {
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid rgba(6,182,212,0.5);
+      border-radius: 0.8rem;
+      padding: 1rem 1.5rem;
+      min-width: 300px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      animation: slideInRight 0.4s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    
+    .toast.success { border-color: rgba(16,185,129,0.5); }
+    .toast.error { border-color: rgba(239,68,68,0.5); }
+    .toast.info { border-color: rgba(6,182,212,0.5); }
+    
+    .toast-icon {
+      font-size: 1.5rem;
+    }
+    
+    .toast-message {
+      flex: 1;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+    
+    .toast-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .toast-close:hover {
+      color: #ef4444;
+      transform: scale(1.2);
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Loading Spinner */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+    
+    .loading-overlay.active {
+      display: flex;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(6,182,212,0.2);
+      border-top-color: #06b6d4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      position: absolute;
+      margin-top: 100px;
+      color: #06b6d4;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    
     .investigation-form {
       background: transparent;
       border: 2px solid rgba(6,182,212,0.3);
@@ -464,6 +631,44 @@
         <h1>ONESEEK</h1>
         <p class="subtitle">Sistema Interno</p>
       </div>
+      
+      <!-- Dashboard de Estatísticas -->
+      {% if stats %}
+      <div class="stats-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ stats.total_consultas }}</div>
+            <div class="stat-label">Total de Consultas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ stats.consultas_hoje }}</div>
+            <div class="stat-label">Hoje</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ stats.consultas_semana }}</div>
+            <div class="stat-label">Esta Semana</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📆</div>
+            <div class="stat-value">{{ stats.consultas_mes }}</div>
+            <div class="stat-label">Este Mês</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-value">{{ stats.horario_pico }}</div>
+            <div class="stat-label">Horário de Pico</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value">{{ stats.total_favoritos }}</div>
+            <div class="stat-label">favoritos</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
       
       <!-- Form -->
       <form class="investigation-form" action="/consulta" method="post">
@@ -800,6 +1005,80 @@
         tipoSelectorBtn.classList.remove('active');
       });
     });
+    
+    // ===========================
+    // TOAST NOTIFICATIONS
+    // ===========================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️'
+      };
+      
+      toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+    
+    // ===========================
+    // LOADING OVERLAY
+    // ===========================
+    function showLoading(text = 'Processando...') {
+      const overlay = document.getElementById('loadingOverlay');
+      document.getElementById('loadingText').textContent = text;
+      overlay.classList.add('active');
+    }
+    
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+    
+    // Mostrar loading ao submeter formulário
+    document.querySelector('.investigation-form')?.addEventListener('submit', function() {
+      showLoading('Consultando...');
+    });
+    
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+      // ESC para fechar dropdown
+      if (e.key === 'Escape') {
+        document.getElementById('tipoSelectorDropdown').classList.remove('show');
+        document.getElementById('tipoSelectorBtn').classList.remove('active');
+      }
+      
+      // Ctrl+K para focar no input
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('identifier')?.focus();
+      }
+    });
   </script>
+  
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+  
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div>
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Processando...</div>
+    </div>
+  </div>
 </body>
 </html>
