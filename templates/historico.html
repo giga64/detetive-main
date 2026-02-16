@@ -43,6 +43,8 @@
       align-items: center;
       margin-bottom: 3rem;
       animation: fadeInDown 0.8s ease-out;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     @keyframes fadeInDown {
@@ -84,6 +86,30 @@
       border-color: rgba(6, 182, 212, 0.8);
     }
 
+    .btn-clear {
+      display: inline-block;
+      text-decoration: none;
+      color: #ef4444;
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      padding: 0.8rem 1.8rem;
+      border-radius: 0.6rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      background: rgba(239, 68, 68, 0.15);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-clear:hover {
+      background: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+      border-color: rgba(239, 68, 68, 0.8);
+    }
+
     .archive-content {
       animation: fadeInUp 0.8s ease-out 0.2s backwards;
     }
@@ -111,27 +137,46 @@
       backdrop-filter: blur(10px);
     }
 
-    .archive-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .archive-icon {
-      display: none;
-    }
-
-    .archive-info {
-      flex: 1;
-    }
-
     .archive-id {
       font-family: 'Courier New', monospace;
       font-weight: 700;
       color: #06b6d4;
       font-size: 1.1rem;
       letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+
+    .archive-result {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px dashed rgba(6, 182, 212, 0.3);
+      border-radius: 0.6rem;
+      padding: 1rem;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #a7f3d0;
+      max-height: 300px;
+      overflow-y: auto;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .archive-result::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .archive-result::-webkit-scrollbar-track {
+      background: rgba(6, 182, 212, 0.1);
+      border-radius: 3px;
+    }
+
+    .archive-result::-webkit-scrollbar-thumb {
+      background: rgba(6, 182, 212, 0.4);
+      border-radius: 3px;
+    }
+
+    .archive-result::-webkit-scrollbar-thumb:hover {
+      background: rgba(6, 182, 212, 0.6);
     }
 
     .archive-meta {
@@ -227,19 +272,6 @@
         padding: 1.5rem;
       }
 
-      .archive-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .archive-info {
-        width: 100%;
-      }
-
-      .status-badge {
-        align-self: flex-start;
-      }
-
       .archive-meta {
         flex-direction: column;
         gap: 0.5rem;
@@ -261,23 +293,26 @@
   <div class="container">
     <header>
       <h1>HISTÓRICO</h1>
-      <a href="/" class="btn-back">← Painel Principal</a>
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        {% if consultas %}
+        <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
+          <button type="submit" class="btn-clear">Limpar Histórico</button>
+        </form>
+        {% endif %}
+        <a href="/" class="btn-back">← Painel Principal</a>
+      </div>
     </header>
     
     <div class="archive-content">
       {% if consultas %}
         {% for consulta in consultas %}
         <div class="archive-card">
-          <div class="archive-header">
-            <div class="archive-info">
-              <div class="archive-icon"></div>
-              <div class="archive-id">{{ consulta.id_alvo }}</div>
-              <div class="archive-meta">
-                <span class="meta-tag">
-                  <span>{{ consulta.data }}</span>
-                </span>
-              </div>
-            </div>
+          <div class="archive-id">{{ consulta.id_alvo }}</div>
+          <div class="archive-result">{{ consulta.response }}</div>
+          <div class="archive-meta">
+            <span class="meta-tag">
+              <span>{{ consulta.data }}</span>
+            </span>
             <span class="status-badge">Completo</span>
           </div>
         </div>

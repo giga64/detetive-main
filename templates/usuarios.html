@@ -571,12 +571,12 @@
                 {% else %}
                 <span class="user-badge">Operador</span>
                 {% endif %}
+                {% if usuario[2] == 0 %}
                 <div class="user-actions">
                     <button onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-edit">Alterar Senha</button>
-                    {% if usuario[2] == 0 %}
                     <button onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-delete">Remover</button>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
             {% else %}
             <div class="empty-state">

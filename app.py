@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS searches (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     identifier   TEXT,
     response     TEXT,
-    searched_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+    searched_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username     TEXT
 )
 """)
 
@@ -252,9 +253,10 @@ async def do_consulta(request: Request):
         # Salvar no histórico apenas se não for erro
         if not resultado.startswith("❌"):
             try:
+                username = request.cookies.get("auth_user")
                 cursor.execute(
-                    "INSERT INTO searches (identifier, response) VALUES (?, ?)", 
-                    (identificador, resultado)
+                    "INSERT INTO searches (identifier, response, username) VALUES (?, ?, ?)", 
+                    (identificador, resultado, username)
                 )
                 conn.commit()
             except:
@@ -275,10 +277,20 @@ async def do_consulta(request: Request):
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
     if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
-    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    username = request.cookies.get("auth_user")
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
     searches = cursor.fetchall()
-    consultas = [{"id_alvo": s[1], "data": s[3], "response": s[2]} for s in searches]
+    consultas = [{"id": s[0], "id_alvo": s[1], "data": s[3], "response": s[2]} for s in searches]
     return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
+
+@app.post("/historico/limpar")
+async def limpar_historico(request: Request):
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login", status_code=303)
+    username = request.cookies.get("auth_user")
+    cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
+    conn.commit()
+    return RedirectResponse(url="/historico", status_code=303)
 
 @app.get("/api/historico")
 def api_historico(request: Request):
