@@ -552,6 +552,7 @@
                 <p class="header-subtitle">Gestão de Acesso ao Sistema</p>
             </div>
             <div class="header-actions">
+                <a href="/admin/logs" class="btn btn-secondary">Ver Logs</a>
                 <a href="/" class="btn btn-secondary">Dashboard</a>
                 <button onclick="openModal()" class="btn btn-primary">+ Novo Operador</button>
             </div>
@@ -597,6 +598,7 @@
                 <button onclick="closeModal()" class="close-btn">&times;</button>
             </div>
             <form action="/usuarios/novo" method="post" class="user-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="form-group">
                     <label for="new_user">Nome de Usuário</label>
                     <input type="text" id="new_user" name="new_user" placeholder="Digite o username" required>
@@ -632,6 +634,7 @@
                 <button onclick="closePasswordModal()" class="close-btn">&times;</button>
             </div>
             <form id="passwordForm" action="/usuarios/alterar-senha" method="post" class="user-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <input type="hidden" id="change_user_id" name="user_id">
                 <div class="form-group">
                     <label>Usuário</label>

@@ -467,6 +467,9 @@
       
       <!-- Form -->
       <form class="investigation-form" action="/consulta" method="post">
+        <!-- CSRF Token -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        
         <!-- Tipo Selector Dropdown -->
         <div class="form-group">
           <div class="tipo-selector-wrapper">
@@ -525,6 +528,7 @@
       <div class="history-button-container">
         <a href="/historico" class="btn-historico">Ver Histórico</a>
         {% if request.cookies.get('is_admin') == '1' %}
+          <a href="/admin/logs" class="btn-historico btn-admin">Ver Logs</a>
           <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">Gerenciar Usuarios</a>
         {% endif %}
       </div>

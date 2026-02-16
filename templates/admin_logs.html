@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Histórico | Detetive</title>
+  <title>Logs de Auditoria | ONESEEK</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
   <link rel="apple-touch-icon" href="/static/favicon.png">
@@ -31,10 +31,35 @@
     .container {
       position: relative;
       z-index: 1;
-      max-width: 1000px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 3rem 2rem;
       min-height: 100vh;
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      padding: 0.6rem 1.2rem;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid rgba(239, 68, 68, 0.5);
+      color: #ef4444;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
     }
 
     header {
@@ -86,31 +111,7 @@
       border-color: rgba(6, 182, 212, 0.8);
     }
 
-    .btn-clear {
-      display: inline-block;
-      text-decoration: none;
-      color: #ef4444;
-      border: 1.5px solid rgba(239, 68, 68, 0.5);
-      padding: 0.8rem 1.8rem;
-      border-radius: 0.6rem;
-      font-weight: 700;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      background: rgba(239, 68, 68, 0.15);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .btn-clear:hover {
-      background: rgba(239, 68, 68, 0.25);
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-      transform: translateY(-2px);
-      border-color: rgba(239, 68, 68, 0.8);
-    }
-
-    .archive-content {
+    .logs-content {
       animation: fadeInUp 0.8s ease-out 0.2s backwards;
     }
 
@@ -119,212 +120,197 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .archive-card {
+    .logs-table {
+      width: 100%;
+      border-collapse: collapse;
       background: transparent;
       border: 2px solid rgba(6, 182, 212, 0.3);
       border-radius: 1rem;
-      padding: 2rem;
-      backdrop-filter: blur(5px);
+      overflow: hidden;
       box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.05);
-      margin-bottom: 1.5rem;
-      transition: all 0.4s ease;
+      backdrop-filter: blur(5px);
     }
 
-    .archive-card:hover {
-      border-color: rgba(6, 182, 212, 0.6);
-      box-shadow: 0 0 40px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.1);
-      transform: translateY(-3px);
-      backdrop-filter: blur(10px);
-    }
-
-    .archive-id {
-      font-family: 'Courier New', monospace;
-      font-weight: 700;
-      color: #06b6d4;
-      font-size: 1.1rem;
-      letter-spacing: 1px;
-      margin-bottom: 1rem;
-    }
-
-    .archive-result {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px dashed rgba(6, 182, 212, 0.3);
-      border-radius: 0.6rem;
-      padding: 1rem;
-      white-space: pre-wrap;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      color: #a7f3d0;
-      max-height: 300px;
-      overflow-y: auto;
-      line-height: 1.6;
-      margin-bottom: 1rem;
-    }
-
-    .archive-result::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .archive-result::-webkit-scrollbar-track {
+    .logs-table thead {
       background: rgba(6, 182, 212, 0.1);
-      border-radius: 3px;
+      border-bottom: 2px solid rgba(6, 182, 212, 0.3);
     }
 
-    .archive-result::-webkit-scrollbar-thumb {
-      background: rgba(6, 182, 212, 0.4);
-      border-radius: 3px;
-    }
-
-    .archive-result::-webkit-scrollbar-thumb:hover {
-      background: rgba(6, 182, 212, 0.6);
-    }
-
-    .archive-meta {
+    .logs-table th {
+      padding: 1rem 1.5rem;
+      text-align: left;
+      color: #06b6d4;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       font-size: 0.85rem;
-      color: #94a3b8;
-      margin-top: 0.3rem;
-      display: flex;
-      gap: 2rem;
-      flex-wrap: wrap;
     }
 
-    .meta-tag {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .logs-table tbody tr {
+      border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+      transition: all 0.3s ease;
     }
 
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.9rem;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
+    .logs-table tbody tr:hover {
+      background: rgba(6, 182, 212, 0.05);
+      border-color: rgba(6, 182, 212, 0.3);
+    }
+
+    .logs-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .logs-table td {
+      padding: 1rem 1.5rem;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .action-badge {
+      display: inline-block;
+      padding: 0.4rem 0.8rem;
       border-radius: 0.4rem;
-      color: #10b981;
-      font-size: 0.8rem;
       font-weight: 600;
+      font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
-    .status-badge::before {
-      content: '●';
-      font-size: 0.6rem;
+    .action-login-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
-    .empty-state {
+    .action-login-failed {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .action-login-blocked {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .action-admin {
+      background: rgba(168, 85, 247, 0.15);
+      color: #a855f7;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .action-default {
+      background: rgba(6, 182, 212, 0.15);
+      color: #06b6d4;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .ip-badge {
+      font-family: 'Courier New', monospace;
+      background: rgba(30, 41, 59, 0.4);
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      font-size: 0.85rem;
+      color: #a1d8f0;
+    }
+
+    .timestamp {
+      font-family: 'Courier New', monospace;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .details {
+      font-family: 'Courier New', monospace;
+      color: #cbd5e1;
+      max-width: 300px;
+      word-break: break-word;
+    }
+
+    .no-logs {
       text-align: center;
-      padding: 4rem 2rem;
-      color: #64748b;
-    }
-
-    .empty-icon,
-    .archive-icon {
-      display: none;
-    }
-
-    .empty-state p {
+      padding: 3rem 2rem;
+      color: #94a3b8;
       font-size: 1.1rem;
-      margin-bottom: 0.5rem;
     }
 
-    .empty-state .hint {
-      font-size: 0.9rem;
-      color: #475569;
-      margin-bottom: 2rem;
-    }
-
-    .empty-state a {
-      display: inline-block;
-      padding: 0.8rem 1.8rem;
-      background: linear-gradient(135deg, #06b6d4, #0ea5a4);
-      color: #000814;
-      border: none;
-      border-radius: 0.6rem;
-      text-decoration: none;
-      font-weight: 700;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.9rem;
-    }
-
-    .empty-state a:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 1rem;
     }
 
     @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .logs-table th,
+      .logs-table td {
+        padding: 0.8rem 0.5rem;
+        font-size: 0.85rem;
+      }
+
       header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
       }
-
-      h1 {
-        font-size: 2rem;
-        letter-spacing: 2px;
-      }
-
-      .archive-card {
-        padding: 1.5rem;
-      }
-
-      .archive-meta {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-    }
-
-    .logout-btn:hover {
-      background: rgba(239, 68, 68, 0.25) !important;
-      border-color: rgba(239, 68, 68, 0.8) !important;
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-      transform: translateY(-2px);
     }
   </style>
 </head>
 <body>
-  <a href="/logout" class="logout-btn" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000; padding: 0.6rem 1.2rem; background: rgba(239, 68, 68, 0.15); border: 1.5px solid rgba(239, 68, 68, 0.5); color: #ef4444; border-radius: 0.5rem; text-decoration: none; font-weight: 700; font-size: 0.85rem; transition: all 0.3s ease; backdrop-filter: blur(10px); text-transform: uppercase; letter-spacing: 0.5px;">Sair</a>
+  <a href="/logout" class="logout-btn">Sair</a>
   <canvas id="detective-canvas"></canvas>
   
   <div class="container">
     <header>
-      <h1>HISTÓRICO</h1>
+      <h1>LOGS DE AUDITORIA</h1>
       <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        {% if consultas %}
-        <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
-          <button type="submit" class="btn-clear">Limpar Histórico</button>
-        </form>
-        <a href="/historico/exportar/csv" class="btn-back" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">Exportar CSV</a>
-        <a href="/historico/exportar/json" class="btn-back" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.5); color: #a855f7;">Exportar JSON</a>
-        {% endif %}
+        <a href="/usuarios" class="btn-back">Gerenciar Usuários</a>
         <a href="/" class="btn-back">← Painel Principal</a>
       </div>
     </header>
     
-    <div class="archive-content">
-      {% if consultas %}
-        {% for consulta in consultas %}
-        <div class="archive-card">
-          <div class="archive-id">{{ consulta.id_alvo }}</div>
-          <div class="archive-result">{{ consulta.response }}</div>
-          <div class="archive-meta">
-            <span class="meta-tag">
-              <span>{{ consulta.data }}</span>
-            </span>
-            <span class="status-badge">Completo</span>
-          </div>
+    <div class="logs-content">
+      {% if logs %}
+        <div class="table-wrapper">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ação</th>
+                <th>Usuário</th>
+                <th>IP Address</th>
+                <th>Data/Hora</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in logs %}
+              <tr>
+                <td>#{{ log.id }}</td>
+                <td>
+                  <span class="action-badge
+                    {%- if 'LOGIN_SUCCESS' in log.action %} action-login-success
+                    {%- elif 'LOGIN_FAILED' in log.action %} action-login-failed
+                    {%- elif 'LOGIN_BLOCKED' in log.action %} action-login-blocked
+                    {%- elif 'LOGIN' in log.action or 'LOGOUT' in log.action or 'USER' in log.action or 'PASSWORD' in log.action %} action-admin
+                    {%- else %} action-default
+                    {%- endif %}">{{ log.action }}</span>
+                </td>
+                <td>{{ log.username or 'N/A' }}</td>
+                <td><span class="ip-badge">{{ log.ip }}</span></td>
+                <td><span class="timestamp">{{ log.timestamp }}</span></td>
+                <td><span class="details">{{ log.details or '-' }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        {% endfor %}
       {% else %}
-      <div class="empty-state">
-        <p>Nenhum arquivo no histórico</p>
-        <p class="hint">Realize sua primeira investigação para iniciar o registro.</p>
-        <a href="/">Iniciar Investigação</a>
-      </div>
+        <div class="no-logs">
+          Nenhum log registrado até o momento.
+        </div>
       {% endif %}
     </div>
   </div>
@@ -332,12 +318,9 @@
   <script>
     const canvas = document.getElementById('detective-canvas');
     const ctx = canvas.getContext('2d');
-    
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
     const particles = [];
-    const numParticles = 50;
     let mouseX = canvas.width / 2;
     let mouseY = canvas.height / 2;
 
@@ -360,17 +343,17 @@
       update() {
         this.x += this.vx;
         this.y += this.vy;
-
+        
         if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
         if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
-
+        
         this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
         this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
+        
         const dx = mouseX - this.x;
         const dy = mouseY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-
+        
         if (distance < 150) {
           const angle = Math.atan2(dy, dx);
           this.vx += Math.cos(angle) * 0.1;
@@ -379,7 +362,7 @@
         } else {
           this.opacity = Math.max(0.2, this.opacity - 0.02);
         }
-
+        
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
         if (speed > 2) {
           this.vx = (this.vx / speed) * 2;
@@ -397,20 +380,18 @@
       }
     }
 
-    for (let i = 0; i < numParticles; i++) {
-      particles.push(new Particle());
-    }
+    for (let i = 0; i < 50; i++) particles.push(new Particle());
 
     function drawConnections() {
       ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
       ctx.lineWidth = 1;
-
+      
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-
+          
           if (distance < 100) {
             ctx.globalAlpha = (1 - distance / 100) * 0.3;
             ctx.beginPath();
@@ -448,16 +429,15 @@
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
-
-      for (let particle of particles) {
-        particle.update();
-        particle.draw();
+      
+      for (let p of particles) {
+        p.update();
+        p.draw();
       }
-
+      
       drawConnections();
       requestAnimationFrame(animate);
     }
-
     animate();
 
     window.addEventListener('resize', () => {

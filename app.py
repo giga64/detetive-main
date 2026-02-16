@@ -2,9 +2,16 @@ import os
 import re
 import asyncio
 import sqlite3
+import csv
+import json
+import uuid
+import secrets
+from io import StringIO
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from collections import defaultdict
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
@@ -76,6 +83,36 @@ cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUE
 cursor.execute("UPDATE users SET password = ? WHERE username = ?", ("admin6464", "admin"))
 conn.commit()
 
+# Tabela de Logs de Auditoria
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT,
+    username TEXT,
+    ip_address TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    details TEXT
+)
+""")
+conn.commit()
+
+# ----------------------
+# Sistema de Rate Limiting e Expiração
+# ----------------------
+SESSION_TIMEOUT = 2 * 60 * 60  # 2 horas em segundos
+MAX_LOGIN_ATTEMPTS = 5
+LOGIN_ATTEMPT_WINDOW = 15 * 60  # 15 minutos em segundos
+
+login_attempts = defaultdict(list)  # {ip: [timestamp1, timestamp2, ...]}
+
+# CSRF Protection
+csrf_tokens = {}  # {session_id: token}
+csrf_token_timeout = 60 * 60  # 1 hora
+
+# Rate Limiting em Consultas
+MAX_QUERIES_PER_MINUTE = 10
+query_attempts = defaultdict(list)  # {username: [timestamp1, timestamp2, ...]}
+
 # ----------------------
 # Configuração Telethon (Telegram)
 # ----------------------
@@ -121,6 +158,58 @@ def detect_tipo(identificador: str) -> str:
     elif is_placa(identificador): return 'placa'
     elif is_nome(identificador): return 'nome'
     return None
+
+# ----------------------
+# CSRF Token Management
+# ----------------------
+def generate_csrf_token() -> str:
+    """Gera um token CSRF único"""
+    return secrets.token_urlsafe(32)
+
+def get_or_create_csrf_token(request: Request) -> str:
+    """Obtém ou cria um token CSRF para a sessão do usuário"""
+    session_id = request.cookies.get("auth_user", str(uuid.uuid4()))
+    
+    # Remover tokens expirados
+    now = datetime.now().timestamp()
+    if session_id in csrf_tokens:
+        token_time = csrf_tokens[session_id].get("created", 0)
+        if now - token_time > csrf_token_timeout:
+            del csrf_tokens[session_id]
+    
+    # Criar novo token se não existir
+    if session_id not in csrf_tokens:
+        csrf_tokens[session_id] = {
+            "token": generate_csrf_token(),
+            "created": now
+        }
+    
+    return csrf_tokens[session_id]["token"]
+
+def validate_csrf_token(request: Request, token: str) -> bool:
+    """Valida um token CSRF"""
+    session_id = request.cookies.get("auth_user")
+    if not session_id or session_id not in csrf_tokens:
+        return False
+    
+    return csrf_tokens[session_id]["token"] == token
+
+# ----------------------
+# Rate Limiting em Consultas
+# ----------------------
+def check_query_rate_limit(username: str) -> bool:
+    """Verifica se o usuário excedeu o limite de consultas por minuto"""
+    now = datetime.now().timestamp()
+    # Remove tentativas antigas (fora da janela de 1 minuto)
+    query_attempts[username] = [t for t in query_attempts[username] if now - t < 60]
+    
+    if len(query_attempts[username]) >= MAX_QUERIES_PER_MINUTE:
+        return False
+    return True
+
+def record_query_attempt(username: str):
+    """Registra uma tentativa de consulta"""
+    query_attempts[username].append(datetime.now().timestamp())
 
 # ----------------------
 # FastAPI Setup
@@ -197,28 +286,124 @@ async def consulta_telegram(cmd: str) -> str:
             return f"❌ Erro na consulta: {str(e)}"
 
 # ----------------------
+# Middleware de Segurança
+# ----------------------
+def get_client_ip(request: Request) -> str:
+    """Extrai IP do cliente, considerando proxies"""
+    if request.headers.get("x-forwarded-for"):
+        return request.headers.get("x-forwarded-for").split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+def is_session_expired(request: Request) -> bool:
+    """Verifica se a sessão expirou"""
+    auth_time = request.cookies.get("auth_time")
+    if not auth_time:
+        return True
+    try:
+        auth_datetime = datetime.fromisoformat(auth_time)
+        return datetime.now() > auth_datetime
+    except (ValueError, TypeError):
+        return True
+
+def check_rate_limit(ip: str) -> bool:
+    """Verifica se o IP excedeu o limite de tentativas de login"""
+    now = datetime.now().timestamp()
+    # Remove tentativas antigas (fora da janela de tempo)
+    login_attempts[ip] = [t for t in login_attempts[ip] if now - t < LOGIN_ATTEMPT_WINDOW]
+    
+    if len(login_attempts[ip]) >= MAX_LOGIN_ATTEMPTS:
+        return False
+    return True
+
+def record_login_attempt(ip: str):
+    """Registra uma tentativa de login"""
+    login_attempts[ip].append(datetime.now().timestamp())
+
+def record_audit_log(action: str, username: str, ip_address: str, details: str = ""):
+    """Registra ação no log de auditoria"""
+    try:
+        cursor.execute(
+            "INSERT INTO audit_logs (action, username, ip_address, details) VALUES (?, ?, ?, ?)",
+            (action, username, ip_address, details)
+        )
+        conn.commit()
+    except:
+        pass  # Silenciar erros de auditoria
+
+# ----------------------
 # Rotas de Autenticação
 # ----------------------
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
+    # Verificar se sessão expirou
+    if request.cookies.get("auth_user") and is_session_expired(request):
+        response = templates.TemplateResponse("login.html", {
+            "request": request,
+            "info": "Sua sessão expirou. Por favor, autentique-se novamente."
+        })
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    if request.cookies.get("auth_user"):
+        return RedirectResponse(url="/")
+    
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
 async def do_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    client_ip = get_client_ip(request)
+    
+    # Verificar rate limiting
+    if not check_rate_limit(client_ip):
+        record_audit_log("LOGIN_BLOCKED", username, client_ip, "Excedidas tentativas de login")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "erro": "Sistema temporariamente indisponível. Tente novamente mais tarde."
+        })
+    
+    record_login_attempt(client_ip)
+    
+    # Validação básica
+    if not username or not password:
+        record_audit_log("LOGIN_FAILED", username, client_ip, "Campos vazios")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "erro": "Credenciais inválidas"
+        })
+    
+    # Verificar credenciais
     cursor.execute("SELECT is_admin FROM users WHERE username = ? AND password = ?", (username, password))
     user = cursor.fetchone()
+    
     if user:
+        # Login bem-sucedido
+        record_audit_log("LOGIN_SUCCESS", username, client_ip, "")
         response = RedirectResponse(url="/", status_code=303)
-        response.set_cookie(key="auth_user", value=username)
-        response.set_cookie(key="is_admin", value=str(user[0]))
+        auth_time = (datetime.now() + timedelta(seconds=SESSION_TIMEOUT)).isoformat()
+        response.set_cookie(key="auth_user", value=username, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+        response.set_cookie(key="is_admin", value=str(user[0]), max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+        response.set_cookie(key="auth_time", value=auth_time, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
         return response
-    return templates.TemplateResponse("login.html", {"request": request, "erro": "ACESSO NEGADO"})
+    
+    # Login falhou
+    record_audit_log("LOGIN_FAILED", username, client_ip, "Credenciais incorretas")
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "erro": "Credenciais inválidas"
+    })
 
 @app.get("/logout")
 async def logout(request: Request):
+    username = request.cookies.get("auth_user", "unknown")
+    client_ip = get_client_ip(request)
+    record_audit_log("LOGOUT", username, client_ip, "")
+    
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie(key="auth_user")
     response.delete_cookie(key="is_admin")
+    response.delete_cookie(key="auth_time")
     return response
 
 # ----------------------
@@ -226,22 +411,65 @@ async def logout(request: Request):
 # ----------------------
 @app.get("/", response_class=HTMLResponse)
 def form(request: Request):
-    if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
-    return templates.TemplateResponse("modern-form.html", {"request": request})
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    csrf_token = get_or_create_csrf_token(request)
+    return templates.TemplateResponse("modern-form.html", {"request": request, "csrf_token": csrf_token})
 
 @app.post("/consulta", response_class=HTMLResponse)
 async def do_consulta(request: Request):
     if not request.cookies.get("auth_user"): 
         return RedirectResponse(url="/login")
     
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     form_data = await request.form()
+    csrf_token = str(form_data.get("csrf_token", "")).strip()
     identificador = str(form_data.get("identificador", "")).strip()
     tipo_manual = str(form_data.get("tipo", "")).strip().lower()
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Validar CSRF token
+    if not validate_csrf_token(request, csrf_token):
+        record_audit_log("INVALID_CSRF", username, client_ip, "Token CSRF inválido ou expirado")
+        return templates.TemplateResponse("modern-form.html", {
+            "request": request, 
+            "erro": "Sessão inválida. Por favor, recarregue a página.",
+            "csrf_token": get_or_create_csrf_token(request)
+        })
+    
+    # Verificar rate limit em consultas
+    if not check_query_rate_limit(username):
+        record_audit_log("RATE_LIMIT_QUERY", username, client_ip, f"Máximo de {MAX_QUERIES_PER_MINUTE} consultas por minuto")
+        return templates.TemplateResponse("modern-form.html", {
+            "request": request, 
+            "erro": f"Limite de {MAX_QUERIES_PER_MINUTE} consultas por minuto atingido. Tente novamente em 1 minuto.",
+            "csrf_token": get_or_create_csrf_token(request)
+        })
+    
+    record_query_attempt(username)
     
     if not identificador:
         return templates.TemplateResponse("modern-form.html", {
             "request": request, 
-            "erro": "Digite um identificador válido"
+            "erro": "Digite um identificador válido",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     tipo = tipo_manual if (tipo_manual and tipo_manual != "auto") else detect_tipo(identificador)
@@ -282,14 +510,27 @@ async def do_consulta(request: Request):
             "identifier": identificador
         })
     except Exception as e:
+        username = request.cookies.get("auth_user", "unknown")
+        client_ip = get_client_ip(request)
+        record_audit_log("QUERY_ERROR", username, client_ip, str(e))
         return templates.TemplateResponse("modern-form.html", {
             "request": request,
-            "erro": f"Erro ao processar consulta: {str(e)}"
+            "erro": "Erro ao processar consulta. Tente novamente mais tarde."
         })
 
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
-    if not request.cookies.get("auth_user"): return RedirectResponse(url="/login")
+    if not request.cookies.get("auth_user"): 
+        return RedirectResponse(url="/login")
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     username = request.cookies.get("auth_user")
     cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
     searches = cursor.fetchall()
@@ -300,10 +541,73 @@ def historico(request: Request):
 async def limpar_historico(request: Request):
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login", status_code=303)
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
     cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
     conn.commit()
+    record_audit_log("CLEAR_HISTORY", username, client_ip, "")
     return RedirectResponse(url="/historico", status_code=303)
+
+@app.get("/historico/exportar/csv")
+async def export_historico_csv(request: Request):
+    """Exporta histórico em CSV"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if is_session_expired(request):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC", (username,))
+    searches = cursor.fetchall()
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Identificador", "Resposta", "Data"])
+    for row in searches:
+        writer.writerow(row)
+    
+    client_ip = get_client_ip(request)
+    record_audit_log("EXPORT_CSV", username, client_ip, f"{len(searches)} registros exportados")
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=historico_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+@app.get("/historico/exportar/json")
+async def export_historico_json(request: Request):
+    """Exporta histórico em JSON"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if is_session_expired(request):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    cursor.execute("SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC", (username,))
+    searches = cursor.fetchall()
+    
+    data = [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
+    
+    client_ip = get_client_ip(request)
+    record_audit_log("EXPORT_JSON", username, client_ip, f"{len(searches)} registros exportados")
+    
+    return StreamingResponse(
+        iter([json.dumps(data, ensure_ascii=False, indent=2)]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=historico_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"}
+    )
 
 @app.get("/api/historico")
 def api_historico(request: Request):
@@ -313,51 +617,168 @@ def api_historico(request: Request):
     return [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
 
 # ----------------------
+# Painel de Admin
+# ----------------------
+@app.get("/admin/logs", response_class=HTMLResponse)
+async def admin_logs(request: Request):
+    """Dashboard com logs de auditoria"""
+    # Verificar autenticação e admin status
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/")
+    
+    # Buscar logs (últimos 500)
+    cursor.execute("""
+        SELECT id, action, username, ip_address, timestamp, details 
+        FROM audit_logs 
+        ORDER BY timestamp DESC 
+        LIMIT 500
+    """)
+    logs = cursor.fetchall()
+    
+    log_list = [
+        {
+            "id": l[0],
+            "action": l[1],
+            "username": l[2],
+            "ip": l[3],
+            "timestamp": l[4],
+            "details": l[5]
+        }
+        for l in logs
+    ]
+    
+    return templates.TemplateResponse("admin_logs.html", {
+        "request": request,
+        "logs": log_list
+    })
+
+# ----------------------
 # Gestão de Usuários (Apenas Admin)
 # ----------------------
 @app.get("/usuarios", response_class=HTMLResponse)
 async def list_users(request: Request):
+    # Verificar autenticação
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     # Apenas admin pode gerenciar usuários
     if request.cookies.get("is_admin") != "1": 
         return RedirectResponse(url="/")
+    
     cursor.execute("SELECT id, username, is_admin FROM users")
+    csrf_token = get_or_create_csrf_token(request)
     return templates.TemplateResponse("usuarios.html", {
         "request": request, 
-        "usuarios": cursor.fetchall()
+        "usuarios": cursor.fetchall(),
+        "csrf_token": csrf_token
     })
 
 @app.post("/usuarios/novo")
-async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None)):
-    # Apenas admin pode criar usuários
+async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None), csrf_token: str = Form(...)):
+    # Verificar autenticação e admin status
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     if request.cookies.get("is_admin") != "1":
         return RedirectResponse(url="/", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Validar CSRF token
+    if not validate_csrf_token(request, csrf_token):
+        record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de criar usuário com CSRF inválido")
+        return RedirectResponse(url="/usuarios", status_code=303)
+    
     try:
         cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
                      (new_user, new_pass, 1 if admin else 0))
         conn.commit()
+        record_audit_log("CREATE_USER", username, client_ip, f"Novo usuário: {new_user}, admin: {bool(admin)}")
     except: 
-        pass
+        record_audit_log("CREATE_USER_FAILED", username, client_ip, f"Falha ao criar: {new_user}")
+    
     return RedirectResponse(url="/usuarios", status_code=303)
 
 @app.get("/usuarios/deletar/{user_id}")
 async def delete_user(request: Request, user_id: int):
-    # Apenas admin pode deletar usuários (exceto outros admins)
+    # Verificar autenticação e admin status
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     if request.cookies.get("is_admin") != "1":
         return RedirectResponse(url="/", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
     cursor.execute("DELETE FROM users WHERE id = ? AND is_admin = 0", (user_id,))
     conn.commit()
+    record_audit_log("DELETE_USER", username, client_ip, f"Usuário ID: {user_id} deletado")
     return RedirectResponse(url="/usuarios", status_code=303)
 
 @app.post("/usuarios/alterar-senha")
-async def change_password(request: Request, user_id: int = Form(...), new_pass: str = Form(...)):
-    # Apenas admin pode alterar senhas de usuários
+async def change_password(request: Request, user_id: int = Form(...), new_pass: str = Form(...), csrf_token: str = Form(...)):
+    # Verificar autenticação e admin status
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
     if request.cookies.get("is_admin") != "1":
         return RedirectResponse(url="/", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Validar CSRF token
+    if not validate_csrf_token(request, csrf_token):
+        record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de alterar senha com CSRF inválido")
+        return RedirectResponse(url="/usuarios", status_code=303)
+    
     try:
         cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pass, user_id))
         conn.commit()
+        record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para ID: {user_id}")
     except:
-        pass
+        record_audit_log("CHANGE_PASSWORD_FAILED", username, client_ip, f"Falha ao alterar senha para ID: {user_id}")
+    
     return RedirectResponse(url="/usuarios", status_code=303)
 
 # ----------------------
