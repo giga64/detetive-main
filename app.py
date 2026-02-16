@@ -637,10 +637,10 @@ def admin_dashboard(request: Request):
     # Obter dados adicionais para gráficos
     # Consultas dos últimos 30 dias
     cursor.execute("""
-        SELECT DATE(timestamp) as dia, COUNT(*) as total
+        SELECT DATE(searched_at) as dia, COUNT(*) as total
         FROM searches
-        WHERE DATE(timestamp) >= DATE('now', '-30 days')
-        GROUP BY DATE(timestamp)
+        WHERE DATE(searched_at) >= DATE('now', '-30 days')
+        GROUP BY DATE(searched_at)
         ORDER BY dia
     """)
     consultas_30_dias = cursor.fetchall()
@@ -657,7 +657,7 @@ def admin_dashboard(request: Request):
     
     # Consultas por hora do dia
     cursor.execute("""
-        SELECT CAST(strftime('%H', timestamp) AS INTEGER) as hora, COUNT(*) as total
+        SELECT CAST(strftime('%H', searched_at) AS INTEGER) as hora, COUNT(*) as total
         FROM searches
         GROUP BY hora
         ORDER BY hora
@@ -786,7 +786,15 @@ def historico(request: Request):
         return response
     
     username = request.cookies.get("auth_user")
-    cursor.execute("SELECT id, identifier, response, searched_at, is_favorite FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100", (username,))
+    cursor.execute("""
+        SELECT s.id, s.identifier, s.response, s.searched_at, 
+               CASE WHEN f.id IS NOT NULL THEN 1 ELSE 0 END as is_favorite
+        FROM searches s
+        LEFT JOIN favorites f ON s.id = f.search_id AND f.username = ?
+        WHERE s.username = ?
+        ORDER BY s.searched_at DESC
+        LIMIT 100
+    """, (username, username))
     searches = cursor.fetchall()
     
     consultas = []
@@ -798,7 +806,7 @@ def historico(request: Request):
         note_date = format_timestamp_br(note_row[1]) if note_row else None
         
         # Buscar tags
-        cursor.execute("SELECT tag FROM tags WHERE search_id = ? ORDER BY created_at", (s[0],))
+        cursor.execute("SELECT tag_name FROM tags WHERE search_id = ? ORDER BY created_at", (s[0],))
         tags_rows = cursor.fetchall()
         tags_list = [t[0] for t in tags_rows]
         
