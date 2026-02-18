@@ -551,13 +551,13 @@
             
             // Detectar se é rural ou urbano
             const addressType = detectAddressType(address);
-            const typeLabel = addressType === 'rural' ? 'RURAL' : 'URBANO';
+            const typeLabel = createIconSVG(addressType) + (addressType === 'rural' ? ' RURAL' : ' URBANO');
             const typeColor = addressType === 'rural' ? '#f59e0b' : '#06b6d4';
             
             // Atualizar info panel
             infoPanel.innerHTML = `
                 <p><strong>📍 Endereço:</strong> ${address}</p>
-                <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700;">${typeLabel}</span></p>
+                <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700; display: flex; align-items: center;">${typeLabel}</span></p>
                 <p><strong>🗺️ Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
             `;
         }
@@ -616,6 +616,26 @@
                 closeMapModal();
             }
         });
+
+        // Função para criar ícone SVG
+        function createIconSVG(type) {
+            if (type === 'rural') {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                    <path d="M5 10l7-7 7 7M6 9v10c0 1-1 2-2 2H4c-1 0-2-1-2-2V9M18 9v10c0 1 1 2 2 2h0c1 0 2-1 2-2V9M12 9v10"></path>
+                    <circle cx="9" cy="14" r="1.5" fill="#f59e0b"></circle>
+                    <circle cx="15" cy="14" r="1.5" fill="#f59e0b"></circle>
+                </svg>`;
+            } else {
+                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                    <rect x="4" y="3" width="16" height="18" rx="1"></rect>
+                    <line x1="9" y1="9" x2="9" y2="12"></line>
+                    <line x1="9" y1="15" x2="9" y2="21"></line>
+                    <line x1="15" y1="9" x2="15" y2="11"></line>
+                    <line x1="15" y1="14" x2="15" y2="21"></line>
+                    <line x1="12" y1="6" x2="12" y2="6.01"></line>
+                </svg>`;
+            }
+        }
 
         // Fechar ao apertar ESC
         document.addEventListener('keydown', function(e) {
