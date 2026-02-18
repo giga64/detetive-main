@@ -152,7 +152,7 @@ conn.commit()
 # ----------------------
 SESSION_TIMEOUT = 30 * 60  # 30 minutos em segundos
 MAX_LOGIN_ATTEMPTS = 5
-LOGIN_ATTEMPT_WINDOW = 15 * 60  # 15 minutos em segundos
+LOGIN_ATTEMPT_WINDOW = 3 * 60  # 3 minutos em segundos
 
 login_attempts = defaultdict(list)  # {ip: [timestamp1, timestamp2, ...]}
 
@@ -693,9 +693,22 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
     # Verificar rate limiting
     if not check_rate_limit(client_ip):
         record_audit_log("LOGIN_BLOCKED", username, client_ip, "Excedidas tentativas de login")
+        
+        # Calcular tempo restante
+        if client_ip in login_attempts:
+            attempts = login_attempts[client_ip]
+            time_passed = datetime.now() - attempts['first_attempt']
+            time_remaining = max(0, LOGIN_ATTEMPT_WINDOW - int(time_passed.total_seconds()))
+            minutes = time_remaining // 60
+            seconds = time_remaining % 60
+            erro_msg = f"Muitas tentativas. Aguarde {minutes}m {seconds}s para tentar novamente."
+        else:
+            erro_msg = "Sistema temporariamente indisponível. Tente novamente mais tarde."
+        
         return templates.TemplateResponse("login.html", {
             "request": request,
-            "erro": "Sistema temporariamente indisponível. Tente novamente mais tarde."
+            "erro": erro_msg,
+            "show_unlock": True
         })
     
     record_login_attempt(client_ip)
@@ -740,6 +753,22 @@ async def logout(request: Request):
     response.delete_cookie(key="is_admin")
     response.delete_cookie(key="auth_time")
     return response
+
+@app.post("/api/unlock-ip")
+async def unlock_ip(request: Request):
+    """
+    Endpoint de emergência para desbloquear IP (sem autenticação necessária).
+    Útil quando o usuário está bloqueado por muitas tentativas de login.
+    """
+    client_ip = get_client_ip(request)
+    
+    # Remover bloqueio dessa IP
+    if client_ip in login_attempts:
+        del login_attempts[client_ip]
+        record_audit_log("IP_UNLOCKED", "auto", client_ip, "Desbloqueio manual solicitado")
+        return JSONResponse({"success": True, "message": "IP desbloqueado! Tente novamente."})
+    
+    return JSONResponse({"success": False, "message": "Nenhum bloqueio ativo para seu IP."})
 
 # ----------------------
 # Rotas do Sistema

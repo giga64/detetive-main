@@ -170,6 +170,19 @@
       transform: translateY(0);
     }
 
+    .btn-unlock {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.5rem;
+      box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+    }
+
+    .btn-unlock:hover {
+      box-shadow: 0 12px 35px rgba(249, 115, 22, 0.5);
+      background: linear-gradient(135deg, #ea580c, #d84315);
+    }
+
     .error-msg {
       color: #fca5a5;
       font-size: 0.9rem;
@@ -234,6 +247,9 @@
 
       {% if erro %}
         <div class="error-msg">{{ erro }}</div>
+        {% if show_unlock %}
+          <button type="button" class="btn btn-unlock" onclick="unlockIP()">🔓 Desbloquear IP</button>
+        {% endif %}
       {% endif %}
 
       {% if info %}
@@ -383,6 +399,29 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     });
+
+    async function unlockIP() {
+      try {
+        const response = await fetch('/api/unlock-ip', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          // Mostrar sucesso e recarregar
+          const btn = event.target;
+          btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+          btn.textContent = '✅ Desbloqueado!';
+          btn.disabled = true;
+          
+          // Recarregar página após 2 segundos
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          alert('❌ ' + data.message);
+        }
+      } catch (error) {
+        console.error('Erro ao desbloquear IP:', error);
+        alert('❌ Erro ao desbloquear IP. Tente novamente mais tarde.');
+      }
+    }
   </script>
 </body>
 </html>
