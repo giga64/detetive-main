@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ONESEEK - Resultado Completo</title>
-    <!-- Leaflet.js para Mapa Interativo -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -266,24 +263,6 @@
             overflow: hidden;
         }
 
-        .leaflet-container {
-            background: #0f172a;
-        }
-
-        .leaflet-popup-content {
-            background: #1a1b2e;
-            color: #e0e0e0;
-            border-radius: 0.5rem;
-            padding: 0.8rem !important;
-        }
-
-        .leaflet-popup-content-wrapper {
-            background: #1a1b2e;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            border-radius: 0.5rem;
-        }
-
         .map-info-panel {
             padding: 1.5rem 2rem;
             border-top: 1px solid rgba(6, 182, 212, 0.3);
@@ -493,46 +472,34 @@
         // ===========================
         // MAPA INTERATIVO
         // ===========================
-        let currentMap = null;
-        let currentMarkers = [];
+        // MAPA INTERATIVO - STREET VIEW
+        // ===========================
+        let streetViewPanorama = null;
 
         function openAddressMap(address) {
+            openStreetView(address);
+        }
+
+        function openStreetView(address) {
             const modal = document.getElementById('mapModal');
             const mapContainer = document.getElementById('mapContainer');
             const mapTitle = document.getElementById('mapTitle');
             
-            // Limpar mapa anterior
-            if (currentMap) {
-                currentMap.remove();
-                currentMap = null;
-            }
-            currentMarkers = [];
-            
             // Atualizar título
-            mapTitle.textContent = 'Localização: ' + address;
+            mapTitle.textContent = 'Street View: ' + address;
             
             // Mostrar modal
             modal.classList.add('show');
             
-            // Inicializar mapa (Brasil como centro padrão)
-            currentMap = L.map('mapContainer', {
-                center: [-15.7942, -47.8822],
-                zoom: 4,
-                zoomControl: true,
-                attributionControl: true
-            });
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: ' OpenStreetMap contributors',
-                maxZoom: 19,
-                minZoom: 3
-            }).addTo(currentMap);
-            
             // Geocodificar o endereço
-            geocodeAddress(address);
+            geocodeAndShowStreetView(address);
         }
 
         function geocodeAddress(address) {
+            geocodeAndShowStreetView(address);
+        }
+
+        function geocodeAndShowStreetView(address) {
             const encodedAddress = encodeURIComponent(address + ', Brasil');
             
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`)
@@ -543,73 +510,104 @@
                         const lat = parseFloat(location.lat);
                         const lon = parseFloat(location.lon);
                         
-                        // Adicionar marker
-                        const marker = L.marker([lat, lon], {
-                            icon: L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowSize: [41, 41]
-                            })
-                        }).addTo(currentMap);
-                        
-                        // Adicionar popup
-                        const popupContent = `
-                            <div style="color: #e0e0e0; font-family: Inter, sans-serif;">
-                                <strong style="color: #06b6d4; display: block; margin-bottom: 0.5rem;">${location.name || address}</strong>
-                                <small style="color: #94a3b8; display: block; margin: 0.3rem 0;">
-                                    📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}
-                                </small>
-                            </div>
-                        `;
-                        marker.bindPopup(popupContent);
-                        
-                        // Centralizar
-                        currentMap.setView([lat, lon], 15);
-                        
-                        // Atualizar painel
-                        updateMapInfoPanel(location, address);
-                        currentMarkers.push(marker);
+                        // Mostrar Street View
+                        showAndDetectAddressType(lat, lon, address);
                     } else {
-                        updateMapInfoPanel(null, address);
                         document.getElementById('mapInfoPanel').innerHTML = `
                             <p style="color: #ef4444;"><strong>⚠️ Endereço não localizado</strong></p>
-                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço não foi encontrado.</p>
+                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço não foi encontrado na base de dados.</p>
                         `;
                     }
                 })
                 .catch(error => {
-                    console.error('Erro:', error);
+                    console.error('Erro ao geocodificar:', error);
                     document.getElementById('mapInfoPanel').innerHTML = `
                         <p style="color: #ef4444;"><strong>❌ Erro ao conectar</strong></p>
                     `;
                 });
         }
 
-        function updateMapInfoPanel(location, searchedAddress) {
-            const panel = document.getElementById('mapInfoPanel');
+        function showAndDetectAddressType(lat, lon, address) {
+            const mapContainer = document.getElementById('mapContainer');
+            const infoPanel = document.getElementById('mapInfoPanel');
             
-            if (!location) return;
+            // Limpar container anterior
+            mapContainer.innerHTML = '';
             
-            const html = `
-                <p><strong>📍 Endereço:</strong> ${location.name || searchedAddress}</p>
-                <p><strong>🌍 Coordenadas:</strong> ${parseFloat(location.lat).toFixed(4)}, ${parseFloat(location.lon).toFixed(4)}</p>
+            // Criar iframe do Google Street View
+            const streetViewHtml = `
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    style="border: none; border-radius: 0.5rem;"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1000!2d${lon}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1spt-BR!2sbr!4v1" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
             `;
             
-            panel.innerHTML = html;
+            mapContainer.innerHTML = streetViewHtml;
+            
+            // Detectar se é rural ou urbano
+            const addressType = detectAddressType(address);
+            const typeLabel = addressType === 'rural' ? 'RURAL' : 'URBANO';
+            const typeColor = addressType === 'rural' ? '#f59e0b' : '#06b6d4';
+            
+            // Atualizar info panel
+            infoPanel.innerHTML = `
+                <p><strong>📍 Endereço:</strong> ${address}</p>
+                <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700;">${typeLabel}</span></p>
+                <p><strong>🗺️ Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+            `;
+        }
+
+        function detectAddressType(address) {
+            const lowAddress = address.toLowerCase();
+            
+            // Palavras-chave para rural
+            const ruralKeywords = [
+                'sítio', 'fazenda', 'chácara', 'roça', 'zona rural', 'estrada',
+                'rodovia', 'km', 'zona', 'distrito', 'lote', 'gleba', 'propriedade',
+                'chácaras', 'pouso', 'vila rural', 'interior', 'comunidade', 'sítios'
+            ];
+            
+            // Palavras-chave para urbano
+            const urbanKeywords = [
+                'rua', 'avenida', 'av.', 'prédio', 'edifício', 'loja', 'bloco', 
+                'apto', 'apartamento', 'sala', 'centro', 'via', 'alameda', 'travessa',
+                'praça', 'trav.', 'pça', 'alameda', 'passagem', 'viela', 'beco',
+                'lote urbano', 'condomínio', 'vila', 'núcleo', 'assentamento', 'pça.'
+            ];
+            
+            // Contar matches
+            let ruralScore = 0;
+            let urbanScore = 0;
+            
+            ruralKeywords.forEach(keyword => {
+                if (lowAddress.includes(keyword)) ruralScore++;
+            });
+            
+            urbanKeywords.forEach(keyword => {
+                if (lowAddress.includes(keyword)) urbanScore++;
+            });
+            
+            // Se rural tem mais palavras-chave, é rural. Senão, é urbano
+            return ruralScore > urbanScore ? 'rural' : 'urban';
+        }
+
+        function updateMapInfoPanel(location, searchedAddress) {
+            // Agora é feito em showAndDetectAddressType
         }
 
         function closeMapModal() {
             const modal = document.getElementById('mapModal');
             modal.classList.remove('show');
             
-            if (currentMap) {
-                currentMap.remove();
-                currentMap = null;
-            }
-            currentMarkers = [];
+            // Limpar Street View
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.innerHTML = '';
+            streetViewPanorama = null;
         }
 
         // Fechar ao clicar fora

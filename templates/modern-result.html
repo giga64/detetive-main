@@ -3,13 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ONESEEK Resultado da Consulta</title>
-    <!-- Leaflet.js para Mapa Interativo -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Nominatim (Geocoding) -->
-    <script src="https://unpkg.com/leaflet-control-geocoder@2.4.2/dist/Control.Geocoder.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@2.4.2/dist/Control.Geocoder.css" />
+    <title>ONESEEK - Resultado da Consulta</title>
     <style>
         * {
             margin: 0;
@@ -554,40 +548,6 @@
             position: relative;
         }
 
-        .leaflet-container {
-            background: #0f172a;
-        }
-
-        .leaflet-popup-content {
-            background: #1a1b2e;
-            color: #e0e0e0;
-            border-radius: 0.5rem;
-            padding: 0.8rem !important;
-        }
-
-        .leaflet-popup-content-wrapper {
-            background: #1a1b2e;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            border-radius: 0.5rem;
-        }
-
-        .leaflet-popup-tip {
-            background: #1a1b2e;
-            border: 1px solid rgba(6, 182, 212, 0.3);
-        }
-
-        .leaflet-control-geocoder {
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .leaflet-control-geocoder button {
-            background: rgba(6, 182, 212, 0.2) !important;
-            border: 1px solid rgba(6, 182, 212, 0.4) !important;
-            color: #06b6d4 !important;
-        }
-
         .map-info-panel {
             padding: 1.5rem 2rem;
             border-top: 1px solid rgba(6, 182, 212, 0.3);
@@ -664,16 +624,16 @@
     <!-- CSRF Token para segurança -->
     <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}">
     
-    <!-- Modal de Mapa Interativo -->
+    <!-- Modal de Street View -->
     <div id="mapModal" class="map-modal">
         <div class="map-container-modal">
             <div class="map-header">
-                <h2 id="mapTitle">Localização</h2>
+                <h2 id="mapTitle">Street View</h2>
                 <button class="map-close-btn" onclick="closeMapModal()">Fechar</button>
             </div>
-            <div id="mapContainer"></div>
+            <div id="mapContainer" style="width: 100%; height: 100%; background: #0f172a;"></div>
             <div class="map-info-panel" id="mapInfoPanel">
-                <p><strong>Clique no mapa</strong> para ver informações sobre a localização</p>
+                <p><strong>Carregando localização...</strong> Aguarde alguns segundos para visualizar o Street View</p>
             </div>
         </div>
     </div>
@@ -883,20 +843,22 @@
                 <!-- TAB: Endereços -->
                 <div id="addresses" class="tab-content">
                     {% if dados.enderecos and dados.enderecos|length > 0 %}
-                        <!-- Filtros de endereço -->
+                        <!-- Filtros de endereço: Urbano vs Rural -->
                         <div class="address-filter-container">
-                            <button class="address-filter-btn active" onclick="filterAddresses('all')">Todos ({{ dados.enderecos|length }})</button>
-                            <button class="address-filter-btn" onclick="filterAddresses('residential')">Residencial</button>
-                            <button class="address-filter-btn" onclick="filterAddresses('commercial')">Comercial</button>
-                            <button class="address-filter-btn" onclick="filterAddresses('other')">Outro</button>
+                            <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
+                            <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
+                            <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
                         </div>
 
                         <ul class="data-list">
                             {% for endereco in dados.enderecos %}
-                                <li class="data-list-item address-item" data-address="{{ endereco }}" style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span>{{ endereco }}</span>
+                                <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                                    <div style="flex: 1;">
+                                        <span>{{ endereco }}</span>
+                                        <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                    </div>
                                     <div style="display: flex; gap: 10px;">
-                                        <button class="action-btn" onclick="openAddressMap('{{ endereco }}')">Ver Mapa</button>
+                                        <button class="action-btn" onclick="openStreetView('{{ endereco }}')">Street View</button>
                                         <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
                                     </div>
                                 </li>
@@ -1136,47 +1098,26 @@
         // ===========================
         // MAPA INTERATIVO
         // ===========================
-        let currentMap = null;
-        let currentMarkers = [];
+        // MAPA INTERATIVO - STREET VIEW
+        // ===========================
+        let streetViewPanorama = null;
 
-        function openAddressMap(address) {
+        function openStreetView(address) {
             const modal = document.getElementById('mapModal');
             const mapContainer = document.getElementById('mapContainer');
             const mapTitle = document.getElementById('mapTitle');
             
-            // Limpar mapa anterior
-            if (currentMap) {
-                currentMap.remove();
-                currentMap = null;
-            }
-            currentMarkers = [];
-            
             // Atualizar título
-            mapTitle.textContent = 'Localização: ' + address;
+            mapTitle.textContent = 'Street View: ' + address;
             
             // Mostrar modal
             modal.classList.add('show');
             
-            // Inicializar mapa (Brasil como centro padrão)
-            currentMap = L.map('mapContainer', {
-                center: [-15.7942, -47.8822],
-                zoom: 4,
-                zoomControl: true,
-                attributionControl: true
-            });
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: ' OpenStreetMap contributors',
-                maxZoom: 19,
-                minZoom: 3
-            }).addTo(currentMap);
-            
-            // Geocodificar o endereço (converter texto para coordenadas)
-            geocodeAddress(address);
+            // Geocodificar o endereço
+            geocodeAndShowStreetView(address);
         }
 
-        function geocodeAddress(address) {
-            // Usar Nominatim para geocodificação
+        function geocodeAndShowStreetView(address) {
             const encodedAddress = encodeURIComponent(address + ', Brasil');
             
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`)
@@ -1187,83 +1128,100 @@
                         const lat = parseFloat(location.lat);
                         const lon = parseFloat(location.lon);
                         
-                        // Adicionar marker no mapa
-                        const marker = L.marker([lat, lon], {
-                            icon: L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowSize: [41, 41]
-                            })
-                        }).addTo(currentMap);
-                        
-                        // Adicionar popup com informações
-                        const popupContent = `
-                            <div style="color: #e0e0e0; font-family: Inter, sans-serif;">
-                                <strong style="color: #06b6d4; display: block; margin-bottom: 0.5rem;">${location.name || address}</strong>
-                                <small style="color: #94a3b8; display: block; margin: 0.3rem 0;">
-                                    📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}
-                                </small>
-                                <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
-                                    ${location.address ? '📬 ' + location.address : 'Endereço não verificado'}
-                                </small>
-                            </div>
-                        `;
-                        marker.bindPopup(popupContent, { className: 'leaflet-popup-custom' });
-                        
-                        // Centralizar e fazer zoom
-                        currentMap.setView([lat, lon], 15);
-                        
-                        // Atualizar painel de informações
-                        updateMapInfoPanel(location, address);
-                        
-                        currentMarkers.push(marker);
+                        // Mostrar Street View
+                        showAndDetectAddressType(lat, lon, address);
                     } else {
-                        updateMapInfoPanel(null, address);
-                        // Se não encontrou no Nominatim, mostrar mensagem
                         document.getElementById('mapInfoPanel').innerHTML = `
                             <p style="color: #ef4444;"><strong>⚠️ Endereço não localizado</strong></p>
-                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço "${address}" não foi encontrado no banco de dados de localização. Verifique se o endereço está correto.</p>
+                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço não foi encontrado na base de dados.</p>
                         `;
                     }
                 })
                 .catch(error => {
                     console.error('Erro ao geocodificar:', error);
                     document.getElementById('mapInfoPanel').innerHTML = `
-                        <p style="color: #ef4444;"><strong>❌ Erro ao conectar ao serviço de localização</strong></p>
-                        <p style="color: #cbd5e1; font-size: 0.9rem;">Verifique sua conexão de internet.</p>
+                        <p style="color: #ef4444;"><strong>❌ Erro ao conectar</strong></p>
                     `;
                 });
         }
 
-        function updateMapInfoPanel(location, searchedAddress) {
-            const panel = document.getElementById('mapInfoPanel');
+        function showAndDetectAddressType(lat, lon, address) {
+            const mapContainer = document.getElementById('mapContainer');
+            const infoPanel = document.getElementById('mapInfoPanel');
             
-            if (!location) return;
+            // Limpar container anterior
+            mapContainer.innerHTML = '';
             
-            const html = `
-                <p><strong>📍 Endereço:</strong> ${location.name || searchedAddress}</p>
-                <p><strong>🌍 Coordenadas:</strong> ${parseFloat(location.lat).toFixed(4)}, ${parseFloat(location.lon).toFixed(4)}</p>
-                ${location.address ? `<p><strong>📬 Endereço Completo:</strong> ${location.address}</p>` : ''}
-                <p><strong>🔍 Tipo:</strong> ${location.type || 'Localização'}</p>
-                ${location.boundingbox ? `<p style="font-size: 0.85rem; color: #64748b;"><strong>Área:</strong> ${location.boundingbox.join(', ')}</p>` : ''}
+            // Criar iframe do Google Street View
+            const streetViewHtml = `
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    style="border: none; border-radius: 0.5rem;"
+                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1000!2d${lon}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1spt-BR!2sbr!4v1" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
             `;
             
-            panel.innerHTML = html;
+            mapContainer.innerHTML = streetViewHtml;
+            
+            // Detectar se é rural ou urbano
+            const addressType = detectAddressType(address);
+            const typeLabel = addressType === 'rural' ? 'RURAL' : 'URBANO';
+            const typeColor = addressType === 'rural' ? '#f59e0b' : '#06b6d4';
+            
+            // Atualizar info panel
+            infoPanel.innerHTML = `
+                <p><strong>📍 Endereço:</strong> ${address}</p>
+                <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700;">${typeLabel}</span></p>
+                <p><strong>🗺️ Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+            `;
+        }
+
+        function detectAddressType(address) {
+            const lowAddress = address.toLowerCase();
+            
+            // Palavras-chave para rural
+            const ruralKeywords = [
+                'sítio', 'fazenda', 'chácara', 'roça', 'zona rural', 'estrada',
+                'rodovia', 'km', 'zona', 'distrito', 'lote', 'gleba', 'propriedade',
+                'chácaras', 'pouso', 'vila rural', 'interior', 'comunidade', 'sítios'
+            ];
+            
+            // Palavras-chave para urbano
+            const urbanKeywords = [
+                'rua', 'avenida', 'av.', 'prédio', 'edifício', 'loja', 'bloco', 
+                'apto', 'apartamento', 'sala', 'centro', 'via', 'alameda', 'travessa',
+                'praça', 'trav.', 'pça', 'alameda', 'passagem', 'viela', 'beco',
+                'lote urbano', 'condomínio', 'vila', 'núcleo', 'assentamento', 'pça.'
+            ];
+            
+            // Contar matches
+            let ruralScore = 0;
+            let urbanScore = 0;
+            
+            ruralKeywords.forEach(keyword => {
+                if (lowAddress.includes(keyword)) ruralScore++;
+            });
+            
+            urbanKeywords.forEach(keyword => {
+                if (lowAddress.includes(keyword)) urbanScore++;
+            });
+            
+            // Se rural tem mais palavras-chave, é rural. Senão, é urbano
+            return ruralScore > urbanScore ? 'rural' : 'urban';
         }
 
         function closeMapModal() {
             const modal = document.getElementById('mapModal');
             modal.classList.remove('show');
             
-            // Limpar mapa
-            if (currentMap) {
-                currentMap.remove();
-                currentMap = null;
-            }
-            currentMarkers = [];
+            // Limpar Street View
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.innerHTML = '';
+            streetViewPanorama = null;
         }
 
         // Fechar modal ao clicar fora
@@ -1281,7 +1239,7 @@
         });
 
         // ===========================
-        // FILTROS DE ENDEREÇO
+        // FILTROS DE ENDEREÇO - URBANO vs RURAL
         // ===========================
         function filterAddresses(filterType) {
             // Atualizar botões ativos
@@ -1290,38 +1248,45 @@
             });
             event.target.classList.add('active');
             
-            // Filtrar endereços
+            // Detectar tipo de cada endereço
             const addresses = document.querySelectorAll('.address-item');
             
             addresses.forEach(item => {
-                const address = item.getAttribute('data-address').toLowerCase();
+                const address = item.getAttribute('data-address');
+                const typeLabel = item.querySelector('.address-type-label');
+                const detectedType = detectAddressType(address); // 'rural' ou 'urban'
+                
+                // Atualizar label do tipo
+                typeLabel.textContent = detectedType === 'rural' ? '🏞️ RURAL' : '🏙️ URBANO';
+                typeLabel.style.color = detectedType === 'rural' ? '#f59e0b' : '#06b6d4';
+                
+                // Filtrar baseado no tipo
                 let shouldShow = false;
                 
                 if (filterType === 'all') {
                     shouldShow = true;
-                } else if (filterType === 'residential') {
-                    // Detectar endereço residencial (Avenida, Rua, Alameda, Travessa, etc)
-                    const residentialKeywords = ['rua', 'avenida', 'av.', 'alameda', 'travessa', 'praia', 'estrada', 'rodovia', 'caminho'];
-                    shouldShow = residentialKeywords.some(keyword => address.includes(keyword));
-                } else if (filterType === 'commercial') {
-                    // Detectar endereço comercial
-                    const commercialKeywords = ['prédio', 'edifício', 'salas', 'sl.', 'lj.', 'loja', 'centro comercial', 'mall', 'galeria'];
-                    shouldShow = commercialKeywords.some(keyword => address.includes(keyword));
-                } else if (filterType === 'other') {
-                    // Outros (que não se encaixam nas categorias acima)
-                    const categorized = [];
-                    const residentialKeywords = ['rua', 'avenida', 'av.', 'alameda', 'travessa', 'praia', 'estrada', 'rodovia', 'caminho'];
-                    const commercialKeywords = ['prédio', 'edifício', 'salas', 'sl.', 'lj.', 'loja', 'centro comercial', 'mall', 'galeria'];
-                    
-                    const isResidential = residentialKeywords.some(keyword => address.includes(keyword));
-                    const isCommercial = commercialKeywords.some(keyword => address.includes(keyword));
-                    
-                    shouldShow = !isResidential && !isCommercial;
+                } else if (filterType === 'urban') {
+                    shouldShow = detectedType === 'urban';
+                } else if (filterType === 'rural') {
+                    shouldShow = detectedType === 'rural';
                 }
                 
                 item.style.display = shouldShow ? 'flex' : 'none';
             });
         }
+        
+        // Auto-detectar tipo ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            const addresses = document.querySelectorAll('.address-item');
+            addresses.forEach(item => {
+                const address = item.getAttribute('data-address');
+                const typeLabel = item.querySelector('.address-type-label');
+                const detectedType = detectAddressType(address);
+                
+                typeLabel.textContent = detectedType === 'rural' ? '🏞️ RURAL' : '🏙️ URBANO';
+                typeLabel.style.color = detectedType === 'rural' ? '#f59e0b' : '#06b6d4';
+            });
+        });
     </script>
 </body>
 </html>
