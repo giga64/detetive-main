@@ -381,7 +381,7 @@
     }
 
     .tag-item::before {
-      content: '🏷️';
+      content: '';
       font-size: 0.8rem;
     }
 
@@ -407,7 +407,7 @@
     }
 
     .note-header::before {
-      content: '📝';
+      content: '';
       font-size: 1rem;
     }
 
@@ -512,7 +512,7 @@
         </form>
         {% endif %}
         {% if is_favorites %}
-        <a href="/historico" class="btn-back" style="background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.5); color: #06b6d4;">📋 Histórico Completo</a>
+        <a href="/historico" class="btn-back" style="background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.5); color: #06b6d4;">Histórico Completo</a>
         {% else %}
         <a href="/favoritos" class="btn-back" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #fbbf24;">⭐ Favoritos</a>
         {% endif %}
@@ -538,8 +538,8 @@
             <option value="desc" {% if filtro_ordem == 'desc' or not filtro_ordem %}selected{% endif %}>Mais recentes</option>
             <option value="asc" {% if filtro_ordem == 'asc' %}selected{% endif %}>Mais antigos</option>
           </select>
-          <button type="submit" class="filter-btn">🔍 Filtrar</button>
-          <a href="/historico" class="filter-btn" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.5);">🔄 Limpar</a>
+          <button type="submit" class="filter-btn">Filtrar</button>
+          <a href="/historico" class="filter-btn" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.5);">Limpar</a>
         </div>
       </form>
     </div>

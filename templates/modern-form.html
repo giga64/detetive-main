@@ -647,29 +647,29 @@
         <div class="form-group">
           <div class="tipo-selector-wrapper">
             <button type="button" class="tipo-selector-btn" id="tipoSelectorBtn">
-              <span id="tipoSelectorText">🔍 Auto Detectar</span>
+              <span id="tipoSelectorText">Auto Detectar</span>
             </button>
             <input type="hidden" id="tipo" name="tipo" value="auto">
             
             <div class="tipo-selector-dropdown" id="tipoSelectorDropdown">
               <div class="tipo-option selected" data-value="auto">
-                <span class="tipo-option-icon">🔍</span>
+                <span class="tipo-option-icon"></span>
                 <span>Auto Detectar</span>
               </div>
               <div class="tipo-option" data-value="cpf">
-                <span class="tipo-option-icon">👤</span>
+                <span class="tipo-option-icon"></span>
                 <span>Buscar por CPF</span>
               </div>
               <div class="tipo-option" data-value="cnpj">
-                <span class="tipo-option-icon">🏢</span>
+                <span class="tipo-option-icon"></span>
                 <span>Buscar por CNPJ</span>
               </div>
               <div class="tipo-option" data-value="placa">
-                <span class="tipo-option-icon">🚗</span>
+                <span class="tipo-option-icon"></span>
                 <span>Buscar por Placa</span>
               </div>
               <div class="tipo-option" data-value="nome">
-                <span class="tipo-option-icon">📝</span>
+                <span class="tipo-option-icon"></span>
                 <span>Buscar por Nome</span>
               </div>
             </div>
@@ -701,7 +701,7 @@
       <div class="history-button-container">
         <a href="/historico" class="btn-historico">Ver Histórico</a>
         {% if request.cookies.get('is_admin') == '1' %}
-          <a href="/admin/dashboard" class="btn-historico btn-admin">📊 Dashboard</a>
+          <a href="/admin/dashboard" class="btn-historico btn-admin">Dashboard</a>
           <a href="/admin/logs" class="btn-historico btn-admin">Ver Logs</a>
           <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">Gerenciar Usuarios</a>
         {% endif %}

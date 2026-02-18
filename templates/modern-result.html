@@ -469,7 +469,7 @@
     
     <div class="container">
         <header>
-            <h1>🔍 ONESEEK</h1>
+            <h1>ONESEEK</h1>
             <div class="header-actions">
                 <a href="/" class="btn btn-back">← Nova Consulta</a>
             </div>
@@ -675,14 +675,14 @@
                         <ul class="data-list">
                             {% for endereco in dados.enderecos %}
                                 <li class="data-list-item">
-                                    <span>📍 {{ endereco }}</span>
+                                    <span>{{ endereco }}</span>
                                     <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
                                 </li>
                             {% endfor %}
                         </ul>
                     {% else %}
                         <div class="empty-state">
-                            <div class="empty-state-icon">📍</div>
+                            <div class="empty-state-icon"></div>
                             <p>Nenhum endereço encontrado</p>
                         </div>
                     {% endif %}
@@ -690,7 +690,7 @@
 
                 <!-- TAB: Contatos -->
                 <div id="contacts" class="tab-content">
-                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">📧 E-mails</h3>
+                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
                     {% if dados.emails and dados.emails|length > 0 %}
                         <ul class="data-list">
                             {% for email in dados.emails %}
@@ -706,7 +706,7 @@
                         </div>
                     {% endif %}
 
-                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">📞 Telefones</h3>
+                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
                     {% if dados.telefones and dados.telefones|length > 0 %}
                         <ul class="data-list">
                             {% for telefone in dados.telefones %}
@@ -725,7 +725,7 @@
 
                 <!-- TAB: Relacionamentos -->
                 <div id="relationships" class="tab-content">
-                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">👨‍👩‍👧 Possíveis Parentes</h3>
+                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">Possíveis Parentes</h3>
                     {% if dados.parentes and dados.parentes|length > 0 %}
                         <div class="relationship-grid">
                             {% for parente in dados.parentes %}
@@ -742,7 +742,7 @@
                         </div>
                     {% endif %}
 
-                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">🏘️ Possíveis Vizinhos</h3>
+                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Possíveis Vizinhos</h3>
                     {% if dados.vizinhos and dados.vizinhos|length > 0 %}
                         <div class="relationship-grid">
                             {% for vizinho in dados.vizinhos %}
@@ -762,7 +762,7 @@
 
                 <!-- TAB: Empresas -->
                 <div id="companies" class="tab-content">
-                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">🏢 Participação Societária</h3>
+                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">Participação Societária</h3>
                     {% if dados.empresas and dados.empresas|length > 0 %}
                         <div class="relationship-grid">
                             {% for empresa in dados.empresas %}
@@ -782,7 +782,7 @@
                         </div>
                     {% endif %}
 
-                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">💼 Vínculos Empregatícios</h3>
+                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Vínculos Empregatícios</h3>
                     {% if dados.vinculos and dados.vinculos|length > 0 %}
                         <ul class="data-list">
                             {% for vinculo in dados.vinculos %}
@@ -806,7 +806,7 @@
                 <!-- Ações -->
                 <div class="actions-section">
                     <button class="action-btn primary" onclick="addToFavorites('{{ identifier }}')">⭐ Adicionar aos Favoritos</button>
-                    <button class="action-btn" onclick="addNote('{{ identifier }}')">📝 Adicionar Nota</button>
+                    <button class="action-btn" onclick="addNote('{{ identifier }}')">Adicionar Nota</button>
                     <button class="action-btn" onclick="goToSearch()">← Voltar</button>
                 </div>
             </div>

@@ -171,7 +171,7 @@ API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
-print(f"🔧 Configuração Telegram:")
+print(f"Configuração Telegram:")
 print(f"   API_ID: {API_ID}")
 print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
 
@@ -298,7 +298,7 @@ async def consulta_telegram(cmd: str) -> str:
                 
                 async def handler(event):
                     nonlocal response_text
-                    response_text = re.sub(r"🔛\s*BY:\s*@Skynet08Robot", "", event.raw_text, flags=re.IGNORECASE)
+                    response_text = re.sub(r"BY:\s*@Skynet08Robot", "", event.raw_text, flags=re.IGNORECASE)
                     response_received.set()
                 
                 # Tenta obter o grupo - usa tanto ID direto quanto busca por username
@@ -821,7 +821,7 @@ async def view_resultado_completo(request: Request, search_id: int):
     
     # Buscar consulta do usuário
     cursor.execute(
-        "SELECT id, identifier, response, data FROM searches WHERE id = ? AND username = ?",
+        "SELECT id, identifier, response FROM searches WHERE id = ? AND username = ?",
         (search_id, username)
     )
     search = cursor.fetchone()
@@ -835,7 +835,6 @@ async def view_resultado_completo(request: Request, search_id: int):
     return templates.TemplateResponse("view-resultado.html", {
         "request": request,
         "identifier": search[1],
-        "data": search[3],
         "response": search[2],
         "dados": dados
     })
