@@ -1118,9 +1118,17 @@
         }
 
         function geocodeAndShowStreetView(address) {
-            const encodedAddress = encodeURIComponent(address + ', Brasil');
+            // Limpar o endereço: remover CEP e caracteres extras
+            let cleanAddress = address.replace(/\b\d{5}-?\d{3}\b/g, '').trim();
             
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`)
+            // Tentar geocodificar com endereço completo primeiro
+            tryGeocoding(cleanAddress + ', Brasil', address, 0);
+        }
+
+        function tryGeocoding(query, originalAddress, attempt) {
+            const encodedAddress = encodeURIComponent(query);
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=5&countrycodes=br`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
@@ -1129,20 +1137,48 @@
                         const lon = parseFloat(location.lon);
                         
                         // Mostrar Street View
-                        showAndDetectAddressType(lat, lon, address);
+                        showAndDetectAddressType(lat, lon, originalAddress);
+                    } else if (attempt === 0) {
+                        // Se não encontrou, tentar com versão simplificada (apenas rua e cidade)
+                        const addressParts = originalAddress.split('-').filter(p => p.trim());
+                        if (addressParts.length > 1) {
+                            const simplifiedAddress = addressParts[0] + ' - ' + addressParts[addressParts.length - 1];
+                            tryGeocoding(simplifiedAddress.trim() + ', Brasil', originalAddress, 1);
+                        } else {
+                            showGeocodingError('não localizado');
+                        }
                     } else {
-                        document.getElementById('mapInfoPanel').innerHTML = `
-                            <p style="color: #ef4444;"><strong>⚠️ Endereço não localizado</strong></p>
-                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço não foi encontrado na base de dados.</p>
-                        `;
+                        showGeocodingError('não localizado');
                     }
                 })
                 .catch(error => {
                     console.error('Erro ao geocodificar:', error);
-                    document.getElementById('mapInfoPanel').innerHTML = `
-                        <p style="color: #ef4444;"><strong>❌ Erro ao conectar</strong></p>
-                    `;
+                    if (attempt < 1) {
+                        // Tentar novamente com versão simplificada em caso de erro de conexão
+                        setTimeout(() => tryGeocoding(query, originalAddress, 1), 1000);
+                    } else {
+                        showGeocodingError('conexão');
+                    }
                 });
+        }
+
+        function showGeocodingError(type) {
+            const errorMessages = {
+                'não localizado': {
+                    title: '⚠️ Endereço não localizado',
+                    message: 'O endereço não foi encontrado no serviço de mapas. Tente verificar a ortografia ou use uma versão simplificada do endereço.'
+                },
+                'conexão': {
+                    title: '❌ Erro ao conectar',
+                    message: 'Não foi possível conectar ao serviço de mapas. Verifique sua conexão e tente novamente.'
+                }
+            };
+            
+            const errorInfo = errorMessages[type] || errorMessages['não localizado'];
+            document.getElementById('mapInfoPanel').innerHTML = `
+                <p style="color: #ef4444;"><strong>${errorInfo.title}</strong></p>
+                <p style="color: #cbd5e1; font-size: 0.9rem;">${errorInfo.message}</p>
+            `;
         }
 
         function showAndDetectAddressType(lat, lon, address) {
