@@ -464,6 +464,9 @@
     </style>
 </head>
 <body>
+    <!-- CSRF Token para segurança -->
+    <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}">
+    
     <div class="container">
         <header>
             <h1>🔍 ONESEEK</h1>
@@ -837,13 +840,20 @@
             input.name = 'identificador';
             input.value = cpf;
             
+            // Tipo auto-detect
+            const typeInput = document.createElement('input');
+            typeInput.type = 'hidden';
+            typeInput.name = 'tipo';
+            typeInput.value = 'auto';
+            
             // CSRF token
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrf_token';
-            csrfInput.value = document.querySelector('[name="csrf_token"]')?.value || '';
+            csrfInput.value = document.getElementById('csrf-token')?.value || '';
             
             form.appendChild(input);
+            form.appendChild(typeInput);
             form.appendChild(csrfInput);
             document.body.appendChild(form);
             form.submit();
