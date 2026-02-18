@@ -1105,10 +1105,9 @@ async def reverse_search_phone(request: Request, phone: str):
     # Limpar telefone (remover caracteres especiais)
     phone_clean = ''.join(filter(str.isdigit, phone))
     
-    # Buscar todas as consultas do usuário
+    # Buscar todas as consultas de TODOS os usuários
     cursor.execute(
-        "SELECT id, identifier, response FROM searches WHERE username = ?",
-        (username,)
+        "SELECT id, identifier, response FROM searches"
     )
     searches = cursor.fetchall()
     
@@ -1161,10 +1160,9 @@ async def reverse_search_email(request: Request, email: str):
     # Email em lowercase
     email_lower = email.lower()
     
-    # Buscar todas as consultas do usuário
+    # Buscar todas as consultas de TODOS os usuários
     cursor.execute(
-        "SELECT id, identifier, response FROM searches WHERE username = ?",
-        (username,)
+        "SELECT id, identifier, response FROM searches"
     )
     searches = cursor.fetchall()
     
@@ -1216,10 +1214,9 @@ async def reverse_search_address(request: Request, address: str):
     # Normalizar endereço para comparação (remover acentos, lowercase)
     address_norm = address.lower().strip()
     
-    # Buscar todas as consultas do usuário
+    # Buscar todas as consultas de TODOS os usuários
     cursor.execute(
-        "SELECT id, identifier, response FROM searches WHERE username = ?",
-        (username,)
+        "SELECT id, identifier, response FROM searches"
     )
     searches = cursor.fetchall()
     
