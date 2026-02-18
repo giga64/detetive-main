@@ -312,38 +312,74 @@
     <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <span class="stat-icon">📊</span>
+        <span class="stat-icon" style="color: #06b6d4;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.total_consultas }}</span>
         <div class="stat-label">Total de Consultas</div>
       </div>
       
       <div class="stat-card">
-        <span class="stat-icon">📅</span>
+        <span class="stat-icon" style="color: #10b981;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.consultas_hoje }}</span>
         <div class="stat-label">Consultas Hoje</div>
       </div>
       
       <div class="stat-card">
-        <span class="stat-icon">📈</span>
+        <span class="stat-icon" style="color: #f59e0b;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 17"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.consultas_semana }}</span>
         <div class="stat-label">Últimos 7 Dias</div>
       </div>
       
       <div class="stat-card">
-        <span class="stat-icon">📆</span>
+        <span class="stat-icon" style="color: #a855f7;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.consultas_mes }}</span>
         <div class="stat-label">Últimos 30 Dias</div>
       </div>
       
       <div class="stat-card">
-        <span class="stat-icon">⏰</span>
+        <span class="stat-icon" style="color: #ef4444;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.horario_pico }}</span>
         <div class="stat-label">Horário de Pico</div>
         <div class="stat-sublabel">{{ stats.consultas_pico }} consultas</div>
       </div>
       
       <div class="stat-card">
-        <span class="stat-icon">👥</span>
+        <span class="stat-icon" style="color: #ec4899;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </span>
         <span class="stat-value">{{ stats.total_usuarios }}</span>
         <div class="stat-label">Usuários Ativos</div>
       </div>
@@ -353,7 +389,13 @@
     <div class="charts-grid">
       <!-- Consultas por Dia -->
       <div class="chart-container" style="grid-column: 1 / -1;">
-        <h3 class="chart-title">📈 Consultas nos Últimos 30 Dias</h3>
+        <h3 class="chart-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 17"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+          Consultas nos Últimos 30 Dias
+        </h3>
         <div class="chart-wrapper tall">
           <canvas id="consultasPorDiaChart"></canvas>
         </div>
@@ -361,7 +403,15 @@
 
       <!-- Top Usuários -->
       <div class="chart-container">
-        <h3 class="chart-title">👥 Top 10 Usuários Mais Ativos</h3>
+        <h3 class="chart-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Top 10 Usuários Mais Ativos
+        </h3>
         <div class="chart-wrapper">
           <canvas id="topUsuariosChart"></canvas>
         </div>
@@ -369,7 +419,13 @@
 
       <!-- Distribuição por Horário -->
       <div class="chart-container">
-        <h3 class="chart-title">🕐 Distribuição por Horário</h3>
+        <h3 class="chart-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          Distribuição por Horário
+        </h3>
         <div class="chart-wrapper">
           <canvas id="horarioChart"></canvas>
         </div>
@@ -379,7 +435,12 @@
     <!-- Top Users Table -->
     {% if stats.top_usuarios %}
     <div class="chart-container" style="margin-top: 2rem;">
-      <h3 class="chart-title">🏆 Ranking de Usuários</h3>
+      <h3 class="chart-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+          <polygon points="12 2 15.09 10.26 24 10.5 17.77 16.61 20.16 25.5 12 20.13 3.84 25.5 6.23 16.61 0 10.5 8.91 10.26 12 2"></polygon>
+        </svg>
+        Ranking de Usuários
+      </h3>
       <table class="top-users-table">
         <thead>
           <tr>

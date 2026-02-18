@@ -808,6 +808,38 @@ async def get_consulta_details(request: Request, search_id: int):
         }
     })
 
+@app.get("/view-resultado/{search_id}", response_class=HTMLResponse)
+async def view_resultado_completo(request: Request, search_id: int):
+    """Exibe o resultado completo em tela cheia"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if is_session_expired(request):
+        return RedirectResponse(url="/login")
+    
+    username = request.cookies.get("auth_user")
+    
+    # Buscar consulta do usuário
+    cursor.execute(
+        "SELECT id, identifier, response, data FROM searches WHERE id = ? AND username = ?",
+        (search_id, username)
+    )
+    search = cursor.fetchone()
+    
+    if not search:
+        return "<h1>Consulta não encontrada</h1>"
+    
+    # Parser dos dados
+    dados = parse_resultado_consulta(search[2])
+    
+    return templates.TemplateResponse("view-resultado.html", {
+        "request": request,
+        "identifier": search[1],
+        "data": search[3],
+        "response": search[2],
+        "dados": dados
+    })
+
 # ----------------------
 # Rotas do Sistema
 # ----------------------

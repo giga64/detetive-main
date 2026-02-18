@@ -762,21 +762,12 @@
     // ===========================
     async function viewFullResult(searchId) {
       try {
-        // Buscar dados completos da consulta
-        const response = await fetch(`/api/consulta/${searchId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-          // Armazenar dados no localStorage para exibir em nova abas
-          localStorage.setItem(`result_${searchId}`, JSON.stringify(data.data));
-          // Abrir em nova aba
-          window.open(`/resultado?id=${searchId}`, '_blank');
-        } else {
-          showToast('Erro ao carregar dados da consulta', 'error');
-        }
+        // Abrir em nova aba
+        window.open(`/view-resultado/${searchId}`, '_blank', 'width=1200,height=800');
+        showToast('✅ Abrindo resultado completo...', 'success');
       } catch (error) {
         console.error('Erro:', error);
-        showToast('Erro ao conectar com o servidor', 'error');
+        showToast('❌ Erro ao abrir resultado', 'error');
       }
     }
     
