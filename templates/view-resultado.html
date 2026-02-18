@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ONESEEK - Resultado Completo</title>
+    <!-- Leaflet.js para Mapa Interativo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -189,9 +192,132 @@
         .list-item:last-child {
             border-bottom: none;
         }
+
+        /* ===== MAPA MODAL ===== */
+        .map-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .map-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-container-modal {
+            background: #1a1b2e;
+            border: 2px solid rgba(6, 182, 212, 0.5);
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 1000px;
+            height: 90%;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.3);
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.3);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .map-header h2 {
+            color: #06b6d4;
+            font-size: 1.3rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .map-close-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .map-close-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+
+        #mapContainer {
+            flex: 1;
+            border-radius: 0 0 1rem 1rem;
+            overflow: hidden;
+        }
+
+        .leaflet-container {
+            background: #0f172a;
+        }
+
+        .leaflet-popup-content {
+            background: #1a1b2e;
+            color: #e0e0e0;
+            border-radius: 0.5rem;
+            padding: 0.8rem !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #1a1b2e;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .map-info-panel {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(6, 182, 212, 0.3);
+            background: rgba(6, 182, 212, 0.05);
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .map-info-panel p {
+            color: #cbd5e1;
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .map-info-panel strong {
+            color: #06b6d4;
+        }
     </style>
 </head>
 <body>
+    <!-- Modal de Mapa Interativo -->
+    <div id="mapModal" class="map-modal">
+        <div class="map-container-modal">
+            <div class="map-header">
+                <h2 id="mapTitle">Localização</h2>
+                <button class="map-close-btn" onclick="closeMapModal()">Fechar</button>
+            </div>
+            <div id="mapContainer"></div>
+            <div class="map-info-panel" id="mapInfoPanel">
+                <p><strong>Clique no mapa</strong> para ver informações sobre a localização</p>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <h1>Resultado Completo</h1>
@@ -244,7 +370,12 @@
                 {% if dados and dados["enderecos"] %}
                     <div class="section">
                         {% for endereco in dados["enderecos"] %}
-                            <div class="list-item">{{ endereco }}</div>
+                            <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                                <span>{{ endereco }}</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <button style="padding: 6px 12px; background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.5); color: #06b6d4; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;" onclick="openAddressMap('{{ endereco }}')">Ver Mapa</button>
+                                </div>
+                            </div>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -358,6 +489,142 @@
             // Add active to clicked button
             event.target.classList.add('active');
         }
+
+        // ===========================
+        // MAPA INTERATIVO
+        // ===========================
+        let currentMap = null;
+        let currentMarkers = [];
+
+        function openAddressMap(address) {
+            const modal = document.getElementById('mapModal');
+            const mapContainer = document.getElementById('mapContainer');
+            const mapTitle = document.getElementById('mapTitle');
+            
+            // Limpar mapa anterior
+            if (currentMap) {
+                currentMap.remove();
+                currentMap = null;
+            }
+            currentMarkers = [];
+            
+            // Atualizar título
+            mapTitle.textContent = 'Localização: ' + address;
+            
+            // Mostrar modal
+            modal.classList.add('show');
+            
+            // Inicializar mapa (Brasil como centro padrão)
+            currentMap = L.map('mapContainer', {
+                center: [-15.7942, -47.8822],
+                zoom: 4,
+                zoomControl: true,
+                attributionControl: true
+            });
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: ' OpenStreetMap contributors',
+                maxZoom: 19,
+                minZoom: 3
+            }).addTo(currentMap);
+            
+            // Geocodificar o endereço
+            geocodeAddress(address);
+        }
+
+        function geocodeAddress(address) {
+            const encodedAddress = encodeURIComponent(address + ', Brasil');
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const location = data[0];
+                        const lat = parseFloat(location.lat);
+                        const lon = parseFloat(location.lon);
+                        
+                        // Adicionar marker
+                        const marker = L.marker([lat, lon], {
+                            icon: L.icon({
+                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41],
+                                popupAnchor: [1, -34],
+                                shadowSize: [41, 41]
+                            })
+                        }).addTo(currentMap);
+                        
+                        // Adicionar popup
+                        const popupContent = `
+                            <div style="color: #e0e0e0; font-family: Inter, sans-serif;">
+                                <strong style="color: #06b6d4; display: block; margin-bottom: 0.5rem;">${location.name || address}</strong>
+                                <small style="color: #94a3b8; display: block; margin: 0.3rem 0;">
+                                    📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}
+                                </small>
+                            </div>
+                        `;
+                        marker.bindPopup(popupContent);
+                        
+                        // Centralizar
+                        currentMap.setView([lat, lon], 15);
+                        
+                        // Atualizar painel
+                        updateMapInfoPanel(location, address);
+                        currentMarkers.push(marker);
+                    } else {
+                        updateMapInfoPanel(null, address);
+                        document.getElementById('mapInfoPanel').innerHTML = `
+                            <p style="color: #ef4444;"><strong>⚠️ Endereço não localizado</strong></p>
+                            <p style="color: #cbd5e1; font-size: 0.9rem;">O endereço não foi encontrado.</p>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    document.getElementById('mapInfoPanel').innerHTML = `
+                        <p style="color: #ef4444;"><strong>❌ Erro ao conectar</strong></p>
+                    `;
+                });
+        }
+
+        function updateMapInfoPanel(location, searchedAddress) {
+            const panel = document.getElementById('mapInfoPanel');
+            
+            if (!location) return;
+            
+            const html = `
+                <p><strong>📍 Endereço:</strong> ${location.name || searchedAddress}</p>
+                <p><strong>🌍 Coordenadas:</strong> ${parseFloat(location.lat).toFixed(4)}, ${parseFloat(location.lon).toFixed(4)}</p>
+            `;
+            
+            panel.innerHTML = html;
+        }
+
+        function closeMapModal() {
+            const modal = document.getElementById('mapModal');
+            modal.classList.remove('show');
+            
+            if (currentMap) {
+                currentMap.remove();
+                currentMap = null;
+            }
+            currentMarkers = [];
+        }
+
+        // Fechar ao clicar fora
+        document.getElementById('mapModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMapModal();
+            }
+        });
+
+        // Fechar ao apertar ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMapModal();
+            }
+        });
     </script>
 </body>
 </html>
