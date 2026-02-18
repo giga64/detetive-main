@@ -552,10 +552,18 @@
                 <p class="header-subtitle">Gestão de Acesso ao Sistema</p>
             </div>
             <div class="header-actions">
-                <a href="/admin/dashboard" class="btn btn-secondary">📊 Dashboard</a>
-                <a href="/admin/logs" class="btn btn-secondary">Ver Logs</a>
-                <a href="/" class="btn btn-secondary">Painel Principal</a>
-                <button onclick="openModal()" class="btn btn-primary">+ Novo Operador</button>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="/admin/dashboard" class="btn btn-secondary">📊 Dashboard</a>
+                    <a href="/admin/logs" class="btn btn-secondary">Ver Logs</a>
+                    <a href="/" class="btn btn-secondary">Painel Principal</a>
+                </div>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button onclick="exportBackupCSV()" class="btn btn-secondary" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">💾 CSV</button>
+                    <button onclick="exportBackupJSON()" class="btn btn-secondary" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.5); color: #a855f7;">💾 JSON</button>
+                    <button onclick="document.getElementById('restoreInput').click()" class="btn btn-secondary" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.5); color: #3b82f6;">📥 Restaurar</button>
+                    <input type="file" id="restoreInput" accept=".json" style="display: none;" onchange="restoreBackup(event)">
+                    <button onclick="openModal()" class="btn btn-primary">+ Novo Operador</button>
+                </div>
             </div>
         </header>
 
@@ -866,6 +874,84 @@
                 closePasswordModal();
             }
         });
+
+        // ===========================
+        // BACKUP E RESTAURAÇÃO
+        // ===========================
+        async function exportBackupCSV() {
+            try {
+                window.location.href = '/backup/usuarios/csv';
+                showNotification('✅ Backup CSV iniciado', 'success');
+            } catch (error) {
+                showNotification('❌ Erro ao baixar backup', 'error');
+            }
+        }
+
+        async function exportBackupJSON() {
+            try {
+                window.location.href = '/backup/usuarios/json';
+                showNotification('✅ Backup JSON iniciado', 'success');
+            } catch (error) {
+                showNotification('❌ Erro ao baixar backup', 'error');
+            }
+        }
+
+        async function restoreBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm('⚠️ Isto vai restaurar TODOS os usuários do arquivo!\n\nTem certeza?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/backup/restaurar/usuarios', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erro ao restaurar backup', 'error');
+            }
+
+            // Limpar input
+            event.target.value = '';
+        }
+
+        function showNotification(message, type) {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'};
+                border: 1px solid ${type === 'success' ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'};
+                color: ${type === 'success' ? '#10b981' : '#ef4444'};
+                border-radius: 0.5rem;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+                font-weight: 600;
+            `;
+            div.textContent = message;
+            document.body.appendChild(div);
+            
+            setTimeout(() => {
+                div.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => div.remove(), 300);
+            }, 3000);
+        }
+        
     </script>
 </body>
 </html>

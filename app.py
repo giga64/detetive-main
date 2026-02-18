@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from collections import defaultdict
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
@@ -393,6 +393,146 @@ def format_timestamp_br(timestamp_str: str) -> str:
     except:
         return timestamp_str  # Retorna original se houver erro
 
+def parse_resultado_consulta(resultado_texto: str) -> dict:
+    """Faz parsing do resultado textual e retorna dados estruturados"""
+    import re
+    
+    data = {
+        "dados_pessoais": {},
+        "emails": [],
+        "enderecos": [],
+        "telefones": [],
+        "parentes": [],
+        "vizinhos": [],
+        "empresas": [],
+        "vinculos": [],
+        "score": None,
+        "risco": None
+    }
+    
+    # Helper para extrair valor após label
+    def get_value(label, text=resultado_texto):
+        match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
+        return match.group(1).strip() if match else None
+    
+    # Dados pessoais
+    data["dados_pessoais"]["cpf"] = get_value("CPF")
+    data["dados_pessoais"]["pis"] = get_value("PIS")
+    data["dados_pessoais"]["titulo"] = get_value("TÍTULO ELEITORAL")
+    data["dados_pessoais"]["rg"] = get_value("RG")
+    data["dados_pessoais"]["nome"] = get_value("NOME")
+    data["dados_pessoais"]["nascimento"] = get_value("NASCIMENTO")
+    data["dados_pessoais"]["idade"] = get_value("IDADE")
+    data["dados_pessoais"]["signo"] = get_value("SIGNO")
+    data["dados_pessoais"]["mae"] = get_value("MÃE")
+    data["dados_pessoais"]["pai"] = get_value("PAI")
+    data["dados_pessoais"]["nacionalidade"] = get_value("NACIONALIDADE")
+    data["dados_pessoais"]["escolaridade"] = get_value("ESCOLARIDADE")
+    data["dados_pessoais"]["estado_civil"] = get_value("ESTADO CIVIL")
+    data["dados_pessoais"]["profissao"] = get_value("PROFISSÃO")
+    data["dados_pessoais"]["renda"] = get_value("RENDA PRESUMIDA")
+    data["dados_pessoais"]["status_rf"] = get_value("STATUS RF")
+    
+    # Score e Risco
+    score_val = get_value("SCORE")
+    if score_val:
+        try:
+            data["score"] = int(score_val)
+        except:
+            pass
+    data["risco"] = get_value("FAIXA DE RISCO")
+    
+    # E-mails (procura seção de e-mails)
+    emails_match = re.search(r'E-MAILS?:?\s*(.+?)(?:\n(?:ENDEREÇO|TELEFONE|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if emails_match:
+        emails_text = emails_match.group(1)
+        # Procura por emails com padrão xxx@xxx.xxx
+        emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', emails_text)
+        data["emails"] = list(set(emails))  # Remove duplicatas
+    
+    # Endereços (procura seção de endereços)
+    enderecos_match = re.search(r'ENDEREÇO(?:S)?:?\s*(.+?)(?:\n(?:TELEFONE|E-MAIL|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if enderecos_match:
+        enderecos_text = enderecos_match.group(1)
+        # Divide por bullet points ou quebras de linha
+        enderecos_raw = re.split(r'[•\n]+', enderecos_text)
+        for endereco in enderecos_raw:
+            endereco = endereco.strip()
+            if endereco and len(endereco) > 5:  # Filtra vazios e pequenos
+                data["enderecos"].append(endereco)
+    
+    # Telefones (procura seção de telefones)
+    telefones_match = re.search(r'TELEFONE(?:S)?(?:\s+PROPRIETÁRIO)?:?\s*(.+?)(?:\n(?:E-MAIL|ENDEREÇO|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if telefones_match:
+        telefones_text = telefones_match.group(1)
+        # Procura por telefones (padrões brasileiros)
+        telefones = re.findall(r'\(?(\d{2,3})\)?[\s\-]?(\d{4,5})[\s\-]?(\d{4})', telefones_text)
+        for tel in telefones:
+            telefone_formatado = f"({tel[0]}) {tel[1]}-{tel[2]}"
+            if telefone_formatado not in data["telefones"]:
+                data["telefones"].append(telefone_formatado)
+    
+    # Possíveis Parentes
+    parentes_match = re.search(r'POSSÍVEL(?:S)?\s+PARENTE(?:S)?:?\s*(.+?)(?:\n(?:POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if parentes_match:
+        parentes_text = parentes_match.group(1)
+        # Procura por CPF e nomes dentro dessa seção
+        parentes_items = re.split(r'(?:•|-|\n)(?=(?:CPF|NOME))', parentes_text)
+        for item in parentes_items:
+            if 'CPF' in item:
+                cpf_match = re.search(r'CPF:\s*(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})', item)
+                nome_match = re.search(r'NOME:\s*(.+?)(?:\n|CPF|$)', item, re.IGNORECASE)
+                if cpf_match:
+                    parente = {"cpf": cpf_match.group(1)}
+                    if nome_match:
+                        parente["nome"] = nome_match.group(1).strip()
+                    data["parentes"].append(parente)
+    
+    # Possíveis Vizinhos
+    vizinhos_match = re.search(r'POSSÍVEL(?:S)?\s+VIZINHO(?:S)?:?\s*(.+?)(?:\n(?:PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if vizinhos_match:
+        vizinhos_text = vizinhos_match.group(1)
+        vizinhos_items = re.split(r'(?:•|-|\n)(?=(?:CPF|NOME))', vizinhos_text)
+        for item in vizinhos_items:
+            if 'CPF' in item:
+                cpf_match = re.search(r'CPF:\s*(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})', item)
+                nome_match = re.search(r'NOME:\s*(.+?)(?:\n|CPF|$)', item, re.IGNORECASE)
+                if cpf_match:
+                    vizinho = {"cpf": cpf_match.group(1)}
+                    if nome_match:
+                        vizinho["nome"] = nome_match.group(1).strip()
+                    data["vizinhos"].append(vizinho)
+    
+    # Participação Societária
+    empresas_match = re.search(r'PARTICIPAÇÃO\s+SOCIETÁRIA:?\s*(.+?)(?:\nVÍNCULO|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if empresas_match:
+        empresas_text = empresas_match.group(1)
+        empresas_items = re.split(r'(?:•|-|\n)(?=(?:CNPJ|EMPRESA))', empresas_text)
+        for item in empresas_items:
+            if 'CNPJ' in item or 'EMPRESA' in item:
+                cnpj_match = re.search(r'CNPJ:\s*(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}|\d{14})', item, re.IGNORECASE)
+                empresa_match = re.search(r'EMPRESA:\s*(.+?)(?:\n|CNPJ|$)', item, re.IGNORECASE)
+                if cnpj_match:
+                    empresa = {"cnpj": cnpj_match.group(1)}
+                    if empresa_match:
+                        empresa["nome"] = empresa_match.group(1).strip()
+                    data["empresas"].append(empresa)
+    
+    # Vínculos Empregatícios
+    vinculos_match = re.search(r'VÍNCULO(?:S)?\s+EMPREGATÍCIO(?:S)?:?\s*(.+?)(?:\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if vinculos_match:
+        vinculos_text = vinculos_match.group(1)
+        # Procura por período (data) e empresa
+        vinculos_items = re.split(r'(?:•|-|\n)(?=(?:\d{2}/\d{2}/\d{4}|EMPRESA|DE))', vinculos_text)
+        for item in vinculos_items:
+            if item.strip() and len(item.strip()) > 5:
+                data["vinculos"].append(item.strip())
+    
+    # Usuário
+    data["usuario"] = get_value("USUÁRIO")
+    
+    return data
+
 def get_user_statistics(username: str, is_admin: bool = False):
     """Retorna estatísticas do usuário ou sistema (se admin)"""
     stats = {}
@@ -757,11 +897,16 @@ async def do_consulta(request: Request):
             except:
                 pass
         
+        # Parser do resultado para dados estruturados
+        dados_estruturados = parse_resultado_consulta(resultado) if not resultado.startswith("❌") else None
+        
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
             "mensagem": identificador, 
             "resultado": resultado, 
-            "identifier": identificador
+            "dados": dados_estruturados,
+            "identifier": identificador,
+            "csrf_token": get_or_create_csrf_token(request)
         })
     except Exception as e:
         username = request.cookies.get("auth_user", "unknown")
@@ -822,6 +967,157 @@ def historico(request: Request):
         })
     
     return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
+
+@app.get("/search/by-phone/{phone}", response_class=JSONResponse)
+async def reverse_search_phone(request: Request, phone: str):
+    """Busca reversa por telefone - encontra pessoas com este telefone no histórico"""
+    if not request.cookies.get("auth_user"):
+        return {"erro": "Não autenticado", "resultados": []}
+    
+    if is_session_expired(request):
+        return {"erro": "Sessão expirada", "resultados": []}
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Limpar telefone (remover caracteres especiais)
+    phone_clean = ''.join(filter(str.isdigit, phone))
+    
+    # Buscar todas as consultas do usuário
+    cursor.execute(
+        "SELECT id, identifier, response FROM searches WHERE username = ?",
+        (username,)
+    )
+    searches = cursor.fetchall()
+    
+    resultados = []
+    for search_id, identifier, response in searches:
+        # Parser do resultado
+        dados = parse_resultado_consulta(response)
+        
+        # Procurar por telefone
+        if dados["telefones"]:
+            for telefone in dados["telefones"]:
+                telefone_clean = ''.join(filter(str.isdigit, telefone))
+                if telefone_clean == phone_clean:
+                    resultados.append({
+                        "identifier": identifier,
+                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
+                        "tipo": "Proprietário"
+                    })
+                    break
+    
+    record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por telefone: {phone}")
+    
+    return {
+        "sucesso": True,
+        "tipo": "telefone",
+        "valor": phone,
+        "total": len(resultados),
+        "resultados": resultados
+    }
+
+@app.get("/search/by-email/{email}", response_class=JSONResponse)
+async def reverse_search_email(request: Request, email: str):
+    """Busca reversa por e-mail - encontra pessoas com este e-mail no histórico"""
+    if not request.cookies.get("auth_user"):
+        return {"erro": "Não autenticado", "resultados": []}
+    
+    if is_session_expired(request):
+        return {"erro": "Sessão expirada", "resultados": []}
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Email em lowercase
+    email_lower = email.lower()
+    
+    # Buscar todas as consultas do usuário
+    cursor.execute(
+        "SELECT id, identifier, response FROM searches WHERE username = ?",
+        (username,)
+    )
+    searches = cursor.fetchall()
+    
+    resultados = []
+    for search_id, identifier, response in searches:
+        # Parser do resultado
+        dados = parse_resultado_consulta(response)
+        
+        # Procurar por email
+        if dados["emails"]:
+            for mail in dados["emails"]:
+                if mail.lower() == email_lower:
+                    resultados.append({
+                        "identifier": identifier,
+                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
+                        "tipo": "Proprietário"
+                    })
+                    break
+    
+    record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por e-mail: {email}")
+    
+    return {
+        "sucesso": True,
+        "tipo": "email",
+        "valor": email,
+        "total": len(resultados),
+        "resultados": resultados
+    }
+
+@app.get("/search/by-address/{address}", response_class=JSONResponse)
+async def reverse_search_address(request: Request, address: str):
+    """Busca reversa por endereço - encontra pessoas neste endereço no histórico"""
+    if not request.cookies.get("auth_user"):
+        return {"erro": "Não autenticado", "resultados": []}
+    
+    if is_session_expired(request):
+        return {"erro": "Sessão expirada", "resultados": []}
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Normalizar endereço para comparação (remover acentos, lowercase)
+    address_norm = address.lower().strip()
+    
+    # Buscar todas as consultas do usuário
+    cursor.execute(
+        "SELECT id, identifier, response FROM searches WHERE username = ?",
+        (username,)
+    )
+    searches = cursor.fetchall()
+    
+    resultados = []
+    for search_id, identifier, response in searches:
+        # Parser do resultado
+        dados = parse_resultado_consulta(response)
+        
+        # Procurar por endereço (busca parcial)
+        if dados["enderecos"]:
+            for endereco in dados["enderecos"]:
+                endereco_norm = endereco.lower().strip()
+                # Busca por similaridade (se contém palavras-chave)
+                if address_norm in endereco_norm or endereco_norm in address_norm:
+                    resultados.append({
+                        "identifier": identifier,
+                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
+                        "endereco": endereco,
+                        "tipo": "Residente"
+                    })
+                    break
+    
+    record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por endereço: {address}")
+    
+    return {
+        "sucesso": True,
+        "tipo": "endereco",
+        "valor": address,
+        "total": len(resultados),
+        "resultados": resultados
+    }
 
 @app.post("/historico/limpar")
 async def limpar_historico(request: Request):
@@ -1556,6 +1852,135 @@ async def filtrar_historico(request: Request, q: str = "", periodo: str = "30", 
         "filtro_periodo": periodo,
         "filtro_ordem": ordem
     })
+
+# ----------------------
+# BACKUP DE USUÁRIOS (ADMIN ONLY)
+# ----------------------
+@app.get("/backup/usuarios/csv")
+async def backup_usuarios_csv(request: Request):
+    """Exporta todos os usuários e senhas em CSV (admin only)"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/")
+    
+    if is_session_expired(request):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Buscar todos os usuários
+    cursor.execute("SELECT id, username, password, is_admin FROM users ORDER BY id")
+    usuarios = cursor.fetchall()
+    
+    # Criar CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Usuário", "Senha", "Admin"])
+    for user in usuarios:
+        writer.writerow([user[0], user[1], user[2], "Sim" if user[3] else "Não"])
+    
+    record_audit_log("BACKUP_USUARIOS_CSV", username, client_ip, f"Backup de {len(usuarios)} usuários exportado em CSV")
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=backup_usuarios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+@app.get("/backup/usuarios/json")
+async def backup_usuarios_json(request: Request):
+    """Exporta todos os usuários e senhas em JSON (admin only)"""
+    if not request.cookies.get("auth_user"):
+        return RedirectResponse(url="/login")
+    
+    if request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/")
+    
+    if is_session_expired(request):
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Buscar todos os usuários
+    cursor.execute("SELECT id, username, password, is_admin FROM users ORDER BY id")
+    usuarios = cursor.fetchall()
+    
+    # Criar JSON
+    data = {
+        "backup_data": datetime.now().isoformat(),
+        "backup_user": username,
+        "total_usuarios": len(usuarios),
+        "usuarios": [
+            {
+                "id": u[0],
+                "username": u[1],
+                "password": u[2],
+                "is_admin": bool(u[3])
+            }
+            for u in usuarios
+        ]
+    }
+    
+    record_audit_log("BACKUP_USUARIOS_JSON", username, client_ip, f"Backup de {len(usuarios)} usuários exportado em JSON")
+    
+    return StreamingResponse(
+        iter([json.dumps(data, indent=2)]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=backup_usuarios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"}
+    )
+
+@app.post("/backup/restaurar/usuarios")
+async def restore_usuarios(request: Request):
+    """Restaura usuários a partir de arquivo JSON (admin only)"""
+    if not request.cookies.get("auth_user"):
+        return {"success": False, "error": "Não autenticado"}
+    
+    if request.cookies.get("is_admin") != "1":
+        return {"success": False, "error": "Acesso negado"}
+    
+    if is_session_expired(request):
+        return {"success": False, "error": "Sessão expirada"}
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    try:
+        form_data = await request.form()
+        file = form_data.get("file")
+        
+        if not file:
+            return {"success": False, "error": "Nenhum arquivo enviado"}
+        
+        # Ler arquivo JSON
+        content = await file.read()
+        data = json.loads(content.decode('utf-8'))
+        
+        # Validar estrutura
+        if "usuarios" not in data:
+            return {"success": False, "error": "Arquivo JSON inválido"}
+        
+        # Restaurar usuários
+        restored = 0
+        for user in data["usuarios"]:
+            try:
+                cursor.execute("INSERT OR REPLACE INTO users (id, username, password, is_admin) VALUES (?, ?, ?, ?)",
+                             (user["id"], user["username"], user["password"], 1 if user.get("is_admin", False) else 0))
+                restored += 1
+            except:
+                pass
+        
+        conn.commit()
+        record_audit_log("RESTORE_USUARIOS", username, client_ip, f"{restored} usuários restaurados")
+        
+        return {"success": True, "message": f"✅ {restored} usuários restaurados com sucesso"}
+    
+    except Exception as e:
+        record_audit_log("RESTORE_USUARIOS_FAILED", username, client_ip, str(e))
+        return {"success": False, "error": f"Erro ao restaurar: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn
