@@ -522,105 +522,105 @@
                 <!-- TAB: Dados Pessoais -->
                 <div id="personal" class="tab-content active">
                     <div class="data-grid">
-                        {% if dados.dados_pessoais.cpf %}
+                        {% if dados.dados_pessoais.cpf and dados.dados_pessoais.cpf != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">CPF</span>
                                 <span class="data-value">{{ dados.dados_pessoais.cpf }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.pis %}
+                        {% if dados.dados_pessoais.pis and dados.dados_pessoais.pis != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">PIS</span>
                                 <span class="data-value">{{ dados.dados_pessoais.pis }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.titulo %}
+                        {% if dados.dados_pessoais.titulo and dados.dados_pessoais.titulo != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Título Eleitoral</span>
                                 <span class="data-value">{{ dados.dados_pessoais.titulo }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.rg %}
+                        {% if dados.dados_pessoais.rg and dados.dados_pessoais.rg != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">RG</span>
                                 <span class="data-value">{{ dados.dados_pessoais.rg }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.nascimento %}
+                        {% if dados.dados_pessoais.nascimento and dados.dados_pessoais.nascimento != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Data de Nascimento</span>
                                 <span class="data-value">{{ dados.dados_pessoais.nascimento }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.idade %}
+                        {% if dados.dados_pessoais.idade and dados.dados_pessoais.idade != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Idade</span>
                                 <span class="data-value">{{ dados.dados_pessoais.idade }} anos</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.signo %}
+                        {% if dados.dados_pessoais.signo and dados.dados_pessoais.signo != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Signo</span>
                                 <span class="data-value">{{ dados.dados_pessoais.signo }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.mae %}
+                        {% if dados.dados_pessoais.mae and dados.dados_pessoais.mae != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Mãe</span>
                                 <span class="data-value">{{ dados.dados_pessoais.mae }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.pai %}
+                        {% if dados.dados_pessoais.pai and dados.dados_pessoais.pai != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Pai</span>
                                 <span class="data-value">{{ dados.dados_pessoais.pai }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.nacionalidade %}
+                        {% if dados.dados_pessoais.nacionalidade and dados.dados_pessoais.nacionalidade != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Nacionalidade</span>
                                 <span class="data-value">{{ dados.dados_pessoais.nacionalidade }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.escolaridade %}
+                        {% if dados.dados_pessoais.escolaridade and dados.dados_pessoais.escolaridade != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Escolaridade</span>
                                 <span class="data-value">{{ dados.dados_pessoais.escolaridade }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.estado_civil %}
+                        {% if dados.dados_pessoais.estado_civil and dados.dados_pessoais.estado_civil != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Estado Civil</span>
                                 <span class="data-value">{{ dados.dados_pessoais.estado_civil }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.profissao %}
+                        {% if dados.dados_pessoais.profissao and dados.dados_pessoais.profissao != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Profissão</span>
                                 <span class="data-value">{{ dados.dados_pessoais.profissao }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.renda %}
+                        {% if dados.dados_pessoais.renda and dados.dados_pessoais.renda != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Renda Presumida</span>
                                 <span class="data-value">R$ {{ dados.dados_pessoais.renda }}</span>
                             </div>
                         {% endif %}
 
-                        {% if dados.dados_pessoais.status_rf %}
+                        {% if dados.dados_pessoais.status_rf and dados.dados_pessoais.status_rf != 'SEM INFORMAÇÃO' %}
                             <div class="data-item">
                                 <span class="data-label">Status RF</span>
                                 <span class="data-value">{{ dados.dados_pessoais.status_rf }}</span>
@@ -690,8 +690,8 @@
                         <div class="relationship-grid">
                             {% for parente in dados.parentes %}
                                 <div class="relationship-card" onclick="searchPerson('{{ parente.cpf }}')">
-                                    <div class="relationship-type">Parente</div>
-                                    <div class="relationship-name">{{ parente.nome or 'N/A' }}</div>
+                                    <div class="relationship-type">{{ parente.parentesco if parente.get('parentesco') else 'Parente' }}</div>
+                                    <div class="relationship-name">{{ parente.nome if parente.get('nome') else 'N/A' }}</div>
                                     <div class="relationship-cpf">{{ parente.cpf }}</div>
                                 </div>
                             {% endfor %}
@@ -708,7 +708,7 @@
                             {% for vizinho in dados.vizinhos %}
                                 <div class="relationship-card" onclick="searchPerson('{{ vizinho.cpf }}')">
                                     <div class="relationship-type">Vizinho</div>
-                                    <div class="relationship-name">{{ vizinho.nome or 'N/A' }}</div>
+                                    <div class="relationship-name">{{ vizinho.nome if vizinho.get('nome') else 'N/A' }}</div>
                                     <div class="relationship-cpf">{{ vizinho.cpf }}</div>
                                 </div>
                             {% endfor %}
@@ -728,8 +728,11 @@
                             {% for empresa in dados.empresas %}
                                 <div class="relationship-card">
                                     <div class="relationship-type">Empresa</div>
-                                    <div class="relationship-name">{{ empresa.nome or 'N/A' }}</div>
+                                    <div class="relationship-name">{{ empresa.nome if empresa.get('nome') else 'N/A' }}</div>
                                     <div class="relationship-cpf">CNPJ: {{ empresa.cnpj }}</div>
+                                    {% if empresa.get('cargo') and empresa.cargo != 'SEM INFORMAÇÃO' %}
+                                        <div style="font-size: 12px; color: #a0a0a0; margin-top: 8px;">Cargo: {{ empresa.cargo }}</div>
+                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>

@@ -431,7 +431,7 @@ def parse_resultado_consulta(resultado_texto: str) -> dict:
     data["dados_pessoais"]["estado_civil"] = get_value("ESTADO CIVIL")
     data["dados_pessoais"]["profissao"] = get_value("PROFISSÃO")
     data["dados_pessoais"]["renda"] = get_value("RENDA PRESUMIDA")
-    data["dados_pessoais"]["status_rf"] = get_value("STATUS RF")
+    data["dados_pessoais"]["status_rf"] = get_value("STATUS RECEITA FEDERAL")
     
     # Score e Risco
     score_val = get_value("SCORE")
@@ -442,91 +442,115 @@ def parse_resultado_consulta(resultado_texto: str) -> dict:
             pass
     data["risco"] = get_value("FAIXA DE RISCO")
     
-    # E-mails (procura seção de e-mails)
-    emails_match = re.search(r'E-MAILS?:?\s*(.+?)(?:\n(?:ENDEREÇO|TELEFONE|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== E-MAILS ====================
+    emails_match = re.search(r'E-MAILS?:\s*\n(.+?)(?:\n\s*•|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
     if emails_match:
         emails_text = emails_match.group(1)
         # Procura por emails com padrão xxx@xxx.xxx
         emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', emails_text)
         data["emails"] = list(set(emails))  # Remove duplicatas
     
-    # Endereços (procura seção de endereços)
-    enderecos_match = re.search(r'ENDEREÇO(?:S)?:?\s*(.+?)(?:\n(?:TELEFONE|E-MAIL|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== ENDEREÇOS ====================
+    # Procurar seção de endereços (entre o header • ENDEREÇOS: e próxima seção com •)
+    enderecos_match = re.search(r'ENDEREÇO[S]?:\s*\n(.+?)(?=\n\s*•\s*TELEFONE|\n\s*•\s*POSSÍVEL|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
     if enderecos_match:
         enderecos_text = enderecos_match.group(1)
-        # Divide por bullet points ou quebras de linha
-        enderecos_raw = re.split(r'[•\n]+', enderecos_text)
-        for endereco in enderecos_raw:
-            endereco = endereco.strip()
-            if endereco and len(endereco) > 5:  # Filtra vazios e pequenos
-                data["enderecos"].append(endereco)
+        # Split por linhas e filtra as que parecem ser endereços
+        linhas = enderecos_text.split('\n')
+        for linha in linhas:
+            linha = linha.strip()
+            # Endereço deve ter: Rua/Av + número + cidade + UF + CEP
+            if len(linha) > 15 and re.search(r'[A-Z]{2}\s+\d{8}', linha):
+                # Remover espaços em branco duplicados
+                linha = re.sub(r'\s+', ' ', linha)
+                if linha not in data["enderecos"]:
+                    data["enderecos"].append(linha)
     
-    # Telefones (procura seção de telefones)
-    telefones_match = re.search(r'TELEFONE(?:S)?(?:\s+PROPRIETÁRIO)?:?\s*(.+?)(?:\n(?:E-MAIL|ENDEREÇO|POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== TELEFONES ====================
+    # Procurar por telefone proprietário, comercial, referenciais
+    telefones_match = re.search(r'TELEFONE[S]?\s+PROPRIETÁRIO[S]?:\s*\n(.+?)(?:\n\s*•|\nTELEFONE|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
     if telefones_match:
         telefones_text = telefones_match.group(1)
-        # Procura por telefones (padrões brasileiros)
-        telefones = re.findall(r'\(?(\d{2,3})\)?[\s\-]?(\d{4,5})[\s\-]?(\d{4})', telefones_text)
-        for tel in telefones:
-            telefone_formatado = f"({tel[0]}) {tel[1]}-{tel[2]}"
-            if telefone_formatado not in data["telefones"]:
-                data["telefones"].append(telefone_formatado)
+        # Limpar "SEM INFORMAÇÃO"
+        if "SEM INFORMAÇÃO" not in telefones_text.upper() or len(telefones_text) > 30:
+            # Procura por linhas com padrão de telefone
+            linhas = telefones_text.split('\n')
+            for linha in linhas:
+                linha = linha.strip()
+                # Remover "- NÃO INFORMADO" ou "- TELEFONIA" do final
+                linha = re.sub(r'\s+-\s+(NÃO INFORMADO|TELEFONIA|.*?)$', '', linha, flags=re.IGNORECASE)
+                # Pattern para telefone: (XX) XXXXX-XXXX ou 84988020705
+                if re.match(r'^\d{8,11}$', linha):
+                    # Formatar como (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+                    if len(linha) == 8:
+                        # Fixo sem DDD (raro, mas acontece)
+                        tel = f"{linha[:4]}-{linha[4:]}"
+                    elif len(linha) == 10:
+                        # Fixo com DDD: (XX) XXXX-XXXX
+                        tel = f"({linha[:2]}) {linha[2:6]}-{linha[6:]}"
+                    elif len(linha) == 11:
+                        # Celular com DDD: (XX) XXXXX-XXXX
+                        tel = f"({linha[:2]}) {linha[2:7]}-{linha[7:]}"
+                    else:
+                        tel = linha
+                    
+                    if tel not in data["telefones"] and len(tel) > 0:
+                        data["telefones"].append(tel)
     
-    # Possíveis Parentes
-    parentes_match = re.search(r'POSSÍVEL(?:S)?\s+PARENTE(?:S)?:?\s*(.+?)(?:\n(?:POSSÍVEL|PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== POSSÍVEIS PARENTES ====================
+    parentes_match = re.search(r'POSSÍVEIS PARENTES:\s*\n([\s\S]+?)(?=\n•\s*POSSÍVEL|POSSÍVEIS VIZINHOS|PARTICIPAÇÃO|$)', resultado_texto, re.IGNORECASE)
     if parentes_match:
         parentes_text = parentes_match.group(1)
-        # Procura por CPF e nomes dentro dessa seção
-        parentes_items = re.split(r'(?:•|-|\n)(?=(?:CPF|NOME))', parentes_text)
-        for item in parentes_items:
-            if 'CPF' in item:
-                cpf_match = re.search(r'CPF:\s*(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})', item)
-                nome_match = re.search(r'NOME:\s*(.+?)(?:\n|CPF|$)', item, re.IGNORECASE)
-                if cpf_match:
-                    parente = {"cpf": cpf_match.group(1)}
-                    if nome_match:
-                        parente["nome"] = nome_match.group(1).strip()
-                    data["parentes"].append(parente)
+        # Encontrar todos os blocos de NOME...CPF...PARENTESCO
+        blocos = re.findall(r'NOME:\s*(.+?)\nCPF:\s*(\d+(?:\.\d+)*(?:\-\d+)?)\nPARENTESCO:\s*(.+?)(?=\n\n|\nNOME:|$)', parentes_text, re.IGNORECASE)
+        for nome, cpf, parentesco in blocos:
+            if cpf.strip():
+                data["parentes"].append({
+                    "nome": nome.strip(),
+                    "cpf": cpf.strip(),
+                    "parentesco": parentesco.strip()
+                })
     
-    # Possíveis Vizinhos
-    vizinhos_match = re.search(r'POSSÍVEL(?:S)?\s+VIZINHO(?:S)?:?\s*(.+?)(?:\n(?:PARTICIPAÇÃO|VÍNCULO)|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== POSSÍVEIS VIZINHOS ====================
+    vizinhos_match = re.search(r'POSSÍVEIS VIZINHOS:\s*\n([\s\S]+?)(?=\n•|PARTICIPAÇÃO|VÍNCULO|$)', resultado_texto, re.IGNORECASE)
     if vizinhos_match:
         vizinhos_text = vizinhos_match.group(1)
-        vizinhos_items = re.split(r'(?:•|-|\n)(?=(?:CPF|NOME))', vizinhos_text)
-        for item in vizinhos_items:
-            if 'CPF' in item:
-                cpf_match = re.search(r'CPF:\s*(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})', item)
-                nome_match = re.search(r'NOME:\s*(.+?)(?:\n|CPF|$)', item, re.IGNORECASE)
-                if cpf_match:
-                    vizinho = {"cpf": cpf_match.group(1)}
-                    if nome_match:
-                        vizinho["nome"] = nome_match.group(1).strip()
-                    data["vizinhos"].append(vizinho)
+        # Encontrar todos os blocos de NOME...CPF
+        blocos = re.findall(r'NOME:\s*(.+?)\nCPF:\s*(\d+(?:\.\d+)*(?:\-\d+)?)', vizinhos_text, re.IGNORECASE)
+        for nome, cpf in blocos:
+            if cpf.strip():
+                data["vizinhos"].append({
+                    "nome": nome.strip(),
+                    "cpf": cpf.strip()
+                })
     
-    # Participação Societária
-    empresas_match = re.search(r'PARTICIPAÇÃO\s+SOCIETÁRIA:?\s*(.+?)(?:\nVÍNCULO|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== PARTICIPAÇÃO SOCIETÁRIA ====================
+    empresas_match = re.search(r'PARTICIPAÇÃO\s+SOCIETÁRIA:\s*\n(.+?)(?:\n\s*•\s*VÍNCULO|\n\s*•\s*USUÁRIO|\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
     if empresas_match:
         empresas_text = empresas_match.group(1)
-        empresas_items = re.split(r'(?:•|-|\n)(?=(?:CNPJ|EMPRESA))', empresas_text)
-        for item in empresas_items:
-            if 'CNPJ' in item or 'EMPRESA' in item:
-                cnpj_match = re.search(r'CNPJ:\s*(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}|\d{14})', item, re.IGNORECASE)
-                empresa_match = re.search(r'EMPRESA:\s*(.+?)(?:\n|CNPJ|$)', item, re.IGNORECASE)
-                if cnpj_match:
-                    empresa = {"cnpj": cnpj_match.group(1)}
-                    if empresa_match:
-                        empresa["nome"] = empresa_match.group(1).strip()
-                    data["empresas"].append(empresa)
+        # Dividir por bloco de CNPJ: ... até CARGO: ...
+        blocos = re.findall(r'CNPJ:\s*(\d+(?:\.\d+)*(?:\-\d+)?)\nCARGO:\s*(.+?)(?=\nCNPJ:|$)', empresas_text, re.IGNORECASE | re.DOTALL)
+        for cnpj, cargo in blocos:
+            if cnpj.strip():
+                empresa = {"cnpj": cnpj.strip()}
+                cargo_clean = cargo.strip()
+                if cargo_clean and "SEM INFORMAÇÃO" not in cargo_clean:
+                    empresa["cargo"] = cargo_clean
+                data["empresas"].append(empresa)
     
-    # Vínculos Empregatícios
-    vinculos_match = re.search(r'VÍNCULO(?:S)?\s+EMPREGATÍCIO(?:S)?:?\s*(.+?)(?:\Z)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    # ==================== VÍNCULOS EMPREGATÍCIOS ====================
+    vinculos_match = re.search(r'VÍNCULO[S]?\s+EMPREGATÍCIO[S]?:\s*\n(.+?)(?:\n\s*•\s*USUÁRIO|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
     if vinculos_match:
         vinculos_text = vinculos_match.group(1)
-        # Procura por período (data) e empresa
-        vinculos_items = re.split(r'(?:•|-|\n)(?=(?:\d{2}/\d{2}/\d{4}|EMPRESA|DE))', vinculos_text)
-        for item in vinculos_items:
-            if item.strip() and len(item.strip()) > 5:
-                data["vinculos"].append(item.strip())
+        # Dividir por linhas de CNPJ
+        blocos = re.findall(r'CNPJ:\s*(\d+(?:\.\d+)*(?:\-\d+)?)\nADMISSÃO:\s*(.+?)(?=\nCNPJ:|$)', vinculos_text, re.IGNORECASE | re.DOTALL)
+        for cnpj, admissao in blocos:
+            if cnpj.strip():
+                vem = f"CNPJ: {cnpj.strip()}"
+                admissao_clean = admissao.strip()
+                if admissao_clean and "USUÁRIO" not in admissao_clean:
+                    vem += f" | Admissão: {admissao_clean}"
+                data["vinculos"].append(vem)
     
     # Usuário
     data["usuario"] = get_value("USUÁRIO")
