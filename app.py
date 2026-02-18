@@ -770,6 +770,44 @@ async def unlock_ip(request: Request):
     
     return JSONResponse({"success": False, "message": "Nenhum bloqueio ativo para seu IP."})
 
+@app.get("/api/consulta/{search_id}")
+async def get_consulta_details(request: Request, search_id: int):
+    """Obtém os detalhes completos de uma consulta para exibição em tela cheia"""
+    if not request.cookies.get("auth_user"):
+        return JSONResponse({"success": False, "error": "Não autenticado"})
+    
+    if is_session_expired(request):
+        return JSONResponse({"success": False, "error": "Sessão expirada"})
+    
+    username = request.cookies.get("auth_user")
+    
+    # Buscar consulta do usuário
+    cursor.execute(
+        "SELECT id, identifier, response, data FROM searches WHERE id = ? AND username = ?",
+        (search_id, username)
+    )
+    search = cursor.fetchone()
+    
+    if not search:
+        return JSONResponse({"success": False, "error": "Consulta não encontrada"})
+    
+    # Parser dos dados
+    dados = parse_resultado_consulta(search[2])
+    
+    # Registrar auditoria
+    record_audit_log("FULL_VIEW", username, get_client_ip(request), f"Ver completo: {search[1]}")
+    
+    return JSONResponse({
+        "success": True,
+        "data": {
+            "id": search[0],
+            "identifier": search[1],
+            "data": search[3],
+            "response": search[2],
+            "parsed": dados
+        }
+    })
+
 # ----------------------
 # Rotas do Sistema
 # ----------------------
@@ -1044,6 +1082,8 @@ async def reverse_search_phone(request: Request, phone: str):
     searches = cursor.fetchall()
     
     resultados = []
+    cpf_adicionados = set()  # Evitar duplicatas
+    
     for search_id, identifier, response in searches:
         # Parser do resultado
         dados = parse_resultado_consulta(response)
@@ -1053,12 +1093,16 @@ async def reverse_search_phone(request: Request, phone: str):
             for telefone in dados["telefones"]:
                 telefone_clean = ''.join(filter(str.isdigit, telefone))
                 if telefone_clean == phone_clean:
-                    resultados.append({
-                        "identifier": identifier,
-                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
-                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
-                        "tipo": "Proprietário"
-                    })
+                    cpf = dados["dados_pessoais"].get("cpf", "N/A")
+                    # Apenas adicionar se CPF ainda não está na lista
+                    if cpf not in cpf_adicionados:
+                        resultados.append({
+                            "identifier": identifier,
+                            "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                            "cpf": cpf,
+                            "tipo": "Proprietário"
+                        })
+                        cpf_adicionados.add(cpf)
                     break
     
     record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por telefone: {phone}")
@@ -1094,6 +1138,8 @@ async def reverse_search_email(request: Request, email: str):
     searches = cursor.fetchall()
     
     resultados = []
+    cpf_adicionados = set()  # Evitar duplicatas
+    
     for search_id, identifier, response in searches:
         # Parser do resultado
         dados = parse_resultado_consulta(response)
@@ -1102,12 +1148,16 @@ async def reverse_search_email(request: Request, email: str):
         if dados["emails"]:
             for mail in dados["emails"]:
                 if mail.lower() == email_lower:
-                    resultados.append({
-                        "identifier": identifier,
-                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
-                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
-                        "tipo": "Proprietário"
-                    })
+                    cpf = dados["dados_pessoais"].get("cpf", "N/A")
+                    # Apenas adicionar se CPF ainda não está na lista
+                    if cpf not in cpf_adicionados:
+                        resultados.append({
+                            "identifier": identifier,
+                            "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                            "cpf": cpf,
+                            "tipo": "Proprietário"
+                        })
+                        cpf_adicionados.add(cpf)
                     break
     
     record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por e-mail: {email}")
@@ -1143,6 +1193,8 @@ async def reverse_search_address(request: Request, address: str):
     searches = cursor.fetchall()
     
     resultados = []
+    cpf_adicionados = set()  # Evitar duplicatas
+    
     for search_id, identifier, response in searches:
         # Parser do resultado
         dados = parse_resultado_consulta(response)
@@ -1153,13 +1205,17 @@ async def reverse_search_address(request: Request, address: str):
                 endereco_norm = endereco.lower().strip()
                 # Busca por similaridade (se contém palavras-chave)
                 if address_norm in endereco_norm or endereco_norm in address_norm:
-                    resultados.append({
-                        "identifier": identifier,
-                        "nome": dados["dados_pessoais"].get("nome", "N/A"),
-                        "cpf": dados["dados_pessoais"].get("cpf", "N/A"),
-                        "endereco": endereco,
-                        "tipo": "Residente"
-                    })
+                    cpf = dados["dados_pessoais"].get("cpf", "N/A")
+                    # Apenas adicionar se CPF ainda não está na lista
+                    if cpf not in cpf_adicionados:
+                        resultados.append({
+                            "identifier": identifier,
+                            "nome": dados["dados_pessoais"].get("nome", "N/A"),
+                            "cpf": cpf,
+                            "endereco": endereco,
+                            "tipo": "Residente"
+                        })
+                        cpf_adicionados.add(cpf)
                     break
     
     record_audit_log("REVERSE_SEARCH", username, client_ip, f"Busca reversa por endereço: {address}")
