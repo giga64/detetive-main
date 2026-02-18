@@ -1101,17 +1101,23 @@
         // MAPA INTERATIVO - STREET VIEW
         // ===========================
         let streetViewPanorama = null;
+        const geocodeCache = {};
 
         function openStreetView(address) {
             const modal = document.getElementById('mapModal');
             const mapContainer = document.getElementById('mapContainer');
             const mapTitle = document.getElementById('mapTitle');
+            const infoPanel = document.getElementById('mapInfoPanel');
             
             // Atualizar título
             mapTitle.textContent = 'Street View: ' + address;
             
             // Mostrar modal
             modal.classList.add('show');
+            
+            // Mostrar loading
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">🗺️</div><div>Carregando mapa...</div></div></div>';
+            infoPanel.innerHTML = '<p style="color: #94a3b8;">Geocodificando endereço...</p>';
             
             // Geocodificar o endereço
             geocodeAndShowStreetView(address);
@@ -1126,6 +1132,13 @@
         }
 
         function tryGeocoding(query, originalAddress, attempt) {
+            // Verificar cache primeiro
+            if (geocodeCache[query]) {
+                const cached = geocodeCache[query];
+                showAndDetectAddressType(cached.lat, cached.lon, originalAddress);
+                return;
+            }
+            
             const encodedAddress = encodeURIComponent(query);
             
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=5&countrycodes=br`)
@@ -1136,6 +1149,9 @@
                         const lat = parseFloat(location.lat);
                         const lon = parseFloat(location.lon);
                         
+                        // Salvar no cache
+                        geocodeCache[query] = { lat, lon };
+                        
                         // Mostrar Street View
                         showAndDetectAddressType(lat, lon, originalAddress);
                     } else if (attempt === 0) {
@@ -1145,10 +1161,10 @@
                             const simplifiedAddress = addressParts[0] + ' - ' + addressParts[addressParts.length - 1];
                             tryGeocoding(simplifiedAddress.trim() + ', Brasil', originalAddress, 1);
                         } else {
-                            showGeocodingError('não localizado');
+                            showGeocodingError('não localizado', originalAddress);
                         }
                     } else {
-                        showGeocodingError('não localizado');
+                        showGeocodingError('não localizado', originalAddress);
                     }
                 })
                 .catch(error => {
@@ -1157,24 +1173,43 @@
                         // Tentar novamente com versão simplificada em caso de erro de conexão
                         setTimeout(() => tryGeocoding(query, originalAddress, 1), 1000);
                     } else {
-                        showGeocodingError('conexão');
+                        showGeocodingError('conexão', originalAddress);
                     }
                 });
         }
 
-        function showGeocodingError(type) {
+        function showGeocodingError(type, originalAddress) {
+            const mapContainer = document.getElementById('mapContainer');
             const errorMessages = {
                 'não localizado': {
                     title: '⚠️ Endereço não localizado',
-                    message: 'O endereço não foi encontrado no serviço de mapas. Tente verificar a ortografia ou use uma versão simplificada do endereço.'
+                    message: 'O endereço não foi encontrado no serviço de mapas. Tente verificar a ortografia ou use uma versão simplificada do endereço.',
+                    icon: '⚠️'
                 },
                 'conexão': {
                     title: '❌ Erro ao conectar',
-                    message: 'Não foi possível conectar ao serviço de mapas. Verifique sua conexão e tente novamente.'
+                    message: 'Não foi possível conectar ao serviço de mapas. Verifique sua conexão e tente novamente.',
+                    icon: '❌'
                 }
             };
             
             const errorInfo = errorMessages[type] || errorMessages['não localizado'];
+            
+            // Mostrar erro visual no container do mapa
+            mapContainer.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(15, 23, 42, 0.5); border-radius: 0.5rem;">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">${errorInfo.icon}</div>
+                        <p style="color: #ef4444; font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">${errorInfo.title}</p>
+                        <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1.5rem;">${errorInfo.message}</p>
+                        <button onclick="geocodeAndShowStreetView('${originalAddress.replace(/'/g, "\\'")}')" 
+                                style="padding: 0.6rem 1.2rem; background: #06b6d4; color: #fff; border: none; border-radius: 0.4rem; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                            🔄 Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+            `;
+            
             document.getElementById('mapInfoPanel').innerHTML = `
                 <p style="color: #ef4444;"><strong>${errorInfo.title}</strong></p>
                 <p style="color: #cbd5e1; font-size: 0.9rem;">${errorInfo.message}</p>
@@ -1188,13 +1223,14 @@
             // Limpar container anterior
             mapContainer.innerHTML = '';
             
-            // Criar iframe do Google Street View
+            // Criar iframe do Google Maps com Street View quando disponível
+            // Zoom 18 para nível de rua, maptype=satellite para visão de satélite se Street View indisponível
             const streetViewHtml = `
                 <iframe 
                     width="100%" 
                     height="100%" 
                     style="border: none; border-radius: 0.5rem;"
-                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1000!2d${lon}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1spt-BR!2sbr!4v1" 
+                    src="https://www.google.com/maps?q=${lat},${lon}&hl=pt-BR&z=18&output=embed" 
                     allowfullscreen="" 
                     loading="lazy" 
                     referrerpolicy="no-referrer-when-downgrade">
