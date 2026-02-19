@@ -835,136 +835,333 @@
                             {% endfor %}
                         </div>
                     {% elif dados.tipo_consulta == 'placa' %}
-                        <!-- Mostrar dados do VEÍCULO (PLACA) -->
-                        <div class="data-grid">
-                            {% if dados.dados_veiculo.placa %}
-                                <div class="data-item">
-                                    <span class="data-label">Placa</span>
-                                    <span class="data-value" style="font-size: 20px; font-weight: 900;">{{ dados.dados_veiculo.placa }}</span>
+                        <!-- Mostrar dados do VEÍCULO (PLACA) - COMPLETO -->
+                        <div style="padding: 0;">
+                            <!-- Dados Básicos do Veículo -->
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #3b82f6; margin-bottom: 15px;">Informações do Veículo</h3>
+                                <div class="data-grid">
+                                    {% if dados.dados_veiculo.placa %}
+                                        <div class="data-item">
+                                            <span class="data-label">Placa</span>
+                                            <span class="data-value" style="font-size: 24px; font-weight: 900; color: #06b6d4; letter-spacing: 2px;">{{ dados.dados_veiculo.placa }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_veiculo.situacao %}
+                                        <div class="data-item">
+                                            <span class="data-label">Situação</span>
+                                            <span class="data-value">{{ dados.dados_veiculo.situacao }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_veiculo.marca_modelo %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Marca/Modelo</span>
+                                            <span class="data-value">{{ dados.dados_veiculo.marca_modelo }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_veiculo.cor %}
+                                        <div class="data-item">
+                                            <span class="data-label">Cor</span>
+                                            <span class="data-value">{{ dados.dados_veiculo.cor }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_veiculo.ano_fabricacao %}
+                                        <div class="data-item">
+                                            <span class="data-label">Ano Fabricação</span>
+                                            <span class="data-value">{{ dados.dados_veiculo.ano_fabricacao }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_veiculo.ano_modelo %}
+                                        <div class="data-item">
+                                            <span class="data-label">Ano Modelo</span>
+                                            <span class="data-value">{{ dados.dados_veiculo.ano_modelo }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Restrições -->
+                            {% if dados.restricoes and dados.restricoes|length > 0 %}
+                                <div style="background: rgba(239, 68, 68, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="color: #ef4444; margin-bottom: 15px;">Restrições ({{ dados.restricoes|length }})</h3>
+                                    {% for restricao in dados.restricoes %}
+                                        <div style="margin-bottom: 8px; padding: 8px 12px; background: rgba(239, 68, 68, 0.2); border-left: 3px solid #ef4444; border-radius: 4px;">
+                                            {{ restricao }}
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             {% endif %}
-                            {% if dados.dados_veiculo.marca_modelo %}
-                                <div class="data-item">
-                                    <span class="data-label">Marca/Modelo</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.marca_modelo }}</span>
+
+                            <!-- Especificações Técnicas -->
+                            <div style="background: rgba(168, 85, 247, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #a855f7; margin-bottom: 15px;">Especificações Técnicas</h3>
+                                <div class="data-grid">
+                                    {% if dados.especificacoes.combustivel %}
+                                        <div class="data-item">
+                                            <span class="data-label">Combustível</span>
+                                            <span class="data-value">{{ dados.especificacoes.combustivel }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.tipo_veiculo %}
+                                        <div class="data-item">
+                                            <span class="data-label">Tipo Veículo</span>
+                                            <span class="data-value">{{ dados.especificacoes.tipo_veiculo }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.especie %}
+                                        <div class="data-item">
+                                            <span class="data-label">Espécie</span>
+                                            <span class="data-value">{{ dados.especificacoes.especie }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.potencia and dados.especificacoes.potencia != 'SEM INFORMAÇÃO' %}
+                                        <div class="data-item">
+                                            <span class="data-label">Potência</span>
+                                            <span class="data-value">{{ dados.especificacoes.potencia }} cv</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.cilindradas and dados.especificacoes.cilindradas != 'SEM INFORMAÇÃO' %}
+                                        <div class="data-item">
+                                            <span class="data-label">Cilindradas</span>
+                                            <span class="data-value">{{ dados.especificacoes.cilindradas }} cc</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.quantidade_passageiros %}
+                                        <div class="data-item">
+                                            <span class="data-label">Passageiros</span>
+                                            <span class="data-value">{{ dados.especificacoes.quantidade_passageiros }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.origem %}
+                                        <div class="data-item">
+                                            <span class="data-label">Origem</span>
+                                            <span class="data-value">{{ dados.especificacoes.origem }}</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.cor %}
-                                <div class="data-item">
-                                    <span class="data-label">Cor</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.cor }}</span>
+                                
+                                <!-- Carroceria -->
+                                {% if dados.especificacoes.tipo_carroceria or dados.especificacoes.carroceria %}
+                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(168, 85, 247, 0.3);">
+                                        <h4 style="color: #a855f7; margin-bottom: 10px;">Carroceria</h4>
+                                        {% if dados.especificacoes.tipo_carroceria %}
+                                            <div><strong>Tipo:</strong> {{ dados.especificacoes.tipo_carroceria }}</div>
+                                        {% endif %}
+                                        {% if dados.especificacoes.carroceria and dados.especificacoes.carroceria != 'SEM INFORMAÇÃO' %}
+                                            <div><strong>Descrição:</strong> {{ dados.especificacoes.carroceria }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Identificadores -->
+                            <div style="background: rgba(236, 72, 153, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #ec4899; margin-bottom: 15px;">Identificadores</h3>
+                                <div style="word-break: break-all;">
+                                    {% if dados.especificacoes.chassi %}
+                                        <div style="margin-bottom: 12px;">
+                                            <strong>Chassi:</strong><br>
+                                            <span style="font-family: monospace; color: #a0a0a0;">{{ dados.especificacoes.chassi }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.renavam %}
+                                        <div style="margin-bottom: 12px;">
+                                            <strong>RENAVAM:</strong><br>
+                                            <span style="font-family: monospace; color: #a0a0a0;">{{ dados.especificacoes.renavam }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.especificacoes.numero_motor %}
+                                        <div>
+                                            <strong>Número Motor:</strong><br>
+                                            <span style="font-family: monospace; color: #a0a0a0;">{{ dados.especificacoes.numero_motor }}</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.ano_fabricacao %}
-                                <div class="data-item">
-                                    <span class="data-label">Ano Fabricação</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.ano_fabricacao }}</span>
+                            </div>
+
+                            <!-- Localização -->
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #22c55e; margin-bottom: 15px;">Localização</h3>
+                                <div class="data-grid">
+                                    {% if dados.localizacao.municipio %}
+                                        <div class="data-item">
+                                            <span class="data-label">Município</span>
+                                            <span class="data-value">{{ dados.localizacao.municipio }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.localizacao.estado %}
+                                        <div class="data-item">
+                                            <span class="data-label">Estado</span>
+                                            <span class="data-value">{{ dados.localizacao.estado }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.fabricacao.municipio_fab %}
+                                        <div class="data-item">
+                                            <span class="data-label">Município Fab.</span>
+                                            <span class="data-value">{{ dados.fabricacao.municipio_fab }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.fabricacao.estado_fab %}
+                                        <div class="data-item">
+                                            <span class="data-label">Estado Fab.</span>
+                                            <span class="data-value">{{ dados.fabricacao.estado_fab }}</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.ano_modelo %}
-                                <div class="data-item">
-                                    <span class="data-label">Ano Modelo</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.ano_modelo }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.combustivel %}
-                                <div class="data-item">
-                                    <span class="data-label">Combustível</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.combustivel }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.tipo_veiculo %}
-                                <div class="data-item">
-                                    <span class="data-label">Tipo Veículo</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.tipo_veiculo }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.situacao %}
-                                <div class="data-item">
-                                    <span class="data-label">Situação</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.situacao }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.chassi %}
-                                <div class="data-item">
-                                    <span class="data-label">Chassi</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.chassi }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_veiculo.renavam %}
-                                <div class="data-item">
-                                    <span class="data-label">Renavam</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.renavam }}</span>
+                            </div>
+
+                            <!-- Documentação -->
+                            {% if dados.documentacao.ultima_atualizacao or dados.documentacao.emissao_ultimo_crv %}
+                                <div style="background: rgba(14, 165, 233, 0.1); padding: 20px; border-radius: 8px;">
+                                    <h3 style="color: #0ea5e9; margin-bottom: 15px;">Documentação</h3>
+                                    <div class="data-grid">
+                                        {% if dados.documentacao.emissao_ultimo_crv %}
+                                            <div class="data-item">
+                                                <span class="data-label">Emissão Último CRV</span>
+                                                <span class="data-value">{{ dados.documentacao.emissao_ultimo_crv }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if dados.documentacao.ultima_atualizacao %}
+                                            <div class="data-item">
+                                                <span class="data-label">Última Atualização</span>
+                                                <span class="data-value">{{ dados.documentacao.ultima_atualizacao }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             {% endif %}
                         </div>
                     {% elif dados.tipo_consulta == 'cnpj' %}
-                        <!-- Mostrar dados da EMPRESA (CNPJ) -->
-                        <div class="data-grid">
-                            {% if dados.dados_pessoais.nome %}
-                                <div class="data-item" style="grid-column: 1 / -1;">
-                                    <span class="data-label">Razão Social</span>
-                                    <span class="data-value">{{ dados.dados_pessoais.nome }}</span>
+                        <!-- Mostrar dados da EMPRESA (CNPJ) - COMPLETO -->
+                        <div style="padding: 0;">
+                            <!-- Dados Básicos -->
+                            <div style="background: rgba(6, 182, 212, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #06b6d4; margin-bottom: 15px;">Dados Básicos</h3>
+                                <div class="data-grid">
+                                    {% if dados.dados_pessoais.nome %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Razão Social</span>
+                                            <span class="data-value">{{ dados.dados_pessoais.nome }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_pessoais.nome_fantasia %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Nome Fantasia</span>
+                                            <span class="data-value">{{ dados.dados_pessoais.nome_fantasia }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.cnpj %}
+                                        <div class="data-item">
+                                            <span class="data-label">CNPJ</span>
+                                            <span class="data-value" style="font-weight: 900; color: #06b6d4;">{{ dados.dados_empresa.cnpj }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.tipo %}
+                                        <div class="data-item">
+                                            <span class="data-label">Tipo</span>
+                                            <span class="data-value">{{ dados.dados_empresa.tipo }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.porte %}
+                                        <div class="data-item">
+                                            <span class="data-label">Porte</span>
+                                            <span class="data-value">{{ dados.dados_empresa.porte }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.abertura %}
+                                        <div class="data-item">
+                                            <span class="data-label">Data de Abertura</span>
+                                            <span class="data-value">{{ dados.dados_empresa.abertura }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.capital_social %}
+                                        <div class="data-item">
+                                            <span class="data-label">Capital Social</span>
+                                            <span class="data-value">{{ dados.dados_empresa.capital_social }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Status Cadastral -->
+                            <div style="background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #f59e0b; margin-bottom: 15px;">Status Cadastral</h3>
+                                <div class="data-grid">
+                                    {% if dados.dados_empresa.status %}
+                                        <div class="data-item">
+                                            <span class="data-label">Status</span>
+                                            <span class="data-value">{{ dados.dados_empresa.status }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.situacao_cadastral %}
+                                        <div class="data-item">
+                                            <span class="data-label">Situação Cadastral</span>
+                                            <span class="data-value">{{ dados.dados_empresa.situacao_cadastral }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.motivo_situacao and dados.dados_empresa.motivo_situacao != '******' %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Motivo Situação</span>
+                                            <span class="data-value">{{ dados.dados_empresa.motivo_situacao }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.situacao_especial and dados.dados_empresa.situacao_especial != '******' %}
+                                        <div class="data-item">
+                                            <span class="data-label">Situação Especial</span>
+                                            <span class="data-value">{{ dados.dados_empresa.situacao_especial }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.dados_empresa.ultima_atualizacao %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Última Atualização</span>
+                                            <span class="data-value">{{ dados.dados_empresa.ultima_atualizacao }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Atividades -->
+                            {% if dados.atividades and dados.atividades|length > 0 %}
+                                <div style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="color: #3b82f6; margin-bottom: 15px;">Atividades</h3>
+                                    {% for atividade in dados.atividades %}
+                                        <div style="margin-bottom: 12px; padding: 12px; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                                            <strong style="color: #3b82f6;">{{ atividade.tipo }}:</strong><br>
+                                            <span>{{ atividade.descricao }}</span>
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             {% endif %}
-                            {% if dados.dados_pessoais.nome_fantasia %}
-                                <div class="data-item" style="grid-column: 1 / -1;">
-                                    <span class="data-label">Nome Fantasia</span>
-                                    <span class="data-value">{{ dados.dados_pessoais.nome_fantasia }}</span>
+
+                            <!-- Natureza Jurídica -->
+                            {% if dados.natureza_juridica and dados.natureza_juridica.descricao %}
+                                <div style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="color: #8b5cf6; margin-bottom: 15px;">Natureza Jurídica</h3>
+                                    <div class="data-grid">
+                                        {% if dados.natureza_juridica.codigo %}
+                                            <div class="data-item">
+                                                <span class="data-label">Código</span>
+                                                <span class="data-value">{{ dados.natureza_juridica.codigo }}</span>
+                                            </div>
+                                        {% endif %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Descrição</span>
+                                            <span class="data-value">{{ dados.natureza_juridica.descricao }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             {% endif %}
-                            {% if dados.dados_empresa.cnpj %}
-                                <div class="data-item">
-                                    <span class="data-label">CNPJ</span>
-                                    <span class="data-value">{{ dados.dados_empresa.cnpj }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.tipo %}
-                                <div class="data-item">
-                                    <span class="data-label">Tipo</span>
-                                    <span class="data-value">{{ dados.dados_empresa.tipo }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.abertura %}
-                                <div class="data-item">
-                                    <span class="data-label">Abertura</span>
-                                    <span class="data-value">{{ dados.dados_empresa.abertura }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.porte %}
-                                <div class="data-item">
-                                    <span class="data-label">Porte</span>
-                                    <span class="data-value">{{ dados.dados_empresa.porte }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.atividade_principal %}
-                                <div class="data-item" style="grid-column: 1 / -1;">
-                                    <span class="data-label">Atividade Principal</span>
-                                    <span class="data-value">{{ dados.dados_empresa.atividade_principal }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.status %}
-                                <div class="data-item">
-                                    <span class="data-label">Status</span>
-                                    <span class="data-value">{{ dados.dados_empresa.status }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.situacao_cadastral %}
-                                <div class="data-item">
-                                    <span class="data-label">Situação Cadastral</span>
-                                    <span class="data-value">{{ dados.dados_empresa.situacao_cadastral }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.capital_social %}
-                                <div class="data-item">
-                                    <span class="data-label">Capital Social</span>
-                                    <span class="data-value">{{ dados.dados_empresa.capital_social }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.dados_empresa.ultima_atualizacao %}
-                                <div class="data-item">
-                                    <span class="data-label">Última Atualização</span>
-                                    <span class="data-value">{{ dados.dados_empresa.ultima_atualizacao }}</span>
+
+                            <!-- Sócios e Administradores -->
+                            {% if dados.socios and dados.socios|length > 0 %}
+                                <div style="background: rgba(34, 197, 94, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="color: #22c55e; margin-bottom: 15px;">Sócios e Administradores ({{ dados.socios|length }})</h3>
+                                    {% for socio in dados.socios %}
+                                        <div style="margin-bottom: 12px; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 4px;">
+                                            <strong>{{ socio.nome }}</strong><br>
+                                            <span style="color: #a0a0a0;">CPF: {{ socio.cpf }}</span>
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             {% endif %}
                         </div>
@@ -1309,42 +1506,49 @@
                 <!-- TAB: Proprietário (PLACA) -->
                 <div id="proprietario" class="tab-content">
                     {% if dados.tipo_consulta == 'placa' and dados.proprietario %}
-                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">Proprietário</h3>
-                        <div class="data-grid">
-                            {% if dados.proprietario.cpf_cnpj %}
-                                <div class="data-item">
-                                    <span class="data-label">CPF/CNPJ</span>
-                                    <span class="data-value">{{ dados.proprietario.cpf_cnpj }}</span>
-                                </div>
-                            {% endif %}
-                            {% if dados.proprietario.nome %}
-                                <div class="data-item">
-                                    <span class="data-label">Nome</span>
-                                    <span class="data-value">{{ dados.proprietario.nome }}</span>
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        {% if dados.possuidor and dados.possuidor.nome %}
-                            <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Possuidor (se diferente do Proprietário)</h3>
+                        <!-- Proprietário -->
+                        <div style="background: rgba(6, 182, 212, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="color: #06b6d4; margin-bottom: 15px;">Proprietário</h3>
                             <div class="data-grid">
-                                {% if dados.possuidor.cpf_cnpj %}
+                                {% if dados.proprietario.cpf_cnpj %}
                                     <div class="data-item">
                                         <span class="data-label">CPF/CNPJ</span>
-                                        <span class="data-value">{{ dados.possuidor.cpf_cnpj }}</span>
+                                        <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.cpf_cnpj }}</span>
                                     </div>
                                 {% endif %}
-                                {% if dados.possuidor.nome %}
-                                    <div class="data-item">
-                                        <span class="data-label">Nome</span>
-                                        <span class="data-value">{{ dados.possuidor.nome }}</span>
+                                {% if dados.proprietario.nome %}
+                                    <div class="data-item" style="grid-column: 1 / -1;">
+                                        <span class="data-label">Nome Completo</span>
+                                        <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.nome }}</span>
                                     </div>
                                 {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Possuidor (se diferente) -->
+                        {% if dados.possuidor and dados.possuidor.nome and dados.possuidor.nome != dados.proprietario.nome %}
+                            <div style="background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 8px;">
+                                <h3 style="color: #f59e0b; margin-bottom: 15px;">Possuidor (diferente do Proprietário)</h3>
+                                <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">O possuidor é quem detém a posse do veículo, podendo ser diferente do proprietário legal.</p>
+                                <div class="data-grid">
+                                    {% if dados.possuidor.cpf_cnpj %}
+                                        <div class="data-item">
+                                            <span class="data-label">CPF/CNPJ</span>
+                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.possuidor.cpf_cnpj }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.possuidor.nome %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Nome Completo</span>
+                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.possuidor.nome }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endif %}
                     {% else %}
                         <div class="empty-state">
-                            <p>Sem informações de proprietário</p>
+                            <p style="color: #9ca3af;">Sem informações de proprietário disponíveis</p>
                         </div>
                     {% endif %}
                 </div>

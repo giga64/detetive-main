@@ -586,13 +586,15 @@ def parse_cpf_resultado(resultado_texto: str) -> dict:
     return data
 
 def parse_cnpj_resultado(resultado_texto: str) -> dict:
-    """Parser para resultados de consulta de CNPJ"""
+    """Parser para resultados de consulta de CNPJ - COMPLETO"""
     import re
     
     data = {
         "dados_pessoais": {},
         "dados_empresa": {},
-        "enderecos": [],
+        "atividades": [],
+        "natureza_juridica": {},
+        "endereco_completo": {},
         "telefones": [],
         "emails": [],
         "socios": [],
@@ -610,62 +612,87 @@ def parse_cnpj_resultado(resultado_texto: str) -> dict:
     data["dados_empresa"]["tipo"] = get_value("TIPO")
     data["dados_empresa"]["abertura"] = get_value("ABERTURA")
     data["dados_empresa"]["porte"] = get_value("PORTE")
-    data["dados_empresa"]["atividade_principal"] = get_value("CÓDIGO E ATIVIDADE PRINCIPAL")
     data["dados_empresa"]["status"] = get_value("STATUS")
     data["dados_empresa"]["situacao_cadastral"] = get_value("SITUAÇÃO CADASTRAL")
+    data["dados_empresa"]["motivo_situacao"] = get_value("MOTIVO DE SITUAÇÃO CADASTRAL")
+    data["dados_empresa"]["situacao_especial"] = get_value("SITUAÇÃO ESPECIAL")
+    data["dados_empresa"]["data_situacao_especial"] = get_value("DATA DA SITUAÇÃO ESPECIAL")
     data["dados_empresa"]["capital_social"] = get_value("CAPITAL SOCIAL")
     data["dados_empresa"]["ultima_atualizacao"] = get_value("ÚLTIMA ATUALIZAÇÃO")
+    data["dados_empresa"]["efr"] = get_value("EFR")
     
-    # Endereço
-    endereco = ""
-    logradouro = get_value("LOGRADOURO")
-    numero = get_value("NÚMERO")
-    complemento = get_value("COMPLEMENTO")
-    bairro = get_value("BAIRRO/DISTRITO")
-    municipio = get_value("MUNICÍPIO")
-    estado = get_value("ESTADO")
-    cep = get_value("CEP")
+    # Atividade Principal
+    atividade_principal = get_value("CÓDIGO E ATIVIDADE PRINCIPAL")
+    if atividade_principal:
+        data["atividades"].append({"tipo": "Principal", "descricao": atividade_principal})
     
-    if logradouro:
-        endereco = logradouro
-        if numero and numero != "******":
-            endereco += f", {numero}"
-        if complemento and complemento != "******":
-            endereco += f" {complemento}"
-        if bairro:
-            endereco += f" - {bairro}"
-        if municipio and estado:
-            endereco += f" - {municipio}/{estado}"
-        if cep:
-            endereco += f" - {cep}"
-        data["enderecos"].append(endereco)
+    # Atividades Secundárias
+    atividades_sec_match = re.search(r'CÓDIGO E ATIVIDADES SECUNDÁRIAS:\s*\n(.+?)(?=\n\s*•|\n\s*CÓDIGO E NATUREZA|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if atividades_sec_match:
+        atividades_sec = atividades_sec_match.group(1)
+        linhas = atividades_sec.split('\n')
+        for linha in linhas:
+            linha = linha.strip()
+            if linha and not linha.startswith('•') and linha and linha[0].isdigit():
+                data["atividades"].append({"tipo": "Secundária", "descricao": linha})
+    
+    # Natureza Jurídica
+    natureza = get_value("CÓDIGO E NATUREZA JURÍDICA")
+    if natureza:
+        match = re.match(r'(\d+[\w\-]*)\s*-\s*(.+)', natureza)
+        if match:
+            data["natureza_juridica"]["codigo"] = match.group(1)
+            data["natureza_juridica"]["descricao"] = match.group(2)
+        else:
+            data["natureza_juridica"]["descricao"] = natureza
+    
+    # Endereço Completo
+    data["endereco_completo"]["logradouro"] = get_value("LOGRADOURO")
+    data["endereco_completo"]["numero"] = get_value("NÚMERO")
+    data["endereco_completo"]["complemento"] = get_value("COMPLEMENTO")
+    data["endereco_completo"]["bairro"] = get_value("BAIRRO/DISTRITO")
+    data["endereco_completo"]["municipio"] = get_value("MUNICÍPIO")
+    data["endereco_completo"]["estado"] = get_value("ESTADO")
+    data["endereco_completo"]["cep"] = get_value("CEP")
     
     # Telefones
     telefones_str = get_value("TELEFONE")
     if telefones_str and "SEM INFORMAÇÃO" not in telefones_str.upper():
-        # Pode ter múltiplos telefones separados por /
         tels = [t.strip() for t in telefones_str.split('/')]
-        data["telefones"] = [t for t in tels if t]
+        data["telefones"] = [t for t in tels if t and '****' not in t]
     
     # Email
     email = get_value("EMAIL")
-    if email and "SEM INFORMAÇÃO" not in email.upper():
+    if email and "SEM INFORMAÇÃO" not in email.upper() and '****' not in email:
         data["emails"].append(email)
+    
+    # Quadro de Sócios
+    socios_match = re.search(r'QUADRO DE SÓCIOS E ADMINISTRADORES:\s*\n(.+?)(?=\n\s*•|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if socios_match:
+        socios_text = socios_match.group(1)
+        if "SEM INFORMAÇÃO" not in socios_text.upper():
+            blocos = re.findall(r'NOME:\s*(.+?)\nCPF:\s*([\d./-]+)', socios_text, re.IGNORECASE)
+            for nome, cpf in blocos:
+                if nome.strip() and '****' not in cpf:
+                    data["socios"].append({"nome": nome.strip(), "cpf": cpf.strip()})
     
     data["usuario"] = get_value("USUÁRIO")
     
     return data
 
 def parse_placa_resultado(resultado_texto: str) -> dict:
-    """Parser para resultados de consulta de PLACA"""
+    """Parser para resultados de consulta de PLACA - COMPLETO"""
     import re
     
     data = {
-        "dados_pessoais": {},
         "dados_veiculo": {},
+        "restricoes": [],
+        "localizacao": {},
+        "fabricacao": {},
+        "especificacoes": {},
+        "documentacao": {},
         "proprietario": {},
         "possuidor": {},
-        "endereco_veiculo": {},
         "tipo_consulta": "placa"
     }
     
@@ -673,41 +700,67 @@ def parse_placa_resultado(resultado_texto: str) -> dict:
         match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
         return match.group(1).strip() if match else None
     
-    # Dados do Veículo
+    # Dados básicos do Veículo
     data["dados_veiculo"]["placa"] = get_value("PLACA")
+    data["dados_veiculo"]["situacao"] = get_value("SITUAÇÃO")
     data["dados_veiculo"]["marca_modelo"] = get_value("MARCA/MODELO")
     data["dados_veiculo"]["cor"] = get_value("COR")
     data["dados_veiculo"]["ano_fabricacao"] = get_value("ANO - FABRICAÇÃO")
     data["dados_veiculo"]["ano_modelo"] = get_value("ANO - MODELO")
-    data["dados_veiculo"]["chassi"] = get_value("CHASSI")
-    data["dados_veiculo"]["renavam"] = get_value("RENAVAM")
-    data["dados_veiculo"]["combustivel"] = get_value("COMBUSTÍVEL")
-    data["dados_veiculo"]["tipo_veiculo"] = get_value("TIPO DE VEICULO")
-    data["dados_veiculo"]["situacao"] = get_value("SITUAÇÃO")
-    data["dados_veiculo"]["tipo_carroceria"] = get_value("TIPO CARROCERIA")
-    data["dados_veiculo"]["potencia"] = get_value("POTENCIA")
-    data["dados_veiculo"]["cilindradas"] = get_value("CILINDRADAS")
-    data["dados_veiculo"]["origem"] = get_value("ORIGEM")
-    data["dados_veiculo"]["ultima_atualizacao"] = get_value("ULTIMA ATUALIZAÇÃO")
     
-    # Endereço do Veículo
-    municipio = get_value("MUNICIPIO")
-    estado = get_value("ESTADO")
-    if municipio and estado:
-        data["endereco_veiculo"]["localizacao"] = f"{municipio} - {estado}"
+    # Restrições (1 a 4)
+    for i in range(1, 5):
+        restricao = get_value(f"RESTRIÇÃO {i}")
+        if restricao and "SEM RESTRICAO" not in restricao.upper():
+            data["restricoes"].append(restricao)
+    
+    # Localização
+    data["localizacao"]["municipio"] = get_value("MUNICIPIO")
+    data["localizacao"]["estado"] = get_value("ESTADO")
+    
+    # Fabricação
+    data["fabricacao"]["municipio_fab"] = get_value("MUNICIPIO - FAB.")
+    data["fabricacao"]["estado_fab"] = get_value("ESTADO - FAB.")
+    data["fabricacao"]["doc_faturado"] = get_value("DOC. FATURADO")
+    data["fabricacao"]["uf_faturado"] = get_value("UF - FATURADO")
+    
+    # Especificações Técnicas
+    data["especificacoes"]["chassi"] = get_value("CHASSI")
+    data["especificacoes"]["renavam"] = get_value("RENAVAM")
+    data["especificacoes"]["numero_motor"] = get_value("NÚM. MOTOR")
+    data["especificacoes"]["combustivel"] = get_value("COMBUSTÍVEL")
+    data["especificacoes"]["potencia"] = get_value("POTENCIA")
+    data["especificacoes"]["cilindradas"] = get_value("CILINDRADAS")
+    data["especificacoes"]["tipo_veiculo"] = get_value("TIPO DE VEICULO")
+    data["especificacoes"]["especie"] = get_value("ESPECIE")
+    data["especificacoes"]["segmento"] = get_value("SEGMENTO")
+    data["especificacoes"]["sub_segmento"] = get_value("SUB SEGMENTO")
+    data["especificacoes"]["grupo"] = get_value("GRUPO")
+    data["especificacoes"]["carroceria"] = get_value("CARROCERIA")
+    data["especificacoes"]["tipo_carroceria"] = get_value("TIPO CARROCERIA")
+    data["especificacoes"]["eixo_traseiro_dif"] = get_value("EIXO TRASEIRO DIF.")
+    data["especificacoes"]["origem"] = get_value("ORIGEM")
+    data["especificacoes"]["quantidade_passageiros"] = get_value("QUANTIDADE DE PASSAGEIROS")
+    
+    # Documentação
+    data["documentacao"]["id_importadora"] = get_value("ID IMPORTADORA")
+    data["documentacao"]["di"] = get_value("DI")
+    data["documentacao"]["registro_di"] = get_value("REGISTRO DI")
+    data["documentacao"]["unidade_local_srf"] = get_value("UNIDADE LOCAL SRF")
+    data["documentacao"]["ultima_atualizacao"] = get_value("ULTIMA ATUALIZAÇÃO")
+    data["documentacao"]["emissao_ultimo_crv"] = get_value("EMISSÃO ULTIMO CRV")
     
     # Proprietário
-    data["proprietario"]["cpf_cnpj"] = get_value(r"PROPRIETÁRIO\s*•\s*CPF/CNPJ")
-    data["proprietario"]["nome"] = get_value(r"PROPRIETÁRIO\s*•.*?NOME")
-    if not data["proprietario"]["nome"]:
-        # Tenta outra regex
-        match = re.search(r'PROPRIETÁRIO\s*•\s*CPF/CNPJ:\s*.+?\n.*?NOME:\s*(.+?)(?:\n|$)', resultado_texto, re.IGNORECASE)
-        if match:
-            data["proprietario"]["nome"] = match.group(1).strip()
+    proprietario_match = re.search(r'PROPRIETÁRIO\s*•\s*CPF/CNPJ:\s*([\d]+)\s*•\s*NOME:\s*(.+?)(?:\n|POSSUIDOR|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if proprietario_match:
+        data["proprietario"]["cpf_cnpj"] = proprietario_match.group(1).strip()
+        data["proprietario"]["nome"] = proprietario_match.group(2).strip()
     
-    # Possuidor (pode ser igual ao proprietário)
-    data["possuidor"]["cpf_cnpj"] = get_value(r"POSSUIDOR\s*•\s*CPF/CNPJ")
-    data["possuidor"]["nome"] = get_value(r"POSSUIDOR\s*•.*?NOME")
+    # Possuidor
+    possuidor_match = re.search(r'POSSUIDOR\s*•\s*CPF/CNPJ:\s*([\d]+)\s*•\s*NOME:\s*(.+?)(?:\n|$)', resultado_texto, re.IGNORECASE | re.DOTALL)
+    if possuidor_match:
+        data["possuidor"]["cpf_cnpj"] = possuidor_match.group(1).strip()
+        data["possuidor"]["nome"] = possuidor_match.group(2).strip()
     
     data["usuario"] = get_value("USUÁRIO")
     
