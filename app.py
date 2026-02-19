@@ -379,6 +379,46 @@ def is_session_expired(request: Request) -> bool:
     except (ValueError, TypeError):
         return True
 
+def is_user_inactive(username: str) -> bool:
+    """Verifica se o usuário está inativo (desativado)"""
+    try:
+        cursor.execute("SELECT status FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        if not user:
+            return True  # Usuário não existe
+        status = user[0]
+        # Se status é NULL ou 0, usuário está inativo
+        if status is None or status == 0:
+            return True
+        return False
+    except:
+        return False  # Se der erro, deixa passar (compatibilidade)
+
+def validate_user_session(request: Request):
+    """Valida se o usuário tem uma sessão válida e está ativo. Retorna None se OK, ou um RedirectResponse se inválido."""
+    username = request.cookies.get("auth_user")
+    
+    if not username:
+        return RedirectResponse(url="/login")
+    
+    # Verificar expiração de sessão
+    if is_session_expired(request):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    # Verificar se usuário está inativo
+    if is_user_inactive(username):
+        response = RedirectResponse(url="/login", status_code=303)
+        response.delete_cookie("auth_user")
+        response.delete_cookie("is_admin")
+        response.delete_cookie("auth_time")
+        return response
+    
+    return None
+
 def check_rate_limit(ip: str) -> bool:
     """Verifica se o IP excedeu o limite de tentativas de login"""
     now = datetime.now().timestamp()
@@ -1045,16 +1085,39 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
         })
     
     # Verificar credenciais
-    cursor.execute("SELECT is_admin FROM users WHERE username = ? AND password = ?", (username, password))
+    cursor.execute("SELECT id, is_admin, status FROM users WHERE username = ? AND password = ?", (username, password))
     user = cursor.fetchone()
     
     if user:
+        user_id = user[0]
+        is_admin = user[1]
+        status = user[2]
+        
+        # Verificar se usuário está ativo (status = 1 ou NULL para compatibilidade)
+        if status is None:
+            status = 1  # Compatibilidade com bancos antigos
+        
+        if status != 1:
+            # Usuário está inativo
+            record_audit_log("LOGIN_FAILED", username, client_ip, "Usuário inativo")
+            return templates.TemplateResponse("login.html", {
+                "request": request,
+                "erro": "Usuário inativo. Contate o administrador."
+            })
+        
+        # Atualizar último login
+        try:
+            cursor.execute("UPDATE users SET ultimo_login = CURRENT_TIMESTAMP WHERE id = ?", (user_id,))
+            conn.commit()
+        except:
+            pass  # Se a coluna não existir, ignora
+        
         # Login bem-sucedido
         record_audit_log("LOGIN_SUCCESS", username, client_ip, "")
         response = RedirectResponse(url="/", status_code=303)
         auth_time = (datetime.now() + timedelta(seconds=SESSION_TIMEOUT)).isoformat()
         response.set_cookie(key="auth_user", value=username, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
-        response.set_cookie(key="is_admin", value=str(user[0]), max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+        response.set_cookie(key="is_admin", value=str(is_admin), max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
         response.set_cookie(key="auth_time", value=auth_time, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
         return response
     
@@ -1168,16 +1231,10 @@ async def view_resultado_completo(request: Request, search_id: int):
 # ----------------------
 @app.get("/", response_class=HTMLResponse)
 def form(request: Request):
-    if not request.cookies.get("auth_user"):
-        return RedirectResponse(url="/login")
-    
-    # Verificar expiração de sessão
-    if is_session_expired(request):
-        response = RedirectResponse(url="/login", status_code=303)
-        response.delete_cookie("auth_user")
-        response.delete_cookie("is_admin")
-        response.delete_cookie("auth_time")
-        return response
+    # Validar sessão do usuário
+    session_error = validate_user_session(request)
+    if session_error:
+        return session_error
     
     # Obter estatísticas para o dashboard
     username = request.cookies.get("auth_user")
@@ -1267,16 +1324,10 @@ def admin_dashboard(request: Request):
 
 @app.post("/consulta", response_class=HTMLResponse)
 async def do_consulta(request: Request):
-    if not request.cookies.get("auth_user"): 
-        return RedirectResponse(url="/login")
-    
-    # Verificar expiração de sessão
-    if is_session_expired(request):
-        response = RedirectResponse(url="/login", status_code=303)
-        response.delete_cookie("auth_user")
-        response.delete_cookie("is_admin")
-        response.delete_cookie("auth_time")
-        return response
+    # Validar sessão do usuário
+    session_error = validate_user_session(request)
+    if session_error:
+        return session_error
     
     form_data = await request.form()
     csrf_token = str(form_data.get("csrf_token", "")).strip()
@@ -1366,16 +1417,10 @@ async def do_consulta(request: Request):
 
 @app.get("/historico", response_class=HTMLResponse)
 def historico(request: Request):
-    if not request.cookies.get("auth_user"): 
-        return RedirectResponse(url="/login")
-    
-    # Verificar expiração de sessão
-    if is_session_expired(request):
-        response = RedirectResponse(url="/login", status_code=303)
-        response.delete_cookie("auth_user")
-        response.delete_cookie("is_admin")
-        response.delete_cookie("auth_time")
-        return response
+    # Validar sessão do usuário
+    session_error = validate_user_session(request)
+    if session_error:
+        return session_error
     
     username = request.cookies.get("auth_user")
     cursor.execute("""
