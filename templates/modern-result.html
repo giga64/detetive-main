@@ -662,15 +662,42 @@
                 <!-- Header com dados principais -->
                 <div class="card-header">
                     <div class="profile-avatar">
-                        {{ dados.dados_pessoais.nome[0] if dados.dados_pessoais.nome else '?' }}
+                        {% if dados.tipo_consulta == 'cnpj' %}
+                            {{ dados.dados_pessoais.nome[0] if dados.dados_pessoais.nome else '?' }}
+                        {% elif dados.tipo_consulta == 'placa' %}
+                            🚗
+                        {% elif dados.tipo_consulta == 'nome' %}
+                            👥
+                        {% else %}
+                            {{ dados.dados_pessoais.nome[0] if dados.dados_pessoais.nome else '?' }}
+                        {% endif %}
                     </div>
                     <div class="card-title-section">
-                        <h2>{{ dados.dados_pessoais.nome or 'N/A' }}</h2>
-                        <p>CPF: {{ dados.dados_pessoais.cpf or 'N/A' }}</p>
+                        {% if dados.tipo_consulta == 'cnpj' %}
+                            <h2>{{ dados.dados_pessoais.nome_fantasia or dados.dados_pessoais.nome or 'N/A' }}</h2>
+                            <p>CNPJ: {{ dados.dados_empresa.cnpj or 'N/A' }}</p>
+                        {% elif dados.tipo_consulta == 'placa' %}
+                            <h2>{{ dados.dados_veiculo.marca_modelo or 'Veículo' }}</h2>
+                            <p>Placa: {{ dados.dados_veiculo.placa or 'N/A' }}</p>
+                        {% elif dados.tipo_consulta == 'nome' %}
+                            <h2>Resultados da Busca por Nome</h2>
+                            <p>{{ dados.resultados|length }} resultado(s) encontrado(s)</p>
+                        {% else %}
+                            <h2>{{ dados.dados_pessoais.nome or 'N/A' }}</h2>
+                            <p>CPF: {{ dados.dados_pessoais.cpf or 'N/A' }}</p>
+                        {% endif %}
                         <div>
                             {% if dados.risco %}
                                 <span class="risk-badge risk-{{ dados.risco.lower().replace(' ', '-') }}">
                                     {{ dados.risco }}
+                                </span>
+                            {% elif dados.tipo_consulta == 'cnpj' and dados.dados_empresa.status %}
+                                <span class="risk-badge risk-{{ dados.dados_empresa.status.lower() }}">
+                                    {{ dados.dados_empresa.status }}
+                                </span>
+                            {% elif dados.tipo_consulta == 'placa' and dados.dados_veiculo.situacao %}
+                                <span class="risk-badge risk-{{ dados.dados_veiculo.situacao.lower().replace('_', '-') }}">
+                                    {{ dados.dados_veiculo.situacao.replace('_', ' ') }}
                                 </span>
                             {% endif %}
                         </div>
@@ -685,225 +712,522 @@
 
                 <!-- Navegação de Abas -->
                 <div class="tabs-nav">
-                    <button class="tab-btn active" onclick="switchTab(event, 'personal')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        Dados Pessoais
-                    </button>
-                    <button class="tab-btn" onclick="switchTab(event, 'addresses')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        Endereços
-                    </button>
-                    <button class="tab-btn" onclick="switchTab(event, 'contacts')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                        Contatos
-                    </button>
-                    <button class="tab-btn" onclick="switchTab(event, 'relationships')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        Relacionamentos
-                    </button>
-                    <button class="tab-btn" onclick="switchTab(event, 'companies')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                        </svg>
-                        Empresas
-                    </button>
-                    <button class="tab-btn" onclick="switchTab(event, 'raw')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        Dados Brutos
-                    </button>
+                    {% if dados.tipo_consulta == 'nome' %}
+                        <!-- Abas para NOME -->
+                        <button class="tab-btn active" onclick="switchTab(event, 'personal')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Resultados
+                        </button>
+                    {% elif dados.tipo_consulta == 'placa' %}
+                        <!-- Abas para PLACA -->
+                        <button class="tab-btn active" onclick="switchTab(event, 'personal')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                <path d="M9 7h6M9 17h6"></path>
+                            </svg>
+                            Dados do Veículo
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'addresses')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M20 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Proprietário
+                        </button>
+                    {% elif dados.tipo_consulta == 'cnpj' %}
+                        <!-- Abas para CNPJ -->
+                        <button class="tab-btn active" onclick="switchTab(event, 'personal')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                            Dados da Empresa
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'addresses')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Endereço
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'contacts')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                            Contatos
+                        </button>
+                    {% else %}
+                        <!-- Abas para CPF (padrão) -->
+                        <button class="tab-btn active" onclick="switchTab(event, 'personal')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Dados Pessoais
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'addresses')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Endereços
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'contacts')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                            Contatos
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'relationships')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Relacionamentos
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'companies')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                            Empresas
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'raw')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Dados Brutos
+                        </button>
+                    {% endif %}
                 </div>
 
-                <!-- TAB: Dados Pessoais -->
+                <!-- TAB: Dados Pessoais / Empresa / Resultados -->
                 <div id="personal" class="tab-content active">
-                    <div class="data-grid">
-                        {% if dados.dados_pessoais.cpf and dados.dados_pessoais.cpf != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">CPF</span>
-                                <span class="data-value">{{ dados.dados_pessoais.cpf }}</span>
-                            </div>
-                        {% endif %}
+                    {% if dados.tipo_consulta == 'nome' %}
+                        <!-- Mostrar resultados de NOME -->
+                        <div class="data-grid">
+                            {% for resultado in dados.resultados %}
+                                <div class="data-item" style="grid-column: 1 / -1; border-left: 3px solid #06b6d4; padding-left: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong>Resultado #{{ resultado.numero }} - {{ resultado.nome }}</strong>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                        <div>
+                                            <span class="data-label">CPF</span>
+                                            <span class="data-value">{{ resultado.cpf }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="data-label">Sexo</span>
+                                            <span class="data-value">{{ resultado.sexo or 'N/A' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="data-label">Nascimento</span>
+                                            <span class="data-value">{{ resultado.nascimento or 'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% elif dados.tipo_consulta == 'placa' %}
+                        <!-- Mostrar dados do VEÍCULO (PLACA) -->
+                        <div class="data-grid">
+                            {% if dados.dados_veiculo.placa %}
+                                <div class="data-item">
+                                    <span class="data-label">Placa</span>
+                                    <span class="data-value" style="font-size: 20px; font-weight: 900;">{{ dados.dados_veiculo.placa }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.marca_modelo %}
+                                <div class="data-item">
+                                    <span class="data-label">Marca/Modelo</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.marca_modelo }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.cor %}
+                                <div class="data-item">
+                                    <span class="data-label">Cor</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.cor }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.ano_fabricacao %}
+                                <div class="data-item">
+                                    <span class="data-label">Ano Fabricação</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.ano_fabricacao }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.ano_modelo %}
+                                <div class="data-item">
+                                    <span class="data-label">Ano Modelo</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.ano_modelo }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.combustivel %}
+                                <div class="data-item">
+                                    <span class="data-label">Combustível</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.combustivel }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.tipo_veiculo %}
+                                <div class="data-item">
+                                    <span class="data-label">Tipo Veículo</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.tipo_veiculo }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.situacao %}
+                                <div class="data-item">
+                                    <span class="data-label">Situação</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.situacao }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.chassi %}
+                                <div class="data-item">
+                                    <span class="data-label">Chassi</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.chassi }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_veiculo.renavam %}
+                                <div class="data-item">
+                                    <span class="data-label">Renavam</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.renavam }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% elif dados.tipo_consulta == 'cnpj' %}
+                        <!-- Mostrar dados da EMPRESA (CNPJ) -->
+                        <div class="data-grid">
+                            {% if dados.dados_pessoais.nome %}
+                                <div class="data-item" style="grid-column: 1 / -1;">
+                                    <span class="data-label">Razão Social</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.nome }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_pessoais.nome_fantasia %}
+                                <div class="data-item" style="grid-column: 1 / -1;">
+                                    <span class="data-label">Nome Fantasia</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.nome_fantasia }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.cnpj %}
+                                <div class="data-item">
+                                    <span class="data-label">CNPJ</span>
+                                    <span class="data-value">{{ dados.dados_empresa.cnpj }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.tipo %}
+                                <div class="data-item">
+                                    <span class="data-label">Tipo</span>
+                                    <span class="data-value">{{ dados.dados_empresa.tipo }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.abertura %}
+                                <div class="data-item">
+                                    <span class="data-label">Abertura</span>
+                                    <span class="data-value">{{ dados.dados_empresa.abertura }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.porte %}
+                                <div class="data-item">
+                                    <span class="data-label">Porte</span>
+                                    <span class="data-value">{{ dados.dados_empresa.porte }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.atividade_principal %}
+                                <div class="data-item" style="grid-column: 1 / -1;">
+                                    <span class="data-label">Atividade Principal</span>
+                                    <span class="data-value">{{ dados.dados_empresa.atividade_principal }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.status %}
+                                <div class="data-item">
+                                    <span class="data-label">Status</span>
+                                    <span class="data-value">{{ dados.dados_empresa.status }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.situacao_cadastral %}
+                                <div class="data-item">
+                                    <span class="data-label">Situação Cadastral</span>
+                                    <span class="data-value">{{ dados.dados_empresa.situacao_cadastral }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.capital_social %}
+                                <div class="data-item">
+                                    <span class="data-label">Capital Social</span>
+                                    <span class="data-value">{{ dados.dados_empresa.capital_social }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.dados_empresa.ultima_atualizacao %}
+                                <div class="data-item">
+                                    <span class="data-label">Última Atualização</span>
+                                    <span class="data-value">{{ dados.dados_empresa.ultima_atualizacao }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <!-- Mostrar dados de CPF (padrão) -->
+                        <div class="data-grid">
+                            {% if dados.dados_pessoais.cpf and dados.dados_pessoais.cpf != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">CPF</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.cpf }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.pis and dados.dados_pessoais.pis != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">PIS</span>
-                                <span class="data-value">{{ dados.dados_pessoais.pis }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.pis and dados.dados_pessoais.pis != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">PIS</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.pis }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.titulo and dados.dados_pessoais.titulo != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Título Eleitoral</span>
-                                <span class="data-value">{{ dados.dados_pessoais.titulo }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.titulo and dados.dados_pessoais.titulo != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Título Eleitoral</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.titulo }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.rg and dados.dados_pessoais.rg != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">RG</span>
-                                <span class="data-value">{{ dados.dados_pessoais.rg }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.rg and dados.dados_pessoais.rg != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">RG</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.rg }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.nascimento and dados.dados_pessoais.nascimento != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Data de Nascimento</span>
-                                <span class="data-value">{{ dados.dados_pessoais.nascimento }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.nascimento and dados.dados_pessoais.nascimento != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Data de Nascimento</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.nascimento }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.idade and dados.dados_pessoais.idade != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Idade</span>
-                                <span class="data-value">{{ dados.dados_pessoais.idade }} anos</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.idade and dados.dados_pessoais.idade != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Idade</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.idade }} anos</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.signo and dados.dados_pessoais.signo != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Signo</span>
-                                <span class="data-value">{{ dados.dados_pessoais.signo }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.signo and dados.dados_pessoais.signo != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Signo</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.signo }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.mae and dados.dados_pessoais.mae != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Mãe</span>
-                                <span class="data-value">{{ dados.dados_pessoais.mae }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.mae and dados.dados_pessoais.mae != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Mãe</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.mae }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.pai and dados.dados_pessoais.pai != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Pai</span>
-                                <span class="data-value">{{ dados.dados_pessoais.pai }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.pai and dados.dados_pessoais.pai != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Pai</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.pai }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.nacionalidade and dados.dados_pessoais.nacionalidade != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Nacionalidade</span>
-                                <span class="data-value">{{ dados.dados_pessoais.nacionalidade }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.nacionalidade and dados.dados_pessoais.nacionalidade != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Nacionalidade</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.nacionalidade }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.escolaridade and dados.dados_pessoais.escolaridade != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Escolaridade</span>
-                                <span class="data-value">{{ dados.dados_pessoais.escolaridade }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.escolaridade and dados.dados_pessoais.escolaridade != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Escolaridade</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.escolaridade }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.estado_civil and dados.dados_pessoais.estado_civil != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Estado Civil</span>
-                                <span class="data-value">{{ dados.dados_pessoais.estado_civil }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.estado_civil and dados.dados_pessoais.estado_civil != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Estado Civil</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.estado_civil }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.profissao and dados.dados_pessoais.profissao != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Profissão</span>
-                                <span class="data-value">{{ dados.dados_pessoais.profissao }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.profissao and dados.dados_pessoais.profissao != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Profissão</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.profissao }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.renda and dados.dados_pessoais.renda != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Renda Presumida</span>
-                                <span class="data-value">R$ {{ dados.dados_pessoais.renda }}</span>
-                            </div>
-                        {% endif %}
+                            {% if dados.dados_pessoais.renda and dados.dados_pessoais.renda != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Renda Presumida</span>
+                                    <span class="data-value">R$ {{ dados.dados_pessoais.renda }}</span>
+                                </div>
+                            {% endif %}
 
-                        {% if dados.dados_pessoais.status_rf and dados.dados_pessoais.status_rf != 'SEM INFORMAÇÃO' %}
-                            <div class="data-item">
-                                <span class="data-label">Status RF</span>
-                                <span class="data-value">{{ dados.dados_pessoais.status_rf }}</span>
-                            </div>
-                        {% endif %}
-                    </div>
+                            {% if dados.dados_pessoais.status_rf and dados.dados_pessoais.status_rf != 'SEM INFORMAÇÃO' %}
+                                <div class="data-item">
+                                    <span class="data-label">Status RF</span>
+                                    <span class="data-value">{{ dados.dados_pessoais.status_rf }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
 
                 <!-- TAB: Endereços -->
                 <div id="addresses" class="tab-content">
-                    {% if dados.enderecos and dados.enderecos|length > 0 %}
-                        <!-- Filtros de endereço: Urbano vs Rural -->
-                        <div class="address-filter-container">
-                            <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
-                            <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
-                            <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
-                        </div>
-
-                        <ul class="data-list">
-                            {% for endereco in dados.enderecos %}
-                                <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
-                                    <div style="flex: 1;">
-                                        <span>{{ endereco }}</span>
-                                        <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="action-btn" onclick="openStreetView('{{ endereco }}')">Street View</button>
-                                        <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    {% if dados.tipo_consulta == 'placa' %}
+                        <!-- Mostrar endereço do VEÍCULO (PLACA) -->
+                        {% if dados.dados_veiculo.endereco_veiculo %}
+                            <div class="data-grid">
+                                <div class="data-item" style="grid-column: 1 / -1;">
+                                    <span class="data-label">Endereço do Veículo</span>
+                                    <span class="data-value">{{ dados.dados_veiculo.endereco_veiculo }}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button class="action-btn" onclick="openStreetView('{{ dados.dados_veiculo.endereco_veiculo }}')">Street View</button>
+                                <button class="action-btn" onclick="reverseSearch('{{ dados.dados_veiculo.endereco_veiculo }}', 'address')">Buscar</button>
+                            </div>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum endereço encontrado</p>
+                            </div>
+                        {% endif %}
+                    {% elif dados.tipo_consulta == 'cnpj' %}
+                        <!-- Mostrar endereço da EMPRESA (CNPJ) -->
+                        {% if dados.endereco %}
+                            <div class="data-grid">
+                                <div class="data-item" style="grid-column: 1 / -1;">
+                                    <span class="data-label">Endereço da Empresa</span>
+                                    <span class="data-value">{{ dados.endereco }}</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button class="action-btn" onclick="openStreetView('{{ dados.endereco }}')">Street View</button>
+                                <button class="action-btn" onclick="reverseSearch('{{ dados.endereco }}', 'address')">Buscar</button>
+                            </div>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum endereço encontrado</p>
+                            </div>
+                        {% endif %}
                     {% else %}
-                        <div class="empty-state">
-                            <div class="empty-state-icon"></div>
-                            <p>Nenhum endereço encontrado</p>
-                        </div>
+                        <!-- Mostrar endereços de CPF (padrão) -->
+                        {% if dados.enderecos and dados.enderecos|length > 0 %}
+                            <!-- Filtros de endereço: Urbano vs Rural -->
+                            <div class="address-filter-container">
+                                <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
+                                <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
+                                <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
+                            </div>
+
+                            <ul class="data-list">
+                                {% for endereco in dados.enderecos %}
+                                    <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                                        <div style="flex: 1;">
+                                            <span>{{ endereco }}</span>
+                                            <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                        </div>
+                                        <div style="display: flex; gap: 10px;">
+                                            <button class="action-btn" onclick="openStreetView('{{ endereco }}')">Street View</button>
+                                            <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-state-icon"></div>
+                                <p>Nenhum endereço encontrado</p>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
 
                 <!-- TAB: Contatos -->
                 <div id="contacts" class="tab-content">
-                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
-                    {% if dados.emails and dados.emails|length > 0 %}
-                        <ul class="data-list">
-                            {% for email in dados.emails %}
-                                <li class="data-list-item">
-                                    <span>{{ email }}</span>
-                                    <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')">Buscar</button>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
+                    {% if dados.tipo_consulta == 'placa' %}
+                        <!-- PLACA não tem tab de contatos -->
                         <div class="empty-state">
-                            <p>Nenhum e-mail encontrado</p>
+                            <p>Sem informações de contatos para veículos</p>
                         </div>
-                    {% endif %}
+                    {% elif dados.tipo_consulta == 'nome' %}
+                        <!-- NOME não tem tab de contatos -->
+                        <div class="empty-state">
+                            <p>Sem informações de contatos para essa busca</p>
+                        </div>
+                    {% elif dados.tipo_consulta == 'cnpj' %}
+                        <!-- Mostrar contatos da EMPRESA (CNPJ) -->
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
+                        {% if dados.emails and dados.emails|length > 0 %}
+                            <ul class="data-list">
+                                {% for email in dados.emails %}
+                                    <li class="data-list-item">
+                                        <span>{{ email }}</span>
+                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')">Buscar</button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum e-mail encontrado</p>
+                            </div>
+                        {% endif %}
 
-                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
-                    {% if dados.telefones and dados.telefones|length > 0 %}
-                        <ul class="data-list">
-                            {% for telefone in dados.telefones %}
-                                <li class="data-list-item">
-                                    <span>{{ telefone }}</span>
-                                    <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')">Buscar</button>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
+                        {% if dados.telefones and dados.telefones|length > 0 %}
+                            <ul class="data-list">
+                                {% for telefone in dados.telefones %}
+                                    <li class="data-list-item">
+                                        <span>{{ telefone }}</span>
+                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')">Buscar</button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum telefone encontrado</p>
+                            </div>
+                        {% endif %}
                     {% else %}
-                        <div class="empty-state">
-                            <p>Nenhum telefone encontrado</p>
-                        </div>
+                        <!-- Mostrar contatos de CPF (padrão) -->
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
+                        {% if dados.emails and dados.emails|length > 0 %}
+                            <ul class="data-list">
+                                {% for email in dados.emails %}
+                                    <li class="data-list-item">
+                                        <span>{{ email }}</span>
+                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')">Buscar</button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum e-mail encontrado</p>
+                            </div>
+                        {% endif %}
+
+                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
+                        {% if dados.telefones and dados.telefones|length > 0 %}
+                            <ul class="data-list">
+                                {% for telefone in dados.telefones %}
+                                    <li class="data-list-item">
+                                        <span>{{ telefone }}</span>
+                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')">Buscar</button>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhum telefone encontrado</p>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
 
@@ -978,6 +1302,49 @@
                     {% else %}
                         <div class="empty-state">
                             <p>Nenhum vínculo empregatício encontrado</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- TAB: Proprietário (PLACA) -->
+                <div id="proprietario" class="tab-content">
+                    {% if dados.tipo_consulta == 'placa' and dados.proprietario %}
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">Proprietário</h3>
+                        <div class="data-grid">
+                            {% if dados.proprietario.cpf_cnpj %}
+                                <div class="data-item">
+                                    <span class="data-label">CPF/CNPJ</span>
+                                    <span class="data-value">{{ dados.proprietario.cpf_cnpj }}</span>
+                                </div>
+                            {% endif %}
+                            {% if dados.proprietario.nome %}
+                                <div class="data-item">
+                                    <span class="data-label">Nome</span>
+                                    <span class="data-value">{{ dados.proprietario.nome }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if dados.possuidor and dados.possuidor.nome %}
+                            <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Possuidor (se diferente do Proprietário)</h3>
+                            <div class="data-grid">
+                                {% if dados.possuidor.cpf_cnpj %}
+                                    <div class="data-item">
+                                        <span class="data-label">CPF/CNPJ</span>
+                                        <span class="data-value">{{ dados.possuidor.cpf_cnpj }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if dados.possuidor.nome %}
+                                    <div class="data-item">
+                                        <span class="data-label">Nome</span>
+                                        <span class="data-value">{{ dados.possuidor.nome }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Sem informações de proprietário</p>
                         </div>
                     {% endif %}
                 </div>
