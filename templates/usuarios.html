@@ -79,7 +79,7 @@
         }
 
         .btn-small {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             font-size: 0.85rem;
         }
 
@@ -297,13 +297,14 @@
         .modal-content {
             background: linear-gradient(135deg, #0f172a 0%, #1a1b2e 100%);
             margin: 3% auto;
-            padding: 2rem;
+            padding: 2.5rem;
             border: 1px solid rgba(6, 182, 212, 0.3);
-            border-radius: 12px;
+            border-radius: 16px;
             width: 90%;
             max-width: 500px;
             backdrop-filter: blur(20px);
             animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.15);
         }
 
         @keyframes slideUp {
@@ -345,15 +346,37 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
             color: #cbd5e1;
             font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .form-group input[type="text"],
         .form-group input[type="password"],
         .form-group select {
             width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus,
+        .form-group select:focus {
+            outline: none;
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .form-group input[type="text"]::placeholder,
+        .form-group input[type="password"]::placeholder {
+            color: #64748b;
         }
 
         .checkbox-group {
@@ -369,11 +392,16 @@
         .form-actions {
             display: flex;
             gap: 1rem;
-            margin-top: 2rem;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(6, 182, 212, 0.2);
         }
 
         .form-actions button {
             flex: 1;
+            padding: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
         }
 
         /* Empty State */
@@ -396,24 +424,46 @@
         .user-input-row {
             display: grid;
             grid-template-columns: 1fr 1fr auto;
-            gap: 0.5rem;
+            gap: 0.7rem;
             margin-bottom: 1rem;
             align-items: end;
         }
 
         .user-input-row input {
             width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
 
-        .btn-add-row {
-            background: rgba(34, 197, 94, 0.2);
-            color: #22c55e;
-            border: 1px solid rgba(34, 197, 94, 0.5);
-            padding: 0.6rem 1rem;
+        .user-input-row input:focus {
+            outline: none;
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
         }
 
-        .btn-add-row:hover {
-            background: rgba(34, 197, 94, 0.3);
+        .user-input-row input::placeholder {
+            color: #64748b;
+        }
+
+        .btn-remove-row {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-remove-row:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
 
         .btn-remove-row {
@@ -501,39 +551,35 @@
 <body>
     <div class="container">
         <header>
-            <h1>👥 Gestão de Usuários</h1>
+            <h1>Gestão de Usuários</h1>
             <div class="header-actions">
-                <button class="btn btn-primary" onclick="openAddModal()">➕ Novo Usuário</button>
-                <button class="btn btn-secondary btn-small" onclick="openAddMultipleModal()">➕➕ Adicionar Múltiplos</button>
-                <button class="btn btn-secondary btn-small" onclick="openImportCSVModal()">📥 Importar CSV</button>
-                <button class="btn btn-secondary btn-small" onclick="exportCSV()">📤 Exportar CSV</button>
-                <a href="/" class="btn btn-secondary btn-small">← Voltar</a>
+                <button class="btn btn-primary" onclick="openAddModal()">Novo Usuário</button>
+                <button class="btn btn-secondary btn-small" onclick="openAddMultipleModal()">Adicionar Múltiplos</button>
+                <button class="btn btn-secondary btn-small" onclick="openImportCSVModal()">Importar CSV</button>
+                <button class="btn btn-secondary btn-small" onclick="exportCSV()">Exportar CSV</button>
+                <a href="/" class="btn btn-secondary btn-small">Voltar</a>
             </div>
         </header>
 
         <!-- Dashboard de Estatísticas -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
-                <h3>👥 Total de Usuários</h3>
+                <h3>Total de Usuários</h3>
                 <div class="stat-number" id="totalUsers">-</div>
             </div>
             <div class="stat-card">
-                <h3>👑 Administradores</h3>
+                <h3>Administradores</h3>
                 <div class="stat-number" id="totalAdmins">-</div>
             </div>
             <div class="stat-card">
-                <h3>🟢 Usuários Ativos</h3>
+                <h3>Usuários Ativos</h3>
                 <div class="stat-number" id="totalAtivos">-</div>
-            </div>
-            <div class="stat-card">
-                <h3>📊 Total de Consultas</h3>
-                <div class="stat-number" id="totalConsultas">-</div>
             </div>
         </div>
 
         <!-- Buscas e Filtros -->
         <div class="search-filter-box">
-            <h3>🔍 Busca e Filtros</h3>
+            <h3>Busca e Filtros</h3>
             <div class="filter-row">
                 <input type="text" id="searchInput" placeholder="Buscar por nome..." onkeyup="filterTable()">
                 <select id="filterType" onchange="filterTable()">
@@ -558,13 +604,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>📋 Usuário</th>
-                        <th>👤 Tipo</th>
-                        <th>📅 Criado em</th>
-                        <th>🕐 Último Login</th>
-                        <th>✅ Status</th>
-                        <th>📊 Consultas</th>
-                        <th>⚙️ Ações</th>
+                        <th>Usuário</th>
+                        <th>Tipo</th>
+                        <th>Criado em</th>
+                        <th>Status</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
@@ -573,24 +617,24 @@
                         <td><strong>{{ usuario[1] }}</strong></td>
                         <td>
                             {% if usuario[2] == 1 %}
-                            <span class="role-admin">👑 ADMIN</span>
+                            <span class="role-admin">ADMIN</span>
                             {% else %}
-                            <span class="role-operador">👤 OPERADOR</span>
+                            <span class="role-operador">OPERADOR</span>
                             {% endif %}
                         </td>
                         <td>{{ usuario[3] if usuario[3] else 'Sem informação' }}</td>
-                        <td>{{ usuario[4] if usuario[4] else 'Nunca' }}</td>
                         <td>
                             {% if usuario[5] == 1 %}
-                            <span class="user-status status-ativo">🟢 Ativo</span>
+                            <span class="user-status status-ativo">Ativo</span>
                             {% else %}
-                            <span class="user-status status-inativo">🔴 Inativo</span>
+                            <span class="user-status status-inativo">Inativo</span>
                             {% endif %}
                         </td>
-                        <td>{{ usuario[6] if usuario[6] else '0' }}</td>
                         <td>
                             <div class="action-buttons">
+                                {% if usuario[1] != 'admin' %}
                                 <button class="btn-action btn-edit btn-small" onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')">Senha</button>
+                                {% endif %}
                                 {% if usuario[1] != 'admin' %}
                                 <button class="btn-action btn-toggle btn-small" onclick="togglePermission({{ usuario[0] }}, this)">{{ 'Remover Admin' if usuario[2] == 1 else 'Tornar Admin' }}</button>
                                 <button class="btn-action btn-toggle btn-small" onclick="toggleStatus({{ usuario[0] }}, this)">{{ 'Desativar' if usuario[5] == 1 else 'Ativar' }}</button>
@@ -604,10 +648,9 @@
             </table>
             {% else %}
             <div class="empty-state">
-                <div class="empty-state-icon">👤</div>
                 <p>Nenhum usuário cadastrado</p>
                 <p style="color: #64748b; margin-top: 0.5rem;">Crie seu primeiro usuário para começar!</p>
-                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openAddModal()">➕ Criar Usuário</button>
+                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openAddModal()">Criar Usuário</button>
             </div>
             {% endif %}
         </div>
@@ -617,7 +660,7 @@
     <div id="addModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>➕ Novo Usuário</h2>
+                <h2>Novo Usuário</h2>
                 <button class="close-btn" onclick="closeAddModal()">&times;</button>
             </div>
             <form id="addForm">
@@ -645,12 +688,12 @@
     <div id="addMultipleModal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
-                <h2>➕➕ Adicionar Múltiplos Usuários</h2>
+                <h2>Adicionar Múltiplos Usuários</h2>
                 <button class="close-btn" onclick="closeAddMultipleModal()">&times;</button>
             </div>
             <form id="addMultipleForm">
                 <div id="usersContainer"></div>
-                <button type="button" class="btn btn-secondary btn-small" onclick="addUserInput()">+ Adicionar Campo</button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="addUserInput()">Adicionar Campo</button>
                 <div class="form-actions" style="margin-top: 1.5rem;">
                     <button type="button" class="btn btn-secondary" onclick="closeAddMultipleModal()">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="addMultipleUsers()">Criar Todos</button>
@@ -663,7 +706,7 @@
     <div id="passwordModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>🔑 Alterar Senha</h2>
+                <h2>Alterar Senha</h2>
                 <button class="close-btn" onclick="closePasswordModal()">&times;</button>
             </div>
             <form id="passwordForm">
@@ -708,14 +751,70 @@
     </div>
 
     <script>
+        // Criar ícones SVG
+        function createIcon(type) {
+            const icons = {
+                'user-plus': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>`,
+                'users': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+                'upload': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+                'download': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+                'arrow-left': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`,
+                'lock': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+                'crown': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M12 1l3 6h6.5L17 13l3 6H12l-3-6H5.5L9 7l3-6z"></path><line x1="12" y1="19" x2="12" y2="23"></line></svg>`,
+                'toggle': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="1"></circle><path d="M12 1v6m0 6v6"></path></svg>`,
+                'trash': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+                'key': `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;"><path d="M21 2l-2 2m-5.5-1a7 7 0 1 1 0 14 7 7 0 0 1 0-14"></path><circle cx="13.5" cy="9" r="1"></circle><path d="M21 2l-4.5 4.5"></path></svg>`
+            };
+            return icons[type] || '';
+        }
+
         // Carregar estatísticas ao abrir
         document.addEventListener('DOMContentLoaded', () => {
+            addIconsToButtons();
             loadStats();
             if (document.getElementById('usersContainer')) {
                 addUserInput();  // Adicionar primeiro campo
                 addUserInput();  // Adicionar segundo campo
             }
         });
+
+        // Adicionar ícones aos botões
+        function addIconsToButtons() {
+            // Header buttons
+            document.querySelector('header .btn-primary').innerHTML = createIcon('user-plus') + 'Novo Usuário';
+            const headerBtns = document.querySelectorAll('header .btn-secondary');
+            if (headerBtns[0]) headerBtns[0].innerHTML = createIcon('users') + 'Adicionar Múltiplos';
+            if (headerBtns[1]) headerBtns[1].innerHTML = createIcon('upload') + 'Importar CSV';
+            if (headerBtns[2]) headerBtns[2].innerHTML = createIcon('download') + 'Exportar CSV';
+            if (headerBtns[3]) headerBtns[3].innerHTML = createIcon('arrow-left') + 'Voltar';
+            
+            // Modal titles
+            document.querySelectorAll('.modal-header h2').forEach((h2, idx) => {
+                if (idx === 0) h2.innerHTML = createIcon('user-plus') + 'Novo Usuário';
+                else if (idx === 1) h2.innerHTML = createIcon('users') + 'Adicionar Múltiplos Usuários';
+                else if (idx === 2) h2.innerHTML = createIcon('lock') + 'Alterar Senha';
+                else if (idx === 3) h2.innerHTML = createIcon('upload') + 'Importar CSV';
+            });
+            
+            // Empty state button
+            const emptyBtn = document.querySelector('.empty-state .btn-primary');
+            if (emptyBtn) emptyBtn.innerHTML = createIcon('user-plus') + 'Criar Usuário';
+            
+            // Add to action buttons
+            const actionBtns = document.querySelectorAll('.action-buttons .btn-action');
+            actionBtns.forEach(btn => {
+                const text = btn.textContent;
+                if (text === 'Senha') btn.innerHTML = createIcon('key') + text;
+                else if (text.includes('Admin')) btn.innerHTML = createIcon('crown') + text;
+                else if (text === 'Ativar' || text === 'Desativar') btn.innerHTML = createIcon('toggle') + text;
+                else if (text === 'Deletar') btn.innerHTML = createIcon('trash') + text;
+            });
+            
+            // Add to campo button
+            const addCampoBtn = document.querySelector('.btn.btn-secondary[onclick="addUserInput()"]');
+            if (addCampoBtn) addCampoBtn.innerHTML = createIcon('user-plus') + '+ Adicionar Campo';
+        }
+
 
         // Carregar Estatísticas
         async function loadStats() {
@@ -980,14 +1079,14 @@
         // Mostrar Mensagens
         function showSuccess(msg) {
             const el = document.getElementById('successMsg');
-            el.textContent = '✅ ' + msg;
+            el.textContent = 'Sucesso: ' + msg;
             el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 5000);
         }
 
         function showError(msg) {
             const el = document.getElementById('errorMsg');
-            el.textContent = '❌ ' + msg;
+            el.textContent = 'Erro: ' + msg;
             el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 5000);
         }
