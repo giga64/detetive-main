@@ -81,28 +81,23 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 conn.commit()
 
-# Migração: adicionar colunas se não existirem
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP")
-except:
-    pass
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN ultimo_login DATETIME")
-except:
-    pass
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN ip_acesso TEXT")
-except:
-    pass
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN status INTEGER DEFAULT 1")
-except:
-    pass
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN numero_consultas INTEGER DEFAULT 0")
-except:
-    pass
-conn.commit()
+# Migração: adicionar colunas se não existirem (com tratamento de erro específico)
+def add_column_if_not_exists(table_name, column_name, column_type):
+    try:
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        if "duplicate column name" in str(e):
+            pass  # Coluna já existe, tudo bem
+        else:
+            raise
+
+# Adicionar todas as colunas necessárias
+add_column_if_not_exists("users", "data_criacao", "DATETIME DEFAULT CURRENT_TIMESTAMP")
+add_column_if_not_exists("users", "ultimo_login", "DATETIME")
+add_column_if_not_exists("users", "ip_acesso", "TEXT")
+add_column_if_not_exists("users", "status", "INTEGER DEFAULT 1")
+add_column_if_not_exists("users", "numero_consultas", "INTEGER DEFAULT 0")
 
 # Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
 cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
@@ -1732,11 +1727,19 @@ async def list_users(request: Request):
     if request.cookies.get("is_admin") != "1": 
         return RedirectResponse(url="/")
     
-    cursor.execute("SELECT id, username, is_admin, data_criacao, ultimo_login, status, numero_consultas FROM users ORDER BY data_criacao DESC")
+    try:
+        # Tentar com as novas colunas
+        cursor.execute("SELECT id, username, is_admin, data_criacao, ultimo_login, status, numero_consultas FROM users ORDER BY data_criacao DESC")
+        usuarios = cursor.fetchall()
+    except sqlite3.OperationalError:
+        # Se falhar, usar query com colunas básicas + valores padrão
+        cursor.execute("SELECT id, username, is_admin, CURRENT_TIMESTAMP, NULL, 1, 0 FROM users ORDER BY id DESC")
+        usuarios = cursor.fetchall()
+    
     csrf_token = get_or_create_csrf_token(request)
     return templates.TemplateResponse("usuarios.html", {
         "request": request, 
-        "usuarios": cursor.fetchall(),
+        "usuarios": usuarios,
         "csrf_token": csrf_token
     })
 
@@ -1847,14 +1850,26 @@ async def get_user_stats(request: Request):
         cursor.execute("SELECT COUNT(*) FROM users WHERE is_admin = 1")
         total_admins = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM users WHERE status = 1")
-        total_ativos = cursor.fetchone()[0]
+        # Tentar com a coluna 'status', se não existir usar valor padrão
+        try:
+            cursor.execute("SELECT COUNT(*) FROM users WHERE status = 1")
+            total_ativos = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            total_ativos = total_users
         
-        cursor.execute("SELECT COUNT(*) FROM users WHERE DATE(data_criacao) = DATE('now')")
-        users_hoje = cursor.fetchone()[0]
+        # Tentar com a coluna 'data_criacao', se não existir usar 0
+        try:
+            cursor.execute("SELECT COUNT(*) FROM users WHERE DATE(data_criacao) = DATE('now')")
+            users_hoje = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            users_hoje = 0
         
-        cursor.execute("SELECT SUM(numero_consultas) FROM users")
-        total_consultas = cursor.fetchone()[0] or 0
+        # Tentar com a coluna 'numero_consultas', se não existir usar 0
+        try:
+            cursor.execute("SELECT SUM(numero_consultas) FROM users")
+            total_consultas = cursor.fetchone()[0] or 0
+        except sqlite3.OperationalError:
+            total_consultas = 0
         
         return {
             "total_users": total_users,
@@ -1966,8 +1981,15 @@ async def export_users_csv(request: Request):
         return RedirectResponse(url="/login", status_code=303)
     
     try:
-        cursor.execute("SELECT username, is_admin, data_criacao, status FROM users")
-        usuarios = cursor.fetchall()
+        # Tentar com todas as colunas novas primeiro
+        try:
+            cursor.execute("SELECT username, is_admin, data_criacao, status FROM users")
+            usuarios = cursor.fetchall()
+        except sqlite3.OperationalError:
+            # Fallback para bancos antigos - sem data_criacao
+            cursor.execute("SELECT username, is_admin, status FROM users")
+            resultado_antigo = cursor.fetchall()
+            usuarios = [(u[0], u[1], None, u[2] if len(u) > 2 else 1) for u in resultado_antigo]
         
         output = StringIO()
         writer = csv.writer(output)
