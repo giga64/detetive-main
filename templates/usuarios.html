@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Operadores</title>
+    <title>Gestão de Usuários - ONESEEK</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
-    <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
-    <link rel="apple-touch-icon" href="/static/favicon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -18,57 +16,29 @@
             overflow-x: hidden;
         }
 
-        #detective-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: 0.6;
-        }
-
         .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1000px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 2rem;
             min-height: 100vh;
         }
 
         header {
             display: flex;
             justify-content: space-between;
-            align-items: start;
-            margin-bottom: 3rem;
-            animation: fadeInDown 0.8s ease-out;
+            align-items: center;
+            margin-bottom: 2rem;
             flex-wrap: wrap;
-            gap: 2rem;
+            gap: 1rem;
         }
 
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .header-content h1 {
+        h1 {
             font-size: 2.5rem;
-            background: linear-gradient(135deg, #06b6d4, #0ea5a4, #06b6d4);
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             font-weight: 900;
-            letter-spacing: 3px;
-            text-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
-            margin-bottom: 0.5rem;
-        }
-
-        .header-subtitle {
-            font-size: 0.95rem;
-            color: #94a3b8;
-            font-weight: 300;
-            letter-spacing: 1px;
         }
 
         .header-actions {
@@ -78,211 +48,235 @@
         }
 
         .btn {
-            display: inline-block;
-            padding: 0.8rem 1.8rem;
-            border-radius: 0.6rem;
-            font-weight: 700;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
             border: none;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #06b6d4, #0ea5a4);
-            color: #000814;
+            color: #000;
             box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 15px 45px rgba(6, 182, 212, 0.6);
-            background: linear-gradient(135deg, #0ea5a4, #06b6d4);
+            box-shadow: 0 15px 40px rgba(6, 182, 212, 0.6);
         }
 
         .btn-secondary {
-            background: rgba(30, 41, 59, 0.3);
-            border: 1.5px solid rgba(6, 182, 212, 0.5);
-            color: #06b6d4;
-            backdrop-filter: blur(10px);
+            background: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.5);
         }
 
         .btn-secondary:hover {
-            background: rgba(6, 182, 212, 0.25);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-            transform: translateY(-2px);
-            border-color: rgba(6, 182, 212, 0.8);
+            background: rgba(148, 163, 184, 0.3);
         }
 
-        .user-grid {
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Dashboard de Estatísticas */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
-            animation: fadeInUp 0.8s ease-out 0.2s backwards;
-            max-height: 70vh;
-            overflow-y: auto;
-            padding-right: 0.5rem;
+            margin-bottom: 2rem;
         }
 
-        .user-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .user-grid::-webkit-scrollbar-track {
-            background: rgba(6, 182, 212, 0.1);
-            border-radius: 4px;
-        }
-
-        .user-grid::-webkit-scrollbar-thumb {
-            background: rgba(6, 182, 212, 0.4);
-            border-radius: 4px;
-        }
-
-        .user-grid::-webkit-scrollbar-thumb:hover {
-            background: rgba(6, 182, 212, 0.6);
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .user-card {
-            background: transparent;
-            border: 2px solid rgba(6, 182, 212, 0.3);
-            border-radius: 1rem;
-            padding: 2rem;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 30px rgba(6, 182, 212, 0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            transition: all 0.4s ease;
-        }
-
-        .user-card:hover {
-            border-color: rgba(6, 182, 212, 0.6);
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.3), inset 0 0 40px rgba(6, 182, 212, 0.1);
-            transform: translateY(-5px);
+        .stat-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
             backdrop-filter: blur(10px);
         }
 
-        .avatar {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 164, 0.2));
-            border: 2px solid rgba(6, 182, 212, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #06b6d4;
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
-        }
-
-        .user-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #06b6d4;
-            margin-bottom: 0.3rem;
-            letter-spacing: 1px;
-            display: block;
-        }
-
-        .user-role {
-            font-size: 0.8rem;
+        .stat-card h3 {
             color: #94a3b8;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #06b6d4;
+        }
+
+        .stat-subtitle {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Buscas e Filtros */
+        .search-filter-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-filter-box h3 {
             margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            color: #06b6d4;
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
         }
 
-        .user-badge {
-            display: inline-block;
-            padding: 0.4rem 0.9rem;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            border-radius: 0.4rem;
-            color: #10b981;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 1rem;
-        }
-
-        .admin-badge {
-            background: rgba(251, 191, 36, 0.15);
-            border-color: rgba(251, 191, 36, 0.4);
-            color: #fbbf24;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.8rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-delete, .btn-edit {
-            flex: 1;
-            min-width: 100px;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
-            font-weight: 700;
-            font-size: 0.75rem;
-            cursor: pointer;
+        input[type="text"],
+        input[type="file"],
+        select {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #e2e8f0;
+            padding: 0.8rem;
+            border-radius: 6px;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border: 1.5px solid;
         }
 
-        .btn-delete {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.5);
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Tabela de Usuários */
+        .users-table-container {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            border-bottom: 2px solid rgba(6, 182, 212, 0.3);
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: #06b6d4;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+        }
+
+        tbody tr:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .user-status {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-ativo {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-inativo {
+            background: rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
 
-        .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.8);
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        .role-admin {
+            background: rgba(168, 85, 247, 0.2);
+            color: #d5a4f0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .role-operador {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .btn-edit {
-            background: rgba(59, 130, 246, 0.15);
-            border-color: rgba(59, 130, 246, 0.5);
-            color: #3b82f6;
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            border: 1px solid rgba(6, 182, 212, 0.5);
         }
 
         .btn-edit:hover {
-            background: rgba(59, 130, 246, 0.25);
-            border-color: rgba(59, 130, 246, 0.8);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            background: rgba(6, 182, 212, 0.3);
         }
 
+        .btn-toggle {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.5);
+        }
+
+        .btn-toggle:hover {
+            background: rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Modais */
         .modal {
             display: none;
             position: fixed;
@@ -291,15 +285,8 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
@@ -308,87 +295,65 @@
         }
 
         .modal-content {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            border: 2px solid rgba(6, 182, 212, 0.4);
-            border-radius: 1rem;
-            padding: 2.5rem;
-            max-width: 500px;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1b2e 100%);
+            margin: 3% auto;
+            padding: 2rem;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 12px;
             width: 90%;
-            box-shadow: 0 0 50px rgba(6, 182, 212, 0.3);
-            animation: slideDown 0.4s ease-out;
+            max-width: 500px;
+            backdrop-filter: blur(20px);
+            animation: slideUp 0.3s ease;
         }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-50px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2);
         }
 
         .modal-header h2 {
-            font-size: 1.8rem;
-            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 900;
+            color: #06b6d4;
+            margin: 0;
         }
 
         .close-btn {
-            background: transparent;
+            background: none;
             border: none;
-            color: #94a3b8;
-            font-size: 2rem;
+            color: #06b6d4;
+            font-size: 28px;
             cursor: pointer;
             transition: all 0.3s ease;
-            line-height: 1;
-            padding: 0;
-            width: 32px;
-            height: 32px;
         }
 
         .close-btn:hover {
-            color: #ef4444;
-            transform: rotate(90deg);
+            color: #0ea5a4;
+            transform: scale(1.2);
         }
 
-        .user-form .form-group {
+        .form-group {
             margin-bottom: 1.5rem;
         }
 
-        .user-form label {
+        .form-group label {
             display: block;
-            margin-bottom: 0.6rem;
-            font-size: 0.9rem;
-            font-weight: 700;
+            margin-bottom: 0.5rem;
             color: #cbd5e1;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 600;
         }
 
-        .user-form input[type="text"],
-        .user-form input[type="password"] {
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group select {
             width: 100%;
-            padding: 0.9rem 1.1rem;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1.5px solid rgba(6, 182, 212, 0.4);
-            border-radius: 0.6rem;
-            color: #ffffff;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .user-form input:focus {
-            outline: none;
-            border-color: #06b6d4;
-            background: rgba(30, 41, 59, 0.8);
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
         }
 
         .checkbox-group {
@@ -396,25 +361,9 @@
             align-items: center;
         }
 
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            margin: 0;
-        }
-
         .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 0.8rem;
-            cursor: pointer;
-            accent-color: #06b6d4;
-        }
-
-        .checkbox-group span {
-            text-transform: none;
-            font-weight: 600;
-            color: #cbd5e1;
+            margin-right: 0.5rem;
+            width: auto;
         }
 
         .form-actions {
@@ -423,523 +372,554 @@
             margin-top: 2rem;
         }
 
-        .form-actions .btn {
+        .form-actions button {
             flex: 1;
         }
 
-        .toggle-password {
-            position: absolute;
-            right: 0.8rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 1.3rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            padding: 0.3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-
-        .toggle-password:hover {
-            color: #06b6d4;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .toggle-password:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-
+        /* Empty State */
         .empty-state {
-            grid-column: 1 / -1;
             text-align: center;
-            padding: 4rem 2rem;
-            color: #64748b;
+            padding: 3rem;
+            color: #94a3b8;
         }
 
-        .empty-icon {
-            font-size: 4rem;
+        .empty-state-icon {
+            font-size: 3rem;
             margin-bottom: 1rem;
-            opacity: 0.5;
-            animation: float 3s ease-in-out infinite;
         }
 
-        .empty-state p {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
+        /* Modal Adicionar Múltiplos */
+        .add-multiple {
+            display: none;
         }
 
-        .empty-state .hint {
-            font-size: 0.9rem;
-            color: #475569;
-            margin-bottom: 2rem;
+        .user-input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: end;
         }
 
-        .empty-state a {
-            display: inline-block;
-            padding: 0.8rem 1.8rem;
-            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
-            color: #000814;
-            border: none;
-            border-radius: 0.6rem;
-            text-decoration: none;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.9rem;
+        .user-input-row input {
+            width: 100%;
         }
 
-        .empty-state a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+        .btn-add-row {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            padding: 0.6rem 1rem;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .btn-add-row:hover {
+            background: rgba(34, 197, 94, 0.3);
         }
 
-        .logout-btn:hover {
-            background: rgba(239, 68, 68, 0.25) !important;
-            border-color: rgba(239, 68, 68, 0.8) !important;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
-            transform: translateY(-2px);
+        .btn-remove-row {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 0.6rem;
+            min-width: 40px;
+        }
+
+        .btn-remove-row:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #06b6d4;
+        }
+
+        .spinner {
+            border: 3px solid rgba(6, 182, 212, 0.2);
+            border-top: 3px solid #06b6d4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #22c55e;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
         }
 
         @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-content h1 {
-                font-size: 2rem;
-                letter-spacing: 2px;
-            }
-
-            .header-actions {
-                width: 100%;
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-
-            .user-grid {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
-            .user-card {
-                padding: 1.5rem;
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .user-input-row {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
-    <a href="/logout" class="logout-btn" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1001; padding: 0.6rem 1.2rem; background: rgba(239, 68, 68, 0.15); border: 1.5px solid rgba(239, 68, 68, 0.5); color: #ef4444; border-radius: 0.5rem; text-decoration: none; font-weight: 700; font-size: 0.85rem; transition: all 0.3s ease; backdrop-filter: blur(10px); text-transform: uppercase; letter-spacing: 0.5px;">Sair</a>
-    <canvas id="detective-canvas"></canvas>
-
     <div class="container">
         <header>
-            <div class="header-content">
-                <h1>OPERADORES</h1>
-                <p class="header-subtitle">Gestão de Acesso ao Sistema</p>
-            </div>
+            <h1>👥 Gestão de Usuários</h1>
             <div class="header-actions">
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <a href="/admin/dashboard" class="btn btn-secondary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        Dashboard
-                    </a>
-                    <a href="/admin/logs" class="btn btn-secondary">Ver Logs</a>
-                    <a href="/" class="btn btn-secondary">Painel Principal</a>
-                </div>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button onclick="exportBackupCSV()" class="btn btn-secondary" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        CSV
-                    </button>
-                    <button onclick="exportBackupJSON()" class="btn btn-secondary" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.5); color: #a855f7;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        JSON
-                    </button>
-                    <button onclick="document.getElementById('restoreInput').click()" class="btn btn-secondary" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.5); color: #3b82f6;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Restaurar
-                    </button>
-                    <input type="file" id="restoreInput" accept=".json" style="display: none;" onchange="restoreBackup(event)">
-                    <button onclick="openModal()" class="btn btn-primary">+ Novo Operador</button>
-                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ Novo Usuário</button>
+                <button class="btn btn-secondary btn-small" onclick="openAddMultipleModal()">➕➕ Adicionar Múltiplos</button>
+                <button class="btn btn-secondary btn-small" onclick="openImportCSVModal()">📥 Importar CSV</button>
+                <button class="btn btn-secondary btn-small" onclick="exportCSV()">📤 Exportar CSV</button>
+                <a href="/" class="btn btn-secondary btn-small">← Voltar</a>
             </div>
         </header>
 
-        <div class="user-grid">
-            {% for usuario in usuarios %}
-            <div class="user-card">
-                <div class="avatar">{{ usuario[1][0] | upper }}</div>
-                <span class="user-name">{{ usuario[1] }}</span>
-                <div class="user-role">
-                    <span class="status-indicator"></span>
-                    {% if usuario[2] == 1 %}Administrador{% else %}Operador{% endif %}
-                </div>
-                {% if usuario[2] == 1 %}
-                <span class="user-badge admin-badge">Admin</span>
-                {% else %}
-                <span class="user-badge">Operador</span>
-                {% endif %}
-                {% if usuario[2] == 0 %}
-                <div class="user-actions">
-                    <button onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-edit">Alterar Senha</button>
-                    <button onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')" class="btn-delete">Remover</button>
-                </div>
-                {% endif %}
+        <!-- Dashboard de Estatísticas -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>👥 Total de Usuários</h3>
+                <div class="stat-number" id="totalUsers">-</div>
             </div>
+            <div class="stat-card">
+                <h3>👑 Administradores</h3>
+                <div class="stat-number" id="totalAdmins">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>🟢 Usuários Ativos</h3>
+                <div class="stat-number" id="totalAtivos">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>📊 Total de Consultas</h3>
+                <div class="stat-number" id="totalConsultas">-</div>
+            </div>
+        </div>
+
+        <!-- Buscas e Filtros -->
+        <div class="search-filter-box">
+            <h3>🔍 Busca e Filtros</h3>
+            <div class="filter-row">
+                <input type="text" id="searchInput" placeholder="Buscar por nome..." onkeyup="filterTable()">
+                <select id="filterType" onchange="filterTable()">
+                    <option value="">Todos os Tipos</option>
+                    <option value="admin">Administrador</option>
+                    <option value="operador">Operador</option>
+                </select>
+                <select id="filterStatus" onchange="filterTable()">
+                    <option value="">Todos os Status</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabela de Usuários -->
+        <div class="users-table-container">
+            <div id="successMsg" class="success-message"></div>
+            <div id="errorMsg" class="error-message"></div>
+            
+            {% if usuarios %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>📋 Usuário</th>
+                        <th>👤 Tipo</th>
+                        <th>📅 Criado em</th>
+                        <th>🕐 Último Login</th>
+                        <th>✅ Status</th>
+                        <th>📊 Consultas</th>
+                        <th>⚙️ Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    {% for usuario in usuarios %}
+                    <tr class="user-row" data-name="{{ usuario[1] }}" data-type="{% if usuario[2] == 1 %}admin{% else %}operador{% endif %}" data-status="{% if usuario[5] == 1 %}ativo{% else %}inativo{% endif %}">
+                        <td><strong>{{ usuario[1] }}</strong></td>
+                        <td>
+                            {% if usuario[2] == 1 %}
+                            <span class="role-admin">👑 ADMIN</span>
+                            {% else %}
+                            <span class="role-operador">👤 OPERADOR</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario[3] if usuario[3] else 'Sem informação' }}</td>
+                        <td>{{ usuario[4] if usuario[4] else 'Nunca' }}</td>
+                        <td>
+                            {% if usuario[5] == 1 %}
+                            <span class="user-status status-ativo">🟢 Ativo</span>
+                            {% else %}
+                            <span class="user-status status-inativo">🔴 Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario[6] if usuario[6] else '0' }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-action btn-edit btn-small" onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')">Senha</button>
+                                {% if usuario[1] != 'admin' %}
+                                <button class="btn-action btn-toggle btn-small" onclick="togglePermission({{ usuario[0] }}, this)">{{ 'Remover Admin' if usuario[2] == 1 else 'Tornar Admin' }}</button>
+                                <button class="btn-action btn-toggle btn-small" onclick="toggleStatus({{ usuario[0] }}, this)">{{ 'Desativar' if usuario[5] == 1 else 'Ativar' }}</button>
+                                <button class="btn-action btn-delete btn-small" onclick="confirmDelete({{ usuario[0] }}, '{{ usuario[1] }}')">Deletar</button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% else %}
             <div class="empty-state">
-                <div class="empty-icon">Operador</div>
-                <p>Nenhum operador cadastrado</p>
-                <p class="hint">Comece criando seu primeiro operador do sistema.</p>
-                <button onclick="openModal()" class="btn btn-primary">+ Criar Operador</button>
+                <div class="empty-state-icon">👤</div>
+                <p>Nenhum usuário cadastrado</p>
+                <p style="color: #64748b; margin-top: 0.5rem;">Crie seu primeiro usuário para começar!</p>
+                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openAddModal()">➕ Criar Usuário</button>
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 
-    <!-- Modal para criar usuário -->
-    <div id="userModal" class="modal">
+    <!-- Modal Novo Usuário -->
+    <div id="addModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Novo Operador</h2>
-                <button onclick="closeModal()" class="close-btn">&times;</button>
+                <h2>➕ Novo Usuário</h2>
+                <button class="close-btn" onclick="closeAddModal()">&times;</button>
             </div>
-            <form action="/usuarios/novo" method="post" class="user-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <form id="addForm">
                 <div class="form-group">
-                    <label for="new_user">Nome de Usuário</label>
-                    <input type="text" id="new_user" name="new_user" placeholder="Digite o username" required>
+                    <label for="newUsername">Nome de Usuário</label>
+                    <input type="text" id="newUsername" placeholder="Digite o username" required>
                 </div>
                 <div class="form-group">
-                    <label for="new_pass">Senha</label>
-                    <div style="position: relative;">
-                        <input type="password" id="new_pass" name="new_pass" placeholder="Digite a senha" required style="padding-right: 3rem;">
-                        <button type="button" onclick="togglePassword()" class="toggle-password" title="Mostrar/Ocultar senha">
-                            <span id="eyeIcon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </span>
-                        </button>
-                    </div>
+                    <label for="newPassword">Senha</label>
+                    <input type="password" id="newPassword" placeholder="Digite a senha" required>
                 </div>
                 <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" name="admin" value="1">
-                        <span>Definir como Administrador</span>
-                    </label>
+                    <input type="checkbox" id="newAdmin" value="1">
+                    <label for="newAdmin" style="margin: 0; margin-left: 0.5rem;">Definir como Administrador</label>
                 </div>
                 <div class="form-actions">
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Criar Operador</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addSingleUser()">Criar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal para alterar senha -->
+    <!-- Modal Adicionar Múltiplos -->
+    <div id="addMultipleModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>➕➕ Adicionar Múltiplos Usuários</h2>
+                <button class="close-btn" onclick="closeAddMultipleModal()">&times;</button>
+            </div>
+            <form id="addMultipleForm">
+                <div id="usersContainer"></div>
+                <button type="button" class="btn btn-secondary btn-small" onclick="addUserInput()">+ Adicionar Campo</button>
+                <div class="form-actions" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddMultipleModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addMultipleUsers()">Criar Todos</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Alterar Senha -->
     <div id="passwordModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Alterar Senha</h2>
-                <button onclick="closePasswordModal()" class="close-btn">&times;</button>
+                <h2>🔑 Alterar Senha</h2>
+                <button class="close-btn" onclick="closePasswordModal()">&times;</button>
             </div>
-            <form id="passwordForm" action="/usuarios/alterar-senha" method="post" class="user-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" id="change_user_id" name="user_id">
+            <form id="passwordForm">
+                <input type="hidden" id="changeUserId">
                 <div class="form-group">
                     <label>Usuário</label>
-                    <input type="text" id="change_username" readonly style="background: rgba(30, 41, 59, 0.3); cursor: not-allowed;">
+                    <input type="text" id="changeUsername" readonly style="background: rgba(30, 41, 59, 0.3); cursor: not-allowed;">
                 </div>
                 <div class="form-group">
-                    <label for="change_pass">Nova Senha</label>
-                    <div style="position: relative;">
-                        <input type="password" id="change_pass" name="new_pass" placeholder="Digite a nova senha" required style="padding-right: 3rem;">
-                        <button type="button" onclick="toggleChangePassword()" class="toggle-password" title="Mostrar/Ocultar senha">
-                            <span id="eyeIconChange">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </span>
-                        </button>
-                    </div>
+                    <label for="changePassword">Nova Senha</label>
+                    <input type="password" id="changePassword" placeholder="Digite a nova senha" required>
                 </div>
                 <div class="form-actions">
-                    <button type="button" onclick="closePasswordModal()" class="btn btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="changePassword()">Alterar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Importar CSV -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📥 Importar Usuários (CSV)</h2>
+                <button class="close-btn" onclick="closeImportCSVModal()">&times;</button>
+            </div>
+            <p style="color: #94a3b8; margin-bottom: 1rem; font-size: 0.9rem;">
+                📋 Formato esperado: username,password,is_admin
+            </p>
+            <form id="importForm">
+                <div class="form-group">
+                    <label for="csvFile">Arquivo CSV</label>
+                    <input type="file" id="csvFile" accept=".csv" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeImportCSVModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="importCSV()">Importar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('detective-canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        const particles = [];
-        const numParticles = 50;
-        let mouseX = canvas.width / 2;
-        let mouseY = canvas.height / 2;
-
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+        // Carregar estatísticas ao abrir
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            if (document.getElementById('usersContainer')) {
+                addUserInput();  // Adicionar primeiro campo
+                addUserInput();  // Adicionar segundo campo
+            }
         });
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.radius = Math.random() * 2 + 0.5;
-                this.opacity = Math.random() * 0.5 + 0.2;
-                this.color = Math.random() > 0.5 ? '#06b6d4' : '#0ea5a4';
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
-                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
-
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
-                const dx = mouseX - this.x;
-                const dy = mouseY - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < 150) {
-                    const angle = Math.atan2(dy, dx);
-                    this.vx += Math.cos(angle) * 0.1;
-                    this.vy += Math.sin(angle) * 0.1;
-                    this.opacity = Math.min(1, this.opacity + 0.05);
-                } else {
-                    this.opacity = Math.max(0.2, this.opacity - 0.02);
-                }
-
-                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                if (speed > 2) {
-                    this.vx = (this.vx / speed) * 2;
-                    this.vy = (this.vy / speed) * 2;
-                }
-            }
-
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = this.opacity;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
+        // Carregar Estatísticas
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/usuarios/stats');
+                const data = await response.json();
+                
+                document.getElementById('totalUsers').textContent = data.total_users || 0;
+                document.getElementById('totalAdmins').textContent = data.total_admins || 0;
+                document.getElementById('totalAtivos').textContent = data.total_ativos || 0;
+                document.getElementById('totalConsultas').textContent = data.total_consultas || 0;
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
             }
         }
 
-        for (let i = 0; i < numParticles; i++) {
-            particles.push(new Particle());
+        // Filtrar Tabela
+        function filterTable() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const typeValue = document.getElementById('filterType').value;
+            const statusValue = document.getElementById('filterStatus').value;
+            
+            const rows = document.querySelectorAll('.user-row');
+            rows.forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const type = row.dataset.type;
+                const status = row.dataset.status;
+                
+                const matchSearch = name.includes(searchValue);
+                const matchType = !typeValue || type === typeValue;
+                const matchStatus = !statusValue || status === statusValue;
+                
+                row.style.display = matchSearch && matchType && matchStatus ? '' : 'none';
+            });
         }
 
-        function drawConnections() {
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
-            ctx.lineWidth = 1;
+        // Abrir/Fechar Modais
+        function openAddModal() { document.getElementById('addModal').style.display = 'block'; }
+        function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+        function openAddMultipleModal() { document.getElementById('addMultipleModal').style.display = 'block'; }
+        function closeAddMultipleModal() { document.getElementById('addMultipleModal').style.display = 'none'; }
+        function openPasswordModal(userId, username) {
+            document.getElementById('changeUserId').value = userId;
+            document.getElementById('changeUsername').value = username;
+            document.getElementById('passwordModal').style.display = 'block';
+        }
+        function closePasswordModal() { document.getElementById('passwordModal').style.display = 'none'; }
+        function openImportCSVModal() { document.getElementById('importModal').style.display = 'block'; }
+        function closeImportCSVModal() { document.getElementById('importModal').style.display = 'none'; }
 
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+        // Adicionar Usuário Simples
+        async function addSingleUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const isAdmin = document.getElementById('newAdmin').checked ? 1 : 0;
+            
+            if (!username || !password) {
+                showError('Preencha todos os campos');
+                return;
+            }
 
-                    if (distance < 100) {
-                        ctx.globalAlpha = (1 - distance / 100) * 0.3;
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
+            const formData = new FormData();
+            formData.append('new_user', username);
+            formData.append('new_pass', password);
+            if (isAdmin) formData.append('admin', '1');
+            formData.append('csrf_token', '{{ csrf_token }}');
+
+            try {
+                const response = await fetch('/usuarios/novo', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                location.reload();
+            } catch (error) {
+                showError('Erro ao criar usuário: ' + error.message);
+            }
+        }
+
+        // Adicionar Múltiplos Usuários
+        function addUserInput() {
+            const container = document.getElementById('usersContainer');
+            const index = container.children.length;
+            
+            const row = document.createElement('div');
+            row.className = 'user-input-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Username" class="username-input">
+                <input type="password" placeholder="Senha" class="password-input">
+                <button type="button" class="btn btn-remove-row btn-small" onclick="this.parentElement.remove()">✕</button>
+            `;
+            
+            container.appendChild(row);
+        }
+
+        async function addMultipleUsers() {
+            const inputs = document.querySelectorAll('.user-input-row');
+            let count = 0;
+
+            for (let row of inputs) {
+                const username = row.querySelector('.username-input').value.trim();
+                const password = row.querySelector('.password-input').value;
+
+                if (username && password) {
+                    const formData = new FormData();
+                    formData.append('new_user', username);
+                    formData.append('new_pass', password);
+                    formData.append('csrf_token', '{{ csrf_token }}');
+
+                    try {
+                        await fetch('/usuarios/novo', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        count++;
+                    } catch (error) {
+                        console.error('Erro ao criar ' + username);
                     }
                 }
             }
-            ctx.globalAlpha = 1;
-        }
 
-        function animate() {
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
-            gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
-            gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.03)';
-            ctx.lineWidth = 0.5;
-            const gridSize = 50;
-            
-            for (let x = 0; x < canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            
-            for (let y = 0; y < canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-
-            for (let particle of particles) {
-                particle.update();
-                particle.draw();
-            }
-
-            drawConnections();
-            requestAnimationFrame(animate);
-        }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // Modal functions
-        function openModal() {
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-
-        function confirmDelete(userId, username) {
-            if (confirm(`Tem certeza que deseja remover o operador "${username}"?`)) {
-                window.location.href = `/usuarios/deletar/${userId}`;
+            if (count > 0) {
+                showSuccess(`${count} usuário(s) criado(s) com sucesso!`);
+                setTimeout(() => location.reload(), 1500);
             }
         }
 
-        function togglePassword() {
-            const passwordInput = document.getElementById('new_pass');
-            const eyeIcon = document.getElementById('eyeIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.style.opacity = '0.6';
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.style.opacity = '1';
+        // Alterar Senha
+        async function changePassword() {
+            const userId = document.getElementById('changeUserId').value;
+            const password = document.getElementById('changePassword').value;
+
+            if (!password) {
+                showError('Digite uma nova senha');
+                return;
             }
-        }
 
-        function openPasswordModal(userId, username) {
-            document.getElementById('change_user_id').value = userId;
-            document.getElementById('change_username').value = username;
-            document.getElementById('change_pass').value = '';
-            document.getElementById('passwordModal').classList.add('active');
-        }
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('new_pass', password);
+            formData.append('csrf_token', '{{ csrf_token }}');
 
-        function closePasswordModal() {
-            document.getElementById('passwordModal').classList.remove('active');
-        }
-
-        function toggleChangePassword() {
-            const passwordInput = document.getElementById('change_pass');
-            const eyeIcon = document.getElementById('eyeIconChange');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.style.opacity = '0.6';
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.style.opacity = '1';
-            }
-        }
-
-        // Close modal on outside click
-        document.getElementById('userModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        document.getElementById('passwordModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePasswordModal();
-            }
-        });
-
-        // Close modal on ESC key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-                closePasswordModal();
-            }
-        });
-
-        // ===========================
-        // BACKUP E RESTAURAÇÃO
-        // ===========================
-        async function exportBackupCSV() {
             try {
-                window.location.href = '/backup/usuarios/csv';
-                showNotification('✅ Backup CSV iniciado', 'success');
+                await fetch('/usuarios/alterar-senha', {
+                    method: 'POST',
+                    body: formData
+                });
+                showSuccess('Senha alterada com sucesso!');
+                closePasswordModal();
+                setTimeout(() => location.reload(), 1500);
             } catch (error) {
-                showNotification('❌ Erro ao baixar backup', 'error');
+                showError('Erro ao alterar senha');
             }
         }
 
-        async function exportBackupJSON() {
+        // Alternar Permissões
+        async function togglePermission(userId, button) {
+            const formData = new FormData();
+            formData.append('user_id', userId);
+
             try {
-                window.location.href = '/backup/usuarios/json';
-                showNotification('✅ Backup JSON iniciado', 'success');
+                const response = await fetch('/usuarios/mudar-permissao', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Permissão alterada!');
+                    setTimeout(() => location.reload(), 1500);
+                }
             } catch (error) {
-                showNotification('❌ Erro ao baixar backup', 'error');
+                showError('Erro ao alterar permissão');
             }
         }
 
-        async function restoreBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Alternar Status
+        async function toggleStatus(userId, button) {
+            const formData = new FormData();
+            formData.append('user_id', userId);
 
-            if (!confirm('⚠️ Isto vai restaurar TODOS os usuários do arquivo!\n\nTem certeza?')) {
+            try {
+                const response = await fetch('/usuarios/ativar-desativar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Status alterado!');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch (error) {
+                showError('Erro ao alterar status');
+            }
+        }
+
+        // Importar CSV
+        async function importCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showError('Selecione um arquivo CSV');
                 return;
             }
 
@@ -947,50 +927,77 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch('/backup/restaurar/usuarios', {
+                const response = await fetch('/usuarios/importar-csv', {
                     method: 'POST',
                     body: formData
                 });
-
                 const data = await response.json();
+                
                 if (data.success) {
-                    showNotification(data.message, 'success');
+                    showSuccess(`Importado: ${data.added} usuários, Ignorado: ${data.skipped}`);
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showNotification(`❌ ${data.error}`, 'error');
+                    showError(data.error);
                 }
             } catch (error) {
-                showNotification('❌ Erro ao restaurar backup', 'error');
+                showError('Erro ao importar: ' + error.message);
+            }
+        }
+
+        // Exportar CSV
+        async function exportCSV() {
+            try {
+                const response = await fetch('/usuarios/exportar-csv');
+                const blob = await response.blob();
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'usuarios.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showSuccess('CSV exportado com sucesso!');
+            } catch (error) {
+                showError('Erro ao exportar: ' + error.message);
+            }
+        }
+
+        // Deletar Usuário
+        function confirmDelete(userId, username) {
+            if (username === 'admin') {
+                showError('Não é possível deletar o usuário admin');
+                return;
             }
 
-            // Limpar input
-            event.target.value = '';
+            if (confirm(`Tem certeza que quer deletar o usuário "${username}"?`)) {
+                window.location.href = `/usuarios/deletar/${userId}`;
+            }
         }
 
-        function showNotification(message, type) {
-            const div = document.createElement('div');
-            div.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                background: ${type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'};
-                border: 1px solid ${type === 'success' ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'};
-                color: ${type === 'success' ? '#10b981' : '#ef4444'};
-                border-radius: 0.5rem;
-                z-index: 10000;
-                animation: slideIn 0.3s ease-out;
-                font-weight: 600;
-            `;
-            div.textContent = message;
-            document.body.appendChild(div);
-            
-            setTimeout(() => {
-                div.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => div.remove(), 300);
-            }, 3000);
+        // Mostrar Mensagens
+        function showSuccess(msg) {
+            const el = document.getElementById('successMsg');
+            el.textContent = '✅ ' + msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
         }
-        
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = '❌ ' + msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        // Fechar modais ao clicar fora
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>

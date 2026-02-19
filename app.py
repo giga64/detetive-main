@@ -71,9 +71,37 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT,
-    is_admin INTEGER DEFAULT 0
+    is_admin INTEGER DEFAULT 0,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ultimo_login DATETIME,
+    ip_acesso TEXT,
+    status INTEGER DEFAULT 1,
+    numero_consultas INTEGER DEFAULT 0
 )
 """)
+conn.commit()
+
+# Migração: adicionar colunas se não existirem
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP")
+except:
+    pass
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN ultimo_login DATETIME")
+except:
+    pass
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN ip_acesso TEXT")
+except:
+    pass
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN status INTEGER DEFAULT 1")
+except:
+    pass
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN numero_consultas INTEGER DEFAULT 0")
+except:
+    pass
 conn.commit()
 
 # Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
@@ -1704,7 +1732,7 @@ async def list_users(request: Request):
     if request.cookies.get("is_admin") != "1": 
         return RedirectResponse(url="/")
     
-    cursor.execute("SELECT id, username, is_admin FROM users")
+    cursor.execute("SELECT id, username, is_admin, data_criacao, ultimo_login, status, numero_consultas FROM users ORDER BY data_criacao DESC")
     csrf_token = get_or_create_csrf_token(request)
     return templates.TemplateResponse("usuarios.html", {
         "request": request, 
@@ -1802,9 +1830,166 @@ async def change_password(request: Request, user_id: int = Form(...), new_pass: 
     
     return RedirectResponse(url="/usuarios", status_code=303)
 
-# ----------------------
+# ──────────────────────────────────────────
+# Novas Rotas para Gerenciamento de Usuários
+# ──────────────────────────────────────────
+
+@app.get("/api/usuarios/stats")
+async def get_user_stats(request: Request):
+    """Retorna estatísticas de usuários em JSON"""
+    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+        return {"error": "Acesso negado"}
+    
+    try:
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE is_admin = 1")
+        total_admins = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE status = 1")
+        total_ativos = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE DATE(data_criacao) = DATE('now')")
+        users_hoje = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT SUM(numero_consultas) FROM users")
+        total_consultas = cursor.fetchone()[0] or 0
+        
+        return {
+            "total_users": total_users,
+            "total_admins": total_admins,
+            "total_operadores": total_users - total_admins,
+            "total_ativos": total_ativos,
+            "users_hoje": users_hoje,
+            "total_consultas": total_consultas
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/usuarios/importar-csv")
+async def import_users_csv(request: Request, file: UploadFile = File(...)):
+    """Importa múltiplos usuários de um arquivo CSV"""
+    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    try:
+        content = await file.read()
+        lines = content.decode('utf-8').split('\n')
+        reader = csv.DictReader(lines)
+        
+        added = 0
+        skipped = 0
+        
+        for row in reader:
+            try:
+                new_user = row.get('username', '').strip()
+                new_pass = row.get('password', '').strip()
+                is_admin = int(row.get('is_admin', 0))
+                
+                if new_user and new_pass:
+                    cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
+                                 (new_user, new_pass, is_admin))
+                    added += 1
+            except sqlite3.IntegrityError:
+                skipped += 1
+        
+        conn.commit()
+        record_audit_log("IMPORT_USERS_CSV", username, client_ip, f"Importado: {added} usuários, Ignorado: {skipped}")
+        
+        return {"success": True, "added": added, "skipped": skipped}
+    except Exception as e:
+        record_audit_log("IMPORT_USERS_CSV_FAILED", username, client_ip, str(e))
+        return {"error": str(e)}
+
+@app.post("/usuarios/mudar-permissao")
+async def toggle_user_permission(request: Request, user_id: int = Form(...)):
+    """Alterna permissões do usuário (Admin ↔ Operador)"""
+    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    try:
+        cursor.execute("SELECT is_admin, username FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+        if user and user[1] != "admin":  # Não permitir mudar admin padrão
+            novo_admin = 0 if user[0] == 1 else 1
+            cursor.execute("UPDATE users SET is_admin = ? WHERE id = ?", (novo_admin, user_id))
+            conn.commit()
+            
+            novo_tipo = "ADMIN" if novo_admin else "OPERADOR"
+            record_audit_log("TOGGLE_PERMISSION", username, client_ip, f"Usuário {user[1]} mudado para {novo_tipo}")
+            return {"success": True, "new_role": novo_tipo}
+        
+        return {"error": "Usuário não encontrado ou protegido"}
+    except Exception as e:
+        record_audit_log("TOGGLE_PERMISSION_FAILED", username, client_ip, str(e))
+        return {"error": str(e)}
+
+@app.post("/usuarios/ativar-desativar")
+async def toggle_user_status(request: Request, user_id: int = Form(...)):
+    """Ativa ou desativa um usuário"""
+    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    try:
+        cursor.execute("SELECT status, username FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+        if user:
+            novo_status = 0 if user[0] == 1 else 1
+            cursor.execute("UPDATE users SET status = ? WHERE id = ?", (novo_status, user_id))
+            conn.commit()
+            
+            novo_estado = "ATIVO" if novo_status else "INATIVO"
+            record_audit_log("TOGGLE_STATUS", username, client_ip, f"Usuário {user[1]} mudado para {novo_estado}")
+            return {"success": True, "new_status": novo_estado}
+        
+        return {"error": "Usuário não encontrado"}
+    except Exception as e:
+        record_audit_log("TOGGLE_STATUS_FAILED", username, client_ip, str(e))
+        return {"error": str(e)}
+
+@app.get("/usuarios/exportar-csv")
+async def export_users_csv(request: Request):
+    """Exporta lista de usuários em CSV"""
+    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+        return RedirectResponse(url="/login", status_code=303)
+    
+    try:
+        cursor.execute("SELECT username, is_admin, data_criacao, status FROM users")
+        usuarios = cursor.fetchall()
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['username', 'is_admin', 'data_criacao', 'status'])
+        
+        for usuario in usuarios:
+            writer.writerow(usuario)
+        
+        username = request.cookies.get("auth_user")
+        record_audit_log("EXPORT_USERS", username, get_client_ip(request), "Exportação de usuários em CSV")
+        
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=usuarios.csv"}
+        )
+    except Exception as e:
+        return {"error": str(e)}
+
+# ──────────────────────────────────────────
 # Teste de Conexão Telegram
-# ----------------------
+# ──────────────────────────────────────────
 @app.get("/test-telegram")
 async def test_telegram(request: Request):
     """Endpoint para testar conexão com Telegram"""
