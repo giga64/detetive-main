@@ -660,6 +660,26 @@ def parse_cnpj_resultado(resultado_texto: str) -> dict:
     data["endereco_completo"]["estado"] = get_value("ESTADO")
     data["endereco_completo"]["cep"] = get_value("CEP")
     
+    # Montar endereço concatenado para exibição
+    endereco_parts = []
+    if data["endereco_completo"].get("logradouro"):
+        endereco_parts.append(data["endereco_completo"]["logradouro"])
+    if data["endereco_completo"].get("numero"):
+        endereco_parts.append(data["endereco_completo"]["numero"])
+    if data["endereco_completo"].get("complemento"):
+        endereco_parts.append(data["endereco_completo"]["complemento"])
+    if data["endereco_completo"].get("bairro"):
+        endereco_parts.append(data["endereco_completo"]["bairro"])
+    if data["endereco_completo"].get("municipio"):
+        endereco_parts.append(data["endereco_completo"]["municipio"])
+    if data["endereco_completo"].get("estado"):
+        endereco_parts.append(data["endereco_completo"]["estado"])
+    if data["endereco_completo"].get("cep"):
+        endereco_parts.append(data["endereco_completo"]["cep"])
+    
+    if endereco_parts:
+        data["endereco"] = " - ".join(endereco_parts)
+    
     # Telefones
     telefones_str = get_value("TELEFONE")
     if telefones_str and "SEM INFORMAÇÃO" not in telefones_str.upper():
@@ -702,6 +722,11 @@ def parse_placa_resultado(resultado_texto: str) -> dict:
     }
     
     def get_value(label, text=resultado_texto):
+        # Tenta com bullet point primeiro (• LABEL: valor)
+        match = re.search(rf'•\s*{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        # Se não encontrar com bullet, tenta padrão normal (LABEL: valor)
         match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
         return match.group(1).strip() if match else None
     
@@ -722,6 +747,15 @@ def parse_placa_resultado(resultado_texto: str) -> dict:
     # Localização
     data["localizacao"]["municipio"] = get_value("MUNICIPIO")
     data["localizacao"]["estado"] = get_value("ESTADO")
+    
+    # Montar endereço do veículo a partir de localização
+    endereco_parts = []
+    if data["localizacao"].get("municipio"):
+        endereco_parts.append(data["localizacao"]["municipio"])
+    if data["localizacao"].get("estado"):
+        endereco_parts.append(data["localizacao"]["estado"])
+    if endereco_parts:
+        data["dados_veiculo"]["endereco_veiculo"] = " - ".join(endereco_parts)
     
     # Fabricação
     data["fabricacao"]["municipio_fab"] = get_value("MUNICIPIO - FAB.")
