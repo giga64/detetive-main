@@ -93,11 +93,11 @@ def add_column_if_not_exists(table_name, column_name, column_type):
             raise
 
 # Adicionar todas as colunas necessárias
-add_column_if_not_exists("users", "data_criacao", "DATETIME DEFAULT CURRENT_TIMESTAMP")
+add_column_if_not_exists("users", "data_criacao", "DATETIME")
 add_column_if_not_exists("users", "ultimo_login", "DATETIME")
 add_column_if_not_exists("users", "ip_acesso", "TEXT")
-add_column_if_not_exists("users", "status", "INTEGER DEFAULT 1")
-add_column_if_not_exists("users", "numero_consultas", "INTEGER DEFAULT 0")
+add_column_if_not_exists("users", "status", "INTEGER")
+add_column_if_not_exists("users", "numero_consultas", "INTEGER")
 
 # Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
 cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
