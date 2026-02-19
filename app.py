@@ -602,13 +602,19 @@ def parse_cnpj_resultado(resultado_texto: str) -> dict:
     }
     
     def get_value(label, text=resultado_texto):
-        # Tenta com bullet point primeiro (• LABEL: valor)
-        match = re.search(rf'•\s*{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
+        # Tenta com bullet point primeiro (• LABEL:  valor com espaços)
+        match = re.search(rf'•\s*{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            value = match.group(1).strip()
+            if value:
+                return value
         # Se não encontrar com bullet, tenta padrão normal (LABEL: valor)
-        match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
-        return match.group(1).strip() if match else None
+        match = re.search(rf'{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip()
+            if value:
+                return value
+        return None
     
     # Dados da empresa
     data["dados_pessoais"]["nome"] = get_value("NOME")
@@ -722,13 +728,19 @@ def parse_placa_resultado(resultado_texto: str) -> dict:
     }
     
     def get_value(label, text=resultado_texto):
-        # Tenta com bullet point primeiro (• LABEL: valor)
-        match = re.search(rf'•\s*{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
+        # Tenta com bullet point primeiro (• LABEL:  valor com espaços)
+        match = re.search(rf'•\s*{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            value = match.group(1).strip()
+            if value:
+                return value
         # Se não encontrar com bullet, tenta padrão normal (LABEL: valor)
-        match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
-        return match.group(1).strip() if match else None
+        match = re.search(rf'{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip()
+            if value:
+                return value
+        return None
     
     # Dados básicos do Veículo
     data["dados_veiculo"]["placa"] = get_value("PLACA")
