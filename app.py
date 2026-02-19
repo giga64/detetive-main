@@ -393,11 +393,23 @@ def format_timestamp_br(timestamp_str: str) -> str:
     except:
         return timestamp_str  # Retorna original se houver erro
 
-def parse_resultado_consulta(resultado_texto: str) -> dict:
+def parse_resultado_consulta(resultado_texto: str, tipo: str = None) -> dict:
     """Faz parsing do resultado textual e retorna dados estruturados"""
     import re
     
-    # Detectar tipo de consulta
+    # Se tipo foi passado, usar diretamente (mais confiável)
+    if tipo:
+        tipo_lower = tipo.lower()
+        if tipo_lower == "cnpj":
+            return parse_cnpj_resultado(resultado_texto)
+        elif tipo_lower == "placa":
+            return parse_placa_resultado(resultado_texto)
+        elif tipo_lower == "nome":
+            return parse_nome_resultado(resultado_texto)
+        else:
+            return parse_cpf_resultado(resultado_texto)
+    
+    # Fallback: tentar detectar pelo resultado
     if "CONSULTA DE CNPJ" in resultado_texto.upper():
         return parse_cnpj_resultado(resultado_texto)
     elif "CONSULTA DE PLACA" in resultado_texto.upper():
@@ -1205,7 +1217,8 @@ async def do_consulta(request: Request):
                 pass
         
         # Parser do resultado para dados estruturados
-        dados_estruturados = parse_resultado_consulta(resultado) if not resultado.startswith("❌") else None
+        # Passar o 'tipo' detectado para garantir parser correto
+        dados_estruturados = parse_resultado_consulta(resultado, tipo) if not resultado.startswith("❌") else None
         
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
