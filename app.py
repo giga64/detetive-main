@@ -1016,11 +1016,12 @@ async def view_resultado_completo(request: Request, search_id: int):
     # Parser dos dados
     dados = parse_resultado_consulta(search[2])
     
-    return templates.TemplateResponse("view-resultado.html", {
+    return templates.TemplateResponse("modern-result.html", {
         "request": request,
         "identifier": search[1],
-        "response": search[2],
-        "dados": dados
+        "resultado": search[2],
+        "dados": dados,
+        "csrf_token": get_or_create_csrf_token(request)
     })
 
 # ----------------------
