@@ -205,9 +205,11 @@ if STRING_SESSION_ENV:
     # Remover espaços, quebras de linha e caracteres extras
     STRING_SESSION_ENV = STRING_SESSION_ENV.strip().strip('"').strip("'")
     STRING_SESSION_ENV = re.sub(r"\s+", "", STRING_SESSION_ENV)
+    # Manter apenas caracteres válidos de base64url para evitar erros por caracteres invisíveis
+    STRING_SESSION_ENV = re.sub(r"[^A-Za-z0-9_\-=]", "", STRING_SESSION_ENV)
     if len(STRING_SESSION_ENV) % 4 != 0:
         STRING_SESSION_ENV += "=" * (4 - (len(STRING_SESSION_ENV) % 4))
-    print(f"   Usando STRING_SESSION")
+    print(f"   Usando STRING_SESSION (len={len(STRING_SESSION_ENV)})")
 else:
     print(f"   Usando arquivo de sessão local")
     
@@ -303,14 +305,42 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 async def get_telegram_client():
     # Usar STRING_SESSION se disponível, senão arquivo de sessão
     if STRING_SESSION_ENV:
-        try:
-            session = StringSession(STRING_SESSION_ENV)
-        except Exception as session_error:
+        session = None
+        session_error = None
+        candidates = []
+
+        # 1) valor como veio
+        candidates.append(STRING_SESSION_ENV)
+
+        # 2) converter de base64 padrão para base64url (caso tenha vindo com + e /)
+        b64url_variant = STRING_SESSION_ENV.replace("+", "-").replace("/", "_")
+        if b64url_variant not in candidates:
+            candidates.append(b64url_variant)
+
+        # 3) sem padding no fim
+        no_padding_variant = STRING_SESSION_ENV.rstrip("=")
+        if no_padding_variant and no_padding_variant not in candidates:
+            candidates.append(no_padding_variant)
+
+        for candidate in candidates:
+            try:
+                session = StringSession(candidate)
+                break
+            except Exception as current_error:
+                session_error = current_error
+
+        if session is None:
             if os.path.exists(SESSION_FILE_PATH):
-                print(f"⚠️ STRING_SESSION inválida ({session_error}). Usando arquivo de sessão local.")
+                print(
+                    f"⚠️ STRING_SESSION inválida ({session_error}). "
+                    f"len={len(STRING_SESSION_ENV)}. Usando arquivo de sessão local."
+                )
                 session = SESSION_FILE_PATH
             else:
-                raise Exception("❌ STRING_SESSION inválida e arquivo de sessão local não encontrado.")
+                raise Exception(
+                    "❌ STRING_SESSION inválida e arquivo de sessão local não encontrado. "
+                    f"Detalhes: {session_error}"
+                )
     else:
         session = SESSION_FILE_PATH
     
