@@ -204,9 +204,10 @@ STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
 if STRING_SESSION_ENV:
     # Remover espaços, quebras de linha e caracteres extras
     STRING_SESSION_ENV = STRING_SESSION_ENV.strip().strip('"').strip("'")
+    STRING_SESSION_ENV = STRING_SESSION_ENV.replace("\\n", "").replace("\\r", "")
     STRING_SESSION_ENV = re.sub(r"\s+", "", STRING_SESSION_ENV)
-    # Manter apenas caracteres válidos de base64url para evitar erros por caracteres invisíveis
-    STRING_SESSION_ENV = re.sub(r"[^A-Za-z0-9_\-=]", "", STRING_SESSION_ENV)
+    # Manter apenas caracteres válidos de base64/base64url para evitar erros por caracteres invisíveis
+    STRING_SESSION_ENV = re.sub(r"[^A-Za-z0-9_\-=+/]", "", STRING_SESSION_ENV)
     if len(STRING_SESSION_ENV) % 4 != 0:
         STRING_SESSION_ENV += "=" * (4 - (len(STRING_SESSION_ENV) % 4))
     print(f"   Usando STRING_SESSION (len={len(STRING_SESSION_ENV)})")
@@ -309,18 +310,23 @@ async def get_telegram_client():
         session_error = None
         candidates = []
 
-        # 1) valor como veio
-        candidates.append(STRING_SESSION_ENV)
+        base_variants = [
+            STRING_SESSION_ENV,
+            STRING_SESSION_ENV.replace("+", "-").replace("/", "_"),
+            STRING_SESSION_ENV.replace("-", "+").replace("_", "/")
+        ]
 
-        # 2) converter de base64 padrão para base64url (caso tenha vindo com + e /)
-        b64url_variant = STRING_SESSION_ENV.replace("+", "-").replace("/", "_")
-        if b64url_variant not in candidates:
-            candidates.append(b64url_variant)
+        for base_value in base_variants:
+            current = base_value.strip().strip('"').strip("'")
+            if not current:
+                continue
 
-        # 3) sem padding no fim
-        no_padding_variant = STRING_SESSION_ENV.rstrip("=")
-        if no_padding_variant and no_padding_variant not in candidates:
-            candidates.append(no_padding_variant)
+            normalized_without_padding = current.rstrip("=")
+            normalized_with_padding = normalized_without_padding + ("=" * ((4 - (len(normalized_without_padding) % 4)) % 4))
+
+            for variant in (current, normalized_without_padding, normalized_with_padding):
+                if variant and variant not in candidates:
+                    candidates.append(variant)
 
         for candidate in candidates:
             try:
