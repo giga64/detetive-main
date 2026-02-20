@@ -508,6 +508,7 @@
         {% if consultas %}
         {% if not is_favorites %}
         <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button type="submit" class="btn-clear">Limpar Histórico</button>
         </form>
         {% endif %}

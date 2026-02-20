@@ -15,8 +15,10 @@
         }
 
         body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background-attachment: fixed;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #e2e8f0;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -25,10 +27,12 @@
         }
 
         .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 480px;
             width: 100%;
             padding: 40px;
             animation: slideUp 0.5s ease-out;
@@ -48,41 +52,52 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2);
         }
 
         .header-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
+        }
+
+        .header-icon svg {
+            width: 32px;
+            height: 32px;
             color: white;
-            font-size: 32px;
+            stroke: white;
         }
 
         h1 {
-            color: #333;
+            color: #06b6d4;
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 0;
         }
 
         .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 25px;
             font-size: 13px;
-            color: #856404;
+            color: #fbbf24;
             line-height: 1.5;
         }
 
@@ -91,7 +106,7 @@
             height: 16px;
             vertical-align: middle;
             margin-right: 8px;
-            fill: #ffc107;
+            stroke: #fbbf24;
         }
 
         .form-group {
@@ -100,7 +115,7 @@
 
         label {
             display: block;
-            color: #333;
+            color: #cbd5e1;
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 8px;
@@ -114,18 +129,26 @@
         input[type="text"] {
             width: 100%;
             padding: 12px;
-            border: 1px solid #ddd;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(6, 182, 212, 0.3);
             border-radius: 6px;
             font-size: 14px;
+            color: #e2e8f0;
             transition: all 0.3s ease;
             font-family: inherit;
+        }
+
+        input[type="password"]::placeholder,
+        input[type="text"]::placeholder {
+            color: #64748b;
         }
 
         input[type="password"]:focus,
         input[type="text"]:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #06b6d4;
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
         }
 
         .toggle-password {
@@ -153,17 +176,18 @@
         .toggle-password svg {
             width: 18px;
             height: 18px;
-            stroke: #666;
+            stroke: #06b6d4;
             stroke-width: 2;
         }
 
         .password-requirements {
-            background: #f5f5f5;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.2);
             border-radius: 6px;
             padding: 12px;
             margin-bottom: 20px;
             font-size: 12px;
-            color: #666;
+            color: #cbd5e1;
         }
 
         .requirement {
@@ -184,18 +208,18 @@
             align-items: center;
             justify-content: center;
             margin-right: 8px;
-            font-size: 10px;
             font-weight: bold;
             color: white;
             flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
         .requirement-icon.met {
-            background: #28a745;
+            background: #10b981;
         }
 
         .requirement-icon.unmet {
-            background: #ccc;
+            background: #64748b;
         }
 
         .requirement-icon svg {
@@ -203,13 +227,13 @@
         }
 
         .error-message {
-            color: #dc3545;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -219,27 +243,7 @@
             width: 18px;
             height: 18px;
             flex-shrink: 0;
-            fill: #dc3545;
-        }
-
-        .success-message {
-            color: #155724;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .success-message svg {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-            fill: #155724;
+            stroke: #fca5a5;
         }
 
         .button-group {
@@ -266,38 +270,43 @@
         }
 
         button[type="submit"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #06b6d4, #0ea5a4);
             color: white;
+            border: 1px solid rgba(6, 182, 212, 0.5);
         }
 
         button[type="submit"]:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
+            border-color: #06b6d4;
         }
 
         button[type="submit"]:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .btn-logout {
-            background: #e9ecef;
-            color: #333;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
             text-decoration: none;
         }
 
         .btn-logout:hover {
-            background: #dee2e6;
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
             transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
         }
 
         .info-box {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
             border-radius: 6px;
             padding: 12px;
-            font-size: 13px;
-            color: #0c5460;
+            font-size: 12px;
+            color: #cbd5e1;
             line-height: 1.5;
             margin-top: 20px;
         }
@@ -307,21 +316,22 @@
             height: 16px;
             vertical-align: middle;
             margin-right: 8px;
-            fill: #0c5460;
+            stroke: #06b6d4;
         }
 
         .username-display {
-            background: #f5f5f5;
-            padding: 8px 12px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 10px 12px;
             border-radius: 6px;
             font-size: 13px;
-            color: #666;
+            color: #cbd5e1;
             margin-bottom: 20px;
             word-break: break-all;
         }
 
         .username-display strong {
-            color: #333;
+            color: #06b6d4;
         }
 
         @media (max-width: 480px) {
@@ -345,27 +355,30 @@
     <div class="container">
         <div class="header">
             <div class="header-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 2H3a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
-                    <path d="M16.6 4.3h-8V10a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V4.3z"/>
-                    <circle cx="12" cy="16" r="1"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a4 4 0 0 1 8 0v4"></path>
                 </svg>
             </div>
             <h1>Alterar Senha</h1>
-            <p class="subtitle">Sua sentença de acesso é temporária</p>
+            <p class="subtitle">Primeira autenticação obrigatória</p>
         </div>
 
         <div class="warning-box">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <strong>Ação Obrigatória:</strong> Você recebeu uma senha temporária (mdr123). Para continuar, crie uma senha permanente agora mesmo.
+            <strong>Ação Obrigatória:</strong> Você recebeu uma senha temporária (mdr123). Defina uma senha permanente para continuar.
         </div>
 
         {% if erro %}
         <div class="error-message">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             {{ erro }}
         </div>
@@ -384,7 +397,8 @@
                            minlength="4" autofocus>
                     <button type="button" class="toggle-password" data-target="nova_senha">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                 </div>
@@ -393,24 +407,24 @@
             <div class="password-requirements">
                 <div class="requirement">
                     <span class="requirement-icon unmet" id="req-length">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </span>
                     <span>Mínimo 4 caracteres</span>
                 </div>
                 <div class="requirement">
                     <span class="requirement-icon unmet" id="req-different">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </span>
                     <span>Diferente da senha padrão</span>
                 </div>
                 <div class="requirement">
                     <span class="requirement-icon unmet" id="req-match">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </span>
                     <span>Confirmação deve ser igual</span>
@@ -424,7 +438,8 @@
                            placeholder="Confirme a nova senha" required minlength="4">
                     <button type="button" class="toggle-password" data-target="confirmar_senha">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                 </div>
@@ -432,14 +447,14 @@
 
             <div class="button-group">
                 <button type="submit" id="submitBtn">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path>
                     </svg>
                     Alterar Senha
                 </button>
                 <a href="/logout" class="btn-logout">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"></path>
                     </svg>
                     Sair
                 </a>
@@ -447,26 +462,24 @@
         </form>
 
         <div class="info-box">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4M12 8h.01"></path>
             </svg>
-            <strong>Dica:</strong> Use uma senha forte com letras e números para maior segurança.
+            <strong>Dica:</strong> Use uma senha com letras e números para maior segurança.
         </div>
     </div>
 
     <script>
-        // Elementos do formulário
         const novaSenhaInput = document.getElementById('nova_senha');
         const confirmarSenhaInput = document.getElementById('confirmar_senha');
         const submitBtn = document.getElementById('submitBtn');
         const passwordToggles = document.querySelectorAll('.toggle-password');
 
-        // Elementos de requisitos
         const reqLength = document.getElementById('req-length');
         const reqDifferent = document.getElementById('req-different');
         const reqMatch = document.getElementById('req-match');
 
-        // Toggle de visibilidade de senha
         passwordToggles.forEach(toggle => {
             toggle.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -475,52 +488,41 @@
                 const isPassword = input.type === 'password';
                 input.type = isPassword ? 'text' : 'password';
                 
-                // Atualizar SVG
                 const svg = toggle.querySelector('svg');
                 const path = svg.querySelector('path:first-child');
                 if (isPassword) {
-                    // Trocar para eye-off
-                    path.setAttribute('d', 'M21 9.98v4.04M3 3l18 18m-9-4v.01M9.13 9.13A3 3 0 0 0 9 12a3 3 0 0 0 3 3a3 3 0 0 0 2.13-.87m0-5.26A9.88 9.88 0 0 1 12 5c7 0 11 8 11 8a18.988 18.988 0 0 1-5.07 5.07M9.13 9.13A9.88 9.88 0 0 0 5.07 14.2C5 14.2 1 6 1 6s4-8 11-8a9.88 9.88 0 0 1 5.13 1.07');
+                    path.setAttribute('d', 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24');
                 } else {
-                    // Trocar para eye
                     path.setAttribute('d', 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z');
                 }
             });
         });
 
-        // Validação em tempo real
         function validatePassword() {
             const novaSenha = novaSenhaInput.value;
             const confirmarSenha = confirmarSenhaInput.value;
 
-            // Requisito 1: Mínimo 4 caracteres
             const lengthValid = novaSenha.length >= 4;
             reqLength.classList.toggle('met', lengthValid);
             reqLength.classList.toggle('unmet', !lengthValid);
 
-            // Requisito 2: Diferente da senha padrão
             const differentValid = novaSenha !== 'mdr123' && novaSenha.length > 0;
             reqDifferent.classList.toggle('met', differentValid);
             reqDifferent.classList.toggle('unmet', !differentValid);
 
-            // Requisito 3: Confirmação igual
             const matchValid = novaSenha === confirmarSenha && novaSenha.length > 0;
             reqMatch.classList.toggle('met', matchValid);
             reqMatch.classList.toggle('unmet', !matchValid);
 
-            // Habilitar/desabilitar botão
             const allValid = lengthValid && differentValid && matchValid;
             submitBtn.disabled = !allValid;
         }
 
-        // Listeners
         novaSenhaInput.addEventListener('input', validatePassword);
         confirmarSenhaInput.addEventListener('input', validatePassword);
 
-        // Inicializar validação
         validatePassword();
 
-        // Prevenir submissão com Enter se houver erro
         document.getElementById('changePasswordForm').addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && submitBtn.disabled) {
                 e.preventDefault();
