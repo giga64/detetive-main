@@ -15,6 +15,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse,
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
+from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
 
 # ----------------------
@@ -196,6 +197,7 @@ API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
 print(f"Configuração Telegram:")
+print(f"   Telethon: {TELETHON_VERSION}")
 print(f"   API_ID: {API_ID}")
 print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
 
@@ -206,6 +208,12 @@ if STRING_SESSION_ENV:
     STRING_SESSION_ENV = STRING_SESSION_ENV.strip().strip('"').strip("'")
     STRING_SESSION_ENV = STRING_SESSION_ENV.replace("\\n", "").replace("\\r", "")
     STRING_SESSION_ENV = re.sub(r"\s+", "", STRING_SESSION_ENV)
+
+    # Se vier com texto extra, manter apenas o maior token candidato a sessão
+    token_candidates = re.findall(r"[A-Za-z0-9_\-=+/]{80,}", STRING_SESSION_ENV)
+    if token_candidates:
+        STRING_SESSION_ENV = max(token_candidates, key=len)
+
     # Manter apenas caracteres válidos de base64/base64url para evitar erros por caracteres invisíveis
     STRING_SESSION_ENV = re.sub(r"[^A-Za-z0-9_\-=+/]", "", STRING_SESSION_ENV)
     if len(STRING_SESSION_ENV) % 4 != 0:

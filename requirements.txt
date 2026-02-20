@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-telethon
+telethon==1.42.0
 jinja2
 playwright  # Remova se não for usar automação de navegador 
 python-multipart
