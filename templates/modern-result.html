@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ONESEEK - Resultado da Consulta</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
     <style>
         * {
             margin: 0;
@@ -721,6 +724,13 @@
                             </svg>
                             Resultados
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'raw')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Dados Brutos
+                        </button>
                     {% elif dados.tipo_consulta == 'placa' %}
                         <!-- Abas para PLACA -->
                         <button class="tab-btn active" onclick="switchTab(event, 'personal')">
@@ -736,6 +746,13 @@
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
                             Proprietário
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'raw')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Dados Brutos
                         </button>
                     {% elif dados.tipo_consulta == 'cnpj' %}
                         <!-- Abas para CNPJ -->
@@ -758,6 +775,13 @@
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                             </svg>
                             Contatos
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'raw')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Dados Brutos
                         </button>
                     {% else %}
                         <!-- Abas para CPF (padrão) -->
@@ -1279,21 +1303,45 @@
                 <!-- TAB: Endereços -->
                 <div id="addresses" class="tab-content">
                     {% if dados.tipo_consulta == 'placa' %}
-                        <!-- Mostrar endereço do VEÍCULO (PLACA) -->
-                        {% if dados.dados_veiculo.endereco_veiculo %}
-                            <div class="data-grid">
-                                <div class="data-item" style="grid-column: 1 / -1;">
-                                    <span class="data-label">Endereço do Veículo</span>
-                                    <span class="data-value">{{ dados.dados_veiculo.endereco_veiculo }}</span>
+                        <!-- Mostrar Proprietário (PLACA) -->
+                        {% if dados.proprietario and dados.proprietario.nome %}
+                            <div style="background: rgba(6, 182, 212, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #06b6d4; margin-bottom: 15px;">Proprietário</h3>
+                                <div class="data-grid">
+                                    {% if dados.proprietario.cpf_cnpj %}
+                                        <div class="data-item">
+                                            <span class="data-label">CPF/CNPJ</span>
+                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.cpf_cnpj }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if dados.proprietario.nome %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Nome Completo</span>
+                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.nome }}</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div style="margin-top: 20px;">
-                                <button class="action-btn" onclick="openStreetView('{{ dados.dados_veiculo.endereco_veiculo }}')">Street View</button>
-                                <button class="action-btn" onclick="reverseSearch('{{ dados.dados_veiculo.endereco_veiculo }}', 'address')">Buscar</button>
+                        {% endif %}
+                        
+                        <!-- Endereço do Veículo -->
+                        {% if dados.dados_veiculo.endereco_veiculo %}
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #22c55e; margin-bottom: 15px;">Localização do Veículo</h3>
+                                <div class="data-grid">
+                                    <div class="data-item" style="grid-column: 1 / -1;">
+                                        <span class="data-label">Endereço</span>
+                                        <span class="data-value">{{ dados.dados_veiculo.endereco_veiculo }}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 20px;">
+                                    <button class="action-btn" onclick="openStreetView('{{ dados.dados_veiculo.endereco_veiculo }}')">Street View</button>
+                                    <button class="action-btn" onclick="reverseSearch('{{ dados.dados_veiculo.endereco_veiculo }}', 'address')">Buscar</button>
+                                </div>
                             </div>
                         {% else %}
                             <div class="empty-state">
-                                <p>Nenhum endereço encontrado</p>
+                                <p>Nenhum endereço do veículo encontrado</p>
                             </div>
                         {% endif %}
                     {% elif dados.tipo_consulta == 'cnpj' %}
@@ -1503,54 +1551,8 @@
                     {% endif %}
                 </div>
 
-                <!-- TAB: Proprietário (PLACA) -->
-                <div id="proprietario" class="tab-content">
-                    {% if dados.tipo_consulta == 'placa' and dados.proprietario %}
-                        <!-- Proprietário -->
-                        <div style="background: rgba(6, 182, 212, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                            <h3 style="color: #06b6d4; margin-bottom: 15px;">Proprietário</h3>
-                            <div class="data-grid">
-                                {% if dados.proprietario.cpf_cnpj %}
-                                    <div class="data-item">
-                                        <span class="data-label">CPF/CNPJ</span>
-                                        <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.cpf_cnpj }}</span>
-                                    </div>
-                                {% endif %}
-                                {% if dados.proprietario.nome %}
-                                    <div class="data-item" style="grid-column: 1 / -1;">
-                                        <span class="data-label">Nome Completo</span>
-                                        <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.proprietario.nome }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Possuidor (se diferente) -->
-                        {% if dados.possuidor and dados.possuidor.nome and dados.possuidor.nome != dados.proprietario.nome %}
-                            <div style="background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 8px;">
-                                <h3 style="color: #f59e0b; margin-bottom: 15px;">Possuidor (diferente do Proprietário)</h3>
-                                <p style="color: #9ca3af; font-size: 13px; margin-bottom: 15px;">O possuidor é quem detém a posse do veículo, podendo ser diferente do proprietário legal.</p>
-                                <div class="data-grid">
-                                    {% if dados.possuidor.cpf_cnpj %}
-                                        <div class="data-item">
-                                            <span class="data-label">CPF/CNPJ</span>
-                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.possuidor.cpf_cnpj }}</span>
-                                        </div>
-                                    {% endif %}
-                                    {% if dados.possuidor.nome %}
-                                        <div class="data-item" style="grid-column: 1 / -1;">
-                                            <span class="data-label">Nome Completo</span>
-                                            <span class="data-value" style="font-weight: 600; font-size: 16px;">{{ dados.possuidor.nome }}</span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="empty-state">
-                            <p style="color: #9ca3af;">Sem informações de proprietário disponíveis</p>
-                        </div>
-                    {% endif %}
+                <!-- TAB: Proprietário (PLACA) - AGORA VAZIO (conteúdo movido para ADDRESSES) -->
+                <div id="proprietario" class="tab-content" style="display: none;">
                 </div>
 
                 <!-- TAB: Dados Brutos -->

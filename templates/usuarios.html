@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Usuários - ONESEEK</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
+    <link rel="apple-touch-icon" href="/static/favicon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -244,6 +246,15 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn-action svg {
+            width: 16px;
+            height: 16px;
         }
 
         .btn-edit {
@@ -633,7 +644,12 @@
                         <td>
                             <div class="action-buttons">
                                 {% if usuario[1] != 'admin' %}
-                                <button class="btn-action btn-edit btn-small" onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')">Senha</button>
+                                <button class="btn-action btn-edit btn-small" onclick="openPasswordModal({{ usuario[0] }}, '{{ usuario[1] }}')" title="Alterar Senha">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 1l-8 8v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8l-8-8z"/>
+                                        <path d="M12 1v12M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                    </svg>
+                                </button>
                                 {% endif %}
                                 {% if usuario[1] != 'admin' %}
                                 <button class="btn-action btn-toggle btn-small" onclick="togglePermission({{ usuario[0] }}, this)">{{ 'Remover Admin' if usuario[2] == 1 else 'Tornar Admin' }}</button>
@@ -871,14 +887,14 @@
             const password = document.getElementById('newPassword').value;
             const isAdmin = document.getElementById('newAdmin').checked ? 1 : 0;
             
-            if (!username || !password) {
-                showError('Preencha todos os campos');
+            if (!username) {
+                showError('Preencha o nome de usuário');
                 return;
             }
 
             const formData = new FormData();
             formData.append('new_user', username);
-            formData.append('new_pass', password);
+            formData.append('new_pass', password || '');  // Se vazio, usa senha padrão (mdr123)
             if (isAdmin) formData.append('admin', '1');
             formData.append('csrf_token', '{{ csrf_token }}');
 
@@ -903,8 +919,8 @@
             row.className = 'user-input-row';
             row.innerHTML = `
                 <input type="text" placeholder="Username" class="username-input">
-                <input type="password" placeholder="Senha" class="password-input">
-                <button type="button" class="btn btn-remove-row btn-small" onclick="this.parentElement.remove()">✕</button>
+                <input type="password" placeholder="Senha (opcional)" class="password-input">
+                <button type="button" class="btn btn-remove-row btn-small" onclick="this.parentElement.remove()">Remover</button>
             `;
             
             container.appendChild(row);
@@ -918,10 +934,10 @@
                 const username = row.querySelector('.username-input').value.trim();
                 const password = row.querySelector('.password-input').value;
 
-                if (username && password) {
+                if (username) {  // Somente username é obrigatório
                     const formData = new FormData();
                     formData.append('new_user', username);
-                    formData.append('new_pass', password);
+                    formData.append('new_pass', password || '');  // Se vazio, usa padrão
                     formData.append('csrf_token', '{{ csrf_token }}');
 
                     try {

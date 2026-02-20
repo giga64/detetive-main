@@ -98,6 +98,7 @@ add_column_if_not_exists("users", "ultimo_login", "DATETIME")
 add_column_if_not_exists("users", "ip_acesso", "TEXT")
 add_column_if_not_exists("users", "status", "INTEGER")
 add_column_if_not_exists("users", "numero_consultas", "INTEGER")
+add_column_if_not_exists("users", "senha_temporaria", "INTEGER DEFAULT 0")
 
 # Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
 cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
@@ -999,7 +1000,7 @@ def get_user_statistics(username: str, is_admin: bool = False):
             cursor.execute("""
                 SELECT username, COUNT(*) as total
                 FROM searches
-                WHERE username IS NOT NULL
+                WHERE username IS NOT NULL AND username NOT IN ('admin', 'None', 'T')
                 GROUP BY username
                 ORDER BY total DESC
                 LIMIT 5
@@ -1085,13 +1086,14 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
         })
     
     # Verificar credenciais
-    cursor.execute("SELECT id, is_admin, status FROM users WHERE username = ? AND password = ?", (username, password))
+    cursor.execute("SELECT id, is_admin, status, senha_temporaria FROM users WHERE username = ? AND password = ?", (username, password))
     user = cursor.fetchone()
     
     if user:
         user_id = user[0]
         is_admin = user[1]
         status = user[2]
+        senha_temporaria = user[3] if len(user) > 3 else 0
         
         # Verificar se usuário está ativo (status = 1 ou NULL para compatibilidade)
         if status is None:
@@ -1111,6 +1113,18 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
             conn.commit()
         except:
             pass  # Se a coluna não existir, ignora
+        
+        # Se usuário usou senha padrão, redirecionar para alterar senha
+        if senha_temporaria == 1:
+            # Criar cookie temporário para mudança de senha obrigatória
+            response = RedirectResponse(url="/mudar-senha-obrigatoria", status_code=303)
+            auth_time = (datetime.now() + timedelta(seconds=SESSION_TIMEOUT)).isoformat()
+            response.set_cookie(key="auth_user", value=username, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+            response.set_cookie(key="is_admin", value=str(is_admin), max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+            response.set_cookie(key="auth_time", value=auth_time, max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+            response.set_cookie(key="senha_temporaria", value="1", max_age=SESSION_TIMEOUT, httponly=True, samesite="Lax")
+            record_audit_log("LOGIN_TENTATIVA_SENHA_PADRAO", username, client_ip, "Redirecionado para mudança obrigatória de senha")
+            return response
         
         # Login bem-sucedido
         record_audit_log("LOGIN_SUCCESS", username, client_ip, "")
@@ -1138,7 +1152,85 @@ async def logout(request: Request):
     response.delete_cookie(key="auth_user")
     response.delete_cookie(key="is_admin")
     response.delete_cookie(key="auth_time")
+    response.delete_cookie(key="senha_temporaria")
     return response
+
+@app.get("/mudar-senha-obrigatoria", response_class=HTMLResponse)
+async def mudar_senha_obrigatoria(request: Request):
+    """Página obrigatória para mudança de senha na primeira autenticação com senha padrão"""
+    # Verificar se usuário está em processo de mudança de senha obrigatória
+    if not request.cookies.get("auth_user") or not request.cookies.get("senha_temporaria"):
+        return RedirectResponse(url="/login")
+    
+    username = request.cookies.get("auth_user")
+    return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+        "request": request,
+        "username": username
+    })
+
+@app.post("/mudar-senha-obrigatoria")
+async def processar_mudanca_senha_obrigatoria(request: Request, 
+                                              nova_senha: str = Form(...), 
+                                              confirmar_senha: str = Form(...)):
+    """Processa a mudança obrigatória de senha"""
+    # Verificar autenticação
+    if not request.cookies.get("auth_user") or not request.cookies.get("senha_temporaria"):
+        return RedirectResponse(url="/login")
+    
+    username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    
+    # Validações
+    if not nova_senha or not confirmar_senha:
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "Informe a nova senha e confirmação"
+        })
+    
+    if len(nova_senha) < 4:
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "Senha deve ter no mínimo 4 caracteres"
+        })
+    
+    if nova_senha != confirmar_senha:
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "As senhas não coincidem"
+        })
+    
+    if nova_senha == "mdr123":
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "A nova senha não pode ser a mesma que a senha padrão"
+        })
+    
+    # Atualizar senha e marcar que mudou
+    try:
+        cursor.execute(
+            "UPDATE users SET password = ?, senha_temporaria = 0 WHERE username = ?",
+            (nova_senha, username)
+        )
+        conn.commit()
+        
+        record_audit_log("SENHA_ALTERADA_OBRIGATORIA", username, client_ip, "Alterou senha padrão com sucesso")
+        
+        # Redirecionar para home
+        response = RedirectResponse(url="/", status_code=303)
+        # Remover cookie de senha temporária
+        response.delete_cookie(key="senha_temporaria")
+        return response
+    except Exception as e:
+        record_audit_log("ERRO_ALTERAR_SENHA", username, client_ip, str(e))
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "Erro ao alterar senha. Tente novamente."
+        })
 
 @app.post("/api/unlock-ip")
 async def unlock_ip(request: Request):
@@ -1288,10 +1380,11 @@ def admin_dashboard(request: Request):
     """)
     consultas_30_dias = cursor.fetchall()
     
-    # Top 10 usuários
+    # Top 10 usuários (excluindo admin, None, T)
     cursor.execute("""
         SELECT username, COUNT(*) as total
         FROM searches
+        WHERE username IS NOT NULL AND username NOT IN ('admin', 'None', 'T')
         GROUP BY username
         ORDER BY total DESC
         LIMIT 10
@@ -1628,23 +1721,22 @@ async def reverse_search_address(request: Request, address: str):
 
 @app.post("/historico/limpar")
 async def limpar_historico(request: Request):
-    if not request.cookies.get("auth_user"):
-        return RedirectResponse(url="/login", status_code=303)
-    
-    # Verificar expiração de sessão
-    if is_session_expired(request):
-        response = RedirectResponse(url="/login", status_code=303)
-        response.delete_cookie("auth_user")
-        response.delete_cookie("is_admin")
-        response.delete_cookie("auth_time")
-        return response
+    # Validar sessão do usuário
+    session_error = validate_user_session(request)
+    if session_error:
+        return session_error
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
-    cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
-    conn.commit()
-    record_audit_log("CLEAR_HISTORY", username, client_ip, "")
-    return RedirectResponse(url="/historico", status_code=303)
+    
+    try:
+        cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
+        conn.commit()
+        record_audit_log("CLEAR_HISTORY", username, client_ip, "Histórico limpo com sucesso")
+        return RedirectResponse(url="/historico", status_code=303)
+    except Exception as e:
+        record_audit_log("ERROR_CLEAR_HISTORY", username, client_ip, str(e))
+        return RedirectResponse(url="/historico", status_code=303)
 
 @app.get("/historico/exportar/csv")
 async def export_historico_csv(request: Request):
@@ -1789,7 +1881,7 @@ async def list_users(request: Request):
     })
 
 @app.post("/usuarios/novo")
-async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(...), admin: str = Form(None), csrf_token: str = Form(...)):
+async def create_user(request: Request, new_user: str = Form(...), new_pass: str = Form(""), admin: str = Form(None), csrf_token: str = Form(...)):
     # Verificar autenticação e admin status
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login", status_code=303)
@@ -1812,11 +1904,21 @@ async def create_user(request: Request, new_user: str = Form(...), new_pass: str
         record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de criar usuário com CSRF inválido")
         return RedirectResponse(url="/usuarios", status_code=303)
     
+    # Se senha não for fornecida, usar padrão "mdr123"
+    usar_senha_padrao = False
+    if not new_pass or new_pass.strip() == "":
+        new_pass = "mdr123"
+        usar_senha_padrao = True
+    
     try:
-        cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
-                     (new_user, new_pass, 1 if admin else 0))
+        if usar_senha_padrao:
+            cursor.execute("INSERT INTO users (username, password, is_admin, senha_temporaria) VALUES (?, ?, ?, 1)", 
+                         (new_user, new_pass, 1 if admin else 0))
+        else:
+            cursor.execute("INSERT INTO users (username, password, is_admin, senha_temporaria) VALUES (?, ?, ?, 0)", 
+                         (new_user, new_pass, 1 if admin else 0))
         conn.commit()
-        record_audit_log("CREATE_USER", username, client_ip, f"Novo usuário: {new_user}, admin: {bool(admin)}")
+        record_audit_log("CREATE_USER", username, client_ip, f"Novo usuário: {new_user}, admin: {bool(admin)}, senha padrão: {usar_senha_padrao}")
     except: 
         record_audit_log("CREATE_USER_FAILED", username, client_ip, f"Falha ao criar: {new_user}")
     
