@@ -6,6 +6,7 @@ import csv
 import json
 import uuid
 import secrets
+from urllib.parse import unquote, unquote_plus
 from io import StringIO
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -203,22 +204,69 @@ print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
 
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
+STRING_SESSION_CANDIDATES = []
+
+def build_string_session_candidates(raw_value: str):
+    if not raw_value:
+        return []
+
+    seeds = []
+
+    for base in (raw_value, unquote(raw_value), unquote_plus(raw_value)):
+        if not base:
+            continue
+        cleaned = base.strip().strip('"').strip("'")
+        if cleaned:
+            seeds.append(cleaned)
+
+    candidates = []
+    for seed in seeds:
+        variants = [
+            seed,
+            seed.replace("\\n", "").replace("\\r", ""),
+            seed.replace(" ", "+"),
+            seed.replace(" ", "")
+        ]
+
+        for variant in variants:
+            current = re.sub(r"\s+", "", variant)
+            current = re.sub(r"[^A-Za-z0-9_\-=+/]", "", current)
+            if not current:
+                continue
+
+            normalized_without_padding = current.rstrip("=")
+            normalized_with_padding = normalized_without_padding + ("=" * ((4 - (len(normalized_without_padding) % 4)) % 4))
+
+            for base_value in (
+                current,
+                normalized_without_padding,
+                normalized_with_padding,
+                current.replace("+", "-").replace("/", "_"),
+                current.replace("-", "+").replace("_", "/")
+            ):
+                value = base_value.rstrip("=")
+                value_padded = value + ("=" * ((4 - (len(value) % 4)) % 4))
+                for final_value in (base_value, value, value_padded):
+                    if final_value and final_value not in candidates:
+                        candidates.append(final_value)
+
+    return candidates
+
 if STRING_SESSION_ENV:
-    # Remover espaços, quebras de linha e caracteres extras
-    STRING_SESSION_ENV = STRING_SESSION_ENV.strip().strip('"').strip("'")
-    STRING_SESSION_ENV = STRING_SESSION_ENV.replace("\\n", "").replace("\\r", "")
-    STRING_SESSION_ENV = re.sub(r"\s+", "", STRING_SESSION_ENV)
+    STRING_SESSION_CANDIDATES = build_string_session_candidates(STRING_SESSION_ENV)
 
-    # Se vier com texto extra, manter apenas o maior token candidato a sessão
-    token_candidates = re.findall(r"[A-Za-z0-9_\-=+/]{80,}", STRING_SESSION_ENV)
-    if token_candidates:
-        STRING_SESSION_ENV = max(token_candidates, key=len)
+    # Se vier com texto extra, manter apenas os maiores tokens candidatos a sessão
+    extracted_tokens = []
+    for candidate in STRING_SESSION_CANDIDATES:
+        extracted_tokens.extend(re.findall(r"[A-Za-z0-9_\-=+/]{80,}", candidate))
+    if extracted_tokens:
+        for token in sorted(set(extracted_tokens), key=len, reverse=True):
+            if token not in STRING_SESSION_CANDIDATES:
+                STRING_SESSION_CANDIDATES.insert(0, token)
 
-    # Manter apenas caracteres válidos de base64/base64url para evitar erros por caracteres invisíveis
-    STRING_SESSION_ENV = re.sub(r"[^A-Za-z0-9_\-=+/]", "", STRING_SESSION_ENV)
-    if len(STRING_SESSION_ENV) % 4 != 0:
-        STRING_SESSION_ENV += "=" * (4 - (len(STRING_SESSION_ENV) % 4))
-    print(f"   Usando STRING_SESSION (len={len(STRING_SESSION_ENV)})")
+    if STRING_SESSION_CANDIDATES:
+        STRING_SESSION_ENV = STRING_SESSION_CANDIDATES[0]
+    print(f"   Usando STRING_SESSION (candidatos={len(STRING_SESSION_CANDIDATES)})")
 else:
     print(f"   Usando arquivo de sessão local")
     
@@ -316,25 +364,7 @@ async def get_telegram_client():
     if STRING_SESSION_ENV:
         session = None
         session_error = None
-        candidates = []
-
-        base_variants = [
-            STRING_SESSION_ENV,
-            STRING_SESSION_ENV.replace("+", "-").replace("/", "_"),
-            STRING_SESSION_ENV.replace("-", "+").replace("_", "/")
-        ]
-
-        for base_value in base_variants:
-            current = base_value.strip().strip('"').strip("'")
-            if not current:
-                continue
-
-            normalized_without_padding = current.rstrip("=")
-            normalized_with_padding = normalized_without_padding + ("=" * ((4 - (len(normalized_without_padding) % 4)) % 4))
-
-            for variant in (current, normalized_without_padding, normalized_with_padding):
-                if variant and variant not in candidates:
-                    candidates.append(variant)
+        candidates = STRING_SESSION_CANDIDATES or [STRING_SESSION_ENV]
 
         for candidate in candidates:
             try:
