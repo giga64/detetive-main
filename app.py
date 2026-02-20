@@ -203,7 +203,10 @@ print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
 if STRING_SESSION_ENV:
     # Remover espaços, quebras de linha e caracteres extras
-    STRING_SESSION_ENV = STRING_SESSION_ENV.strip()
+    STRING_SESSION_ENV = STRING_SESSION_ENV.strip().strip('"').strip("'")
+    STRING_SESSION_ENV = re.sub(r"\s+", "", STRING_SESSION_ENV)
+    if len(STRING_SESSION_ENV) % 4 != 0:
+        STRING_SESSION_ENV += "=" * (4 - (len(STRING_SESSION_ENV) % 4))
     print(f"   Usando STRING_SESSION")
 else:
     print(f"   Usando arquivo de sessão local")
@@ -300,7 +303,14 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 async def get_telegram_client():
     # Usar STRING_SESSION se disponível, senão arquivo de sessão
     if STRING_SESSION_ENV:
-        session = StringSession(STRING_SESSION_ENV)
+        try:
+            session = StringSession(STRING_SESSION_ENV)
+        except Exception as session_error:
+            if os.path.exists(SESSION_FILE_PATH):
+                print(f"⚠️ STRING_SESSION inválida ({session_error}). Usando arquivo de sessão local.")
+                session = SESSION_FILE_PATH
+            else:
+                raise Exception("❌ STRING_SESSION inválida e arquivo de sessão local não encontrado.")
     else:
         session = SESSION_FILE_PATH
     
