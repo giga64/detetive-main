@@ -1758,7 +1758,7 @@
                                 <h4 style="color: #0ea5a4; margin-bottom: 12px;">📍 Selecionar Endereço para Validar</h4>
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
                                     {% for endereco in apis_data.enderecos_disponiveis %}
-                                        <button onclick="validarEndereco('{{ endereco | replace(\"'\", \"\\\\\") }}')" 
+                                        <button onclick='validarEndereco({{ endereco | tojson }})' 
                                                 style="text-align: left; padding: 12px; background: rgba(10, 165, 164, 0.1); border: 1px solid rgba(10, 165, 164, 0.3); border-radius: 6px; color: #d0d0d0; cursor: pointer; transition: all 0.2s;">
                                             {{ endereco }}
                                         </button>
