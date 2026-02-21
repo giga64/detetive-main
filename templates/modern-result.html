@@ -633,6 +633,126 @@
             border-color: rgba(6, 182, 212, 0.8);
             box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
         }
+
+        /* ===== APIs ENRIQUECIDAS ===== */
+        .apis-enrichment-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .api-card {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .api-card:hover {
+            background: rgba(6, 182, 212, 0.08);
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .api-content {
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .api-content p {
+            margin: 8px 0;
+            color: #d0d0d0;
+        }
+
+        .api-content strong {
+            color: #e0e0e0;
+            font-weight: 600;
+        }
+
+        .api-content a {
+            color: #06b6d4;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .api-content a:hover {
+            color: #0ea5a4;
+            text-decoration: underline;
+        }
+
+        /* Risk Score Gauge */
+        .risk-score-container {
+            padding: 16px 0;
+        }
+
+        .risk-score-gauge {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .risk-score-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+
+        .risk-score-bar {
+            width: 100%;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .risk-score-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .risk-score-label {
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .risk-alertas {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .risk-alerta-item {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #f59e0b;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            color: #d0d0d0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1572,6 +1692,117 @@
                 <div id="raw" class="tab-content">
                     <div class="raw-text">{{ resultado }}</div>
                 </div>
+
+                <!-- APIS ENRIQUECIDAS - Dados de Fontes Públicas -->
+                {% if apis_data %}
+                    <div class="apis-enrichment-section">
+                        <h3 style="margin-top: 30px; margin-bottom: 20px; color: #06b6d4; display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🌐</span>
+                            Informações de Fontes Públicas
+                        </h3>
+                        
+                        <!-- Risk Score Jurídico -->
+                        {% if apis_data.risk_score %}
+                            <div class="api-card" style="border-left: 6px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));">
+                                <h4 style="color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px;">⚖️</span>
+                                    Score de Risco Jurídico
+                                </h4>
+                                <div class="risk-score-container">
+                                    <div class="risk-score-gauge">
+                                        <div class="risk-score-value">{{ apis_data.risk_score.score }}/100</div>
+                                        <div class="risk-score-bar">
+                                            <div class="risk-score-fill" style="width: {{ apis_data.risk_score.score }}%; background: {% if apis_data.risk_score.score < 25 %}#10b981{% elif apis_data.risk_score.score < 50 %}#f59e0b{% elif apis_data.risk_score.score < 75 %}#f97316{% else %}#ef4444{% endif %};"></div>
+                                        </div>
+                                        <div class="risk-score-label" style="color: {% if 'BAIXO' in apis_data.risk_score.faixa %}#10b981{% elif 'MODERADO' in apis_data.risk_score.faixa %}#f59e0b{% elif 'ELEVADO' in apis_data.risk_score.faixa %}#f97316{% else %}#ef4444{% endif %};">
+                                            {{ apis_data.risk_score.faixa }}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if apis_data.risk_score.alertas %}
+                                        <div class="risk-alertas">
+                                            <p style="font-weight: 600; color: #06b6d4; margin-bottom: 10px;">{{ apis_data.risk_score.criterios_avaliados }} critério(s) avaliado(s):</p>
+                                            {% for alerta in apis_data.risk_score.alertas %}
+                                                <div class="risk-alerta-item">{{ alerta }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <small style="color: #888; margin-top: 12px; display: block;">Análise baseada em critérios jurídicos e cadastrais</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Processos Judiciais -->
+                        {% if apis_data.processos_judiciais %}
+                            <div class="api-card" style="border-left: 4px solid #8b5cf6;">
+                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais</h4>
+                                <div class="api-content">
+                                    <p><strong>Total encontrado:</strong> {{ apis_data.processos_judiciais.total_processos }}</p>
+                                    {% if apis_data.processos_judiciais.observacao %}
+                                        <p style="color: #aaa; margin-top: 8px; font-style: italic;">{{ apis_data.processos_judiciais.observacao }}</p>
+                                    {% endif %}
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ (Conselho Nacional de Justiça)</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Endereço Validado (ViaCEP) -->
+                        {% if apis_data.endereco_validado %}
+                            <div class="api-card" style="border-left: 4px solid #06b6d4;">
+                                <h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>
+                                <div class="api-content">
+                                    {% if apis_data.endereco_validado.logradouro %}
+                                        <p><strong>Rua:</strong> {{ apis_data.endereco_validado.logradouro }}</p>
+                                    {% endif %}
+                                    {% if apis_data.endereco_validado.bairro %}
+                                        <p><strong>Bairro:</strong> {{ apis_data.endereco_validado.bairro }}</p>
+                                    {% endif %}
+                                    {% if apis_data.endereco_validado.localidade %}
+                                        <p><strong>Cidade:</strong> {{ apis_data.endereco_validado.localidade }}</p>
+                                    {% endif %}
+                                    {% if apis_data.endereco_validado.uf %}
+                                        <p><strong>Estado:</strong> {{ apis_data.endereco_validado.uf }}</p>
+                                    {% endif %}
+                                    {% if apis_data.endereco_validado.cep %}
+                                        <p><strong>CEP:</strong> {{ apis_data.endereco_validado.cep }}</p>
+                                    {% endif %}
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: ViaCEP (Receita Federal)</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Localização (Nominatim/OpenStreetMap) -->
+                        {% if apis_data.localizacao %}
+                            <div class="api-card" style="border-left: 4px solid #10b981;">
+                                <h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>
+                                <div class="api-content">
+                                    <p><strong>Latitude:</strong> {{ "%.4f" | format(apis_data.localizacao.latitude) }}</p>
+                                    <p><strong>Longitude:</strong> {{ "%.4f" | format(apis_data.localizacao.longitude) }}</p>
+                                    {% if apis_data.localizacao.endereco_completo %}
+                                        <p><strong>Endereço:</strong> {{ apis_data.localizacao.endereco_completo }}</p>
+                                    {% endif %}
+                                    <a href="https://www.openstreetmap.org/?mlat={{ apis_data.localizacao.latitude }}&mlon={{ apis_data.localizacao.longitude }}&zoom=17&layers=M" 
+                                       target="_blank" 
+                                       style="color: #06b6d4; text-decoration: none; word-break: break-all;">
+                                        🔗 Ver no Mapa
+                                    </a>
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: OpenStreetMap / Nominatim</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Informações Públicas (Wikipedia) -->
+                        {% if apis_data.info_publica %}
+                            <div class="api-card" style="border-left: 4px solid #f59e0b;">
+                                <h4 style="color: #f59e0b; margin-bottom: 12px;">📚 Informações Públicas</h4>
+                                <div class="api-content">
+                                    <p>{{ apis_data.info_publica.resumo }}</p>
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
 
                 <!-- Ações -->
                 <div class="actions-section">

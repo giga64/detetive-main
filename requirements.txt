@@ -6,3 +6,4 @@ playwright  # Remova se não for usar automação de navegador
 python-multipart
 psutil
 tenacity
+requests
