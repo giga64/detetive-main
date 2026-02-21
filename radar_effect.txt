@@ -1,0 +1,184 @@
+// Canvas Background - Radar Sonar Effect
+    const canvas = document.getElementById('detective-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    const radarWaves = [];
+    let lastWaveTime = 0;
+    const binaryTrails = [];
+    const helixPoints = [];
+    
+    class RadarWave {
+      constructor(x, y) {
+        this.x = x; this.y = y; this.radius = 0;
+        this.maxRadius = 200; this.speed = 3; this.opacity = 1;
+      }
+      update() {
+        this.radius += this.speed;
+        this.opacity = 1 - (this.radius / this.maxRadius);
+        return this.radius < this.maxRadius;
+      }
+      draw() {
+        ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity * 0.1})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        const angle = (Date.now() * 0.003) % (Math.PI * 2);
+        ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.8})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + Math.cos(angle) * this.radius, this.y + Math.sin(angle) * this.radius);
+        ctx.stroke();
+      }
+    }
+    
+    class BinaryTrail {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.code = Math.random() > 0.5 ? '1' : '0';
+        this.opacity = 1;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = Math.random() * 2 + 1;
+        this.life = 0; this.maxLife = 100;
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.life++;
+        this.opacity = 1 - (this.life / this.maxLife);
+        return this.life < this.maxLife;
+      }
+      draw() {
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity})`;
+        ctx.fillText(this.code, this.x, this.y);
+      }
+    }
+    
+    class HelixPoint {
+      constructor(x, y, side) {
+        this.baseX = x; this.baseY = y; this.side = side;
+        this.angle = Math.random() * Math.PI * 2;
+        this.radius = 30; this.opacity = 1;
+        this.life = 0; this.maxLife = 180;
+      }
+      update() {
+        this.angle += 0.05; this.life++;
+        this.opacity = 1 - (this.life / this.maxLife);
+        this.baseY += 1;
+        return this.life < this.maxLife && this.baseY < canvas.height;
+      }
+      draw() {
+        const x = this.baseX + Math.cos(this.angle) * this.radius * this.side;
+        ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(x, this.baseY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.3})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.baseX, this.baseY);
+        ctx.lineTo(x, this.baseY);
+        ctx.stroke();
+      }
+    }
+    
+    function animate() {
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+      gradient.addColorStop(0.5, 'rgba(10, 15, 31, 0.95)');
+      gradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.02)';
+      ctx.lineWidth = 1;
+      const scanlineOffset = (Date.now() * 0.1) % 20;
+      for (let y = scanlineOffset; y < canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      for (let i = radarWaves.length - 1; i >= 0; i--) {
+        if (!radarWaves[i].update()) radarWaves.splice(i, 1);
+        else radarWaves[i].draw();
+      }
+      
+      for (let i = binaryTrails.length - 1; i >= 0; i--) {
+        if (!binaryTrails[i].update()) binaryTrails.splice(i, 1);
+        else binaryTrails[i].draw();
+      }
+      
+      for (let i = helixPoints.length - 1; i >= 0; i--) {
+        if (!helixPoints[i].update()) helixPoints.splice(i, 1);
+        else helixPoints[i].draw();
+      }
+      
+      const glowGradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 50);
+      glowGradient.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
+      glowGradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
+      ctx.fillStyle = glowGradient;
+      ctx.fillRect(mouseX - 50, mouseY - 50, 100, 100);
+      
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)';
+      ctx.lineWidth = 2;
+      const crosshairSize = 15;
+      ctx.beginPath();
+      ctx.moveTo(mouseX - crosshairSize, mouseY);
+      ctx.lineTo(mouseX + crosshairSize, mouseY);
+      ctx.moveTo(mouseX, mouseY - crosshairSize);
+      ctx.lineTo(mouseX, mouseY + crosshairSize);
+      ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(mouseX, mouseY, 25 + Math.sin(Date.now() * 0.005) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    let mouseMoveTimeout;
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX; mouseY = e.clientY;
+      const now = Date.now();
+      if (now - lastWaveTime > 150) {
+        radarWaves.push(new RadarWave(mouseX, mouseY));
+        lastWaveTime = now;
+      }
+      if (Math.random() > 0.7) binaryTrails.push(new BinaryTrail(mouseX, mouseY));
+      clearTimeout(mouseMoveTimeout);
+      mouseMoveTimeout = setTimeout(() => {
+        helixPoints.push(new HelixPoint(mouseX, mouseY, 1));
+        helixPoints.push(new HelixPoint(mouseX, mouseY, -1));
+      }, 100);
+    });
+    
+    document.addEventListener('click', (e) => {
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => radarWaves.push(new RadarWave(e.clientX, e.clientY)), i * 100);
+      }
+      for (let i = 0; i < 20; i++) {
+        binaryTrails.push(new BinaryTrail(
+          e.clientX + (Math.random() - 0.5) * 40,
+          e.clientY + (Math.random() - 0.5) * 40
+        ));
+      }
+    });
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });

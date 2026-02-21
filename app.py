@@ -6,6 +6,8 @@ import csv
 import json
 import uuid
 import secrets
+import threading
+import time
 from urllib.parse import unquote, unquote_plus
 from io import StringIO
 from contextlib import asynccontextmanager
@@ -1808,7 +1810,7 @@ async def reverse_search_address(request: Request, address: str):
     }
 
 @app.post("/historico/limpar")
-async def limpar_historico(request: Request):
+async def limpar_historico(request: Request, csrf_token: str = Form(...)):
     # Validar sessão do usuário
     session_error = validate_user_session(request)
     if session_error:
@@ -1816,6 +1818,11 @@ async def limpar_historico(request: Request):
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+    
+    # Validar CSRF token
+    if not validate_csrf_token(request, csrf_token):
+        record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de limpar histórico com CSRF inválido")
+        return RedirectResponse(url="/historico", status_code=303)
     
     try:
         cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
@@ -2039,17 +2046,13 @@ async def delete_user(request: Request, user_id: int):
 async def change_password(request: Request, user_id: int = Form(...), new_pass: str = Form(...), csrf_token: str = Form(...)):
     # Verificar autenticação e admin status
     if not request.cookies.get("auth_user"):
-        return RedirectResponse(url="/login", status_code=303)
+        return {"success": False, "error": "Não autenticado"}
     
     if is_session_expired(request):
-        response = RedirectResponse(url="/login", status_code=303)
-        response.delete_cookie("auth_user")
-        response.delete_cookie("is_admin")
-        response.delete_cookie("auth_time")
-        return response
+        return {"success": False, "error": "Sessão expirada"}
     
     if request.cookies.get("is_admin") != "1":
-        return RedirectResponse(url="/", status_code=303)
+        return {"success": False, "error": "Acesso negado"}
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
@@ -2057,16 +2060,20 @@ async def change_password(request: Request, user_id: int = Form(...), new_pass: 
     # Validar CSRF token
     if not validate_csrf_token(request, csrf_token):
         record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de alterar senha com CSRF inválido")
-        return RedirectResponse(url="/usuarios", status_code=303)
+        return {"success": False, "error": "CSRF inválido"}
+    
+    # Validar senha
+    if not new_pass or len(new_pass) < 4:
+        return {"success": False, "error": "Senha deve ter no mínimo 4 caracteres"}
     
     try:
         cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pass, user_id))
         conn.commit()
         record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para ID: {user_id}")
-    except:
-        record_audit_log("CHANGE_PASSWORD_FAILED", username, client_ip, f"Falha ao alterar senha para ID: {user_id}")
-    
-    return RedirectResponse(url="/usuarios", status_code=303)
+        return {"success": True, "message": "Senha alterada com sucesso"}
+    except Exception as e:
+        record_audit_log("CHANGE_PASSWORD_FAILED", username, client_ip, f"Falha ao alterar senha para ID: {user_id} - {str(e)}")
+        return {"success": False, "error": "Erro ao alterar senha"}
 
 # ──────────────────────────────────────────
 # Novas Rotas para Gerenciamento de Usuários
@@ -2867,6 +2874,26 @@ async def restore_usuarios(request: Request):
     except Exception as e:
         record_audit_log("RESTORE_USUARIOS_FAILED", username, client_ip, str(e))
         return {"success": False, "error": f"Erro ao restaurar: {str(e)}"}
+
+# ===========================
+# LIMPEZA AUTOMÁTICA DE LOGS
+# ===========================
+def auto_cleanup_logs():
+    """Limpa logs com mais de 2 dias automaticamente"""
+    while True:
+        try:
+            time.sleep(86400)  # Espera 24 horas
+            cursor.execute("DELETE FROM audit_logs WHERE timestamp < datetime('now', '-2 days')")
+            deleted = cursor.rowcount
+            conn.commit()
+            if deleted > 0:
+                record_audit_log("AUTO_CLEANUP", "system", "127.0.0.1", f"Limpeza automática: {deleted} logs removidos")
+        except Exception as e:
+            print(f"Erro na limpeza automática de logs: {e}")
+
+# Iniciar thread de limpeza automática
+cleanup_thread = threading.Thread(target=auto_cleanup_logs, daemon=True)
+cleanup_thread.start()
 
 if __name__ == "__main__":
     import uvicorn
