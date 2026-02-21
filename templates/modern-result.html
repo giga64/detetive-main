@@ -778,18 +778,18 @@
         <header>
             <h1>ONESEEK</h1>
             <div class="header-actions">
-                <a href="/" class="btn btn-back">← Nova Consulta</a>
+                <a href="/" class="btn btn-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Nova Consulta</a>
             </div>
         </header>
 
-        {% if dados is none or resultado.startswith('❌') %}
+        {% if dados is none or resultado.startswith('Erro:') or resultado.startswith('Error:') %}
             <!-- Erro -->
             <div class="result-card">
                 <div style="text-align: center; padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                    <div style="font-size: 48px; margin-bottom: 20px;">{{{ getSVG('x') | safe }}}</div>
                     <h2 style="color: #ff6b6b; margin-bottom: 10px;">Consulta não encontrada</h2>
                     <p style="color: #a0a0a0; margin-bottom: 20px;">{{ resultado }}</p>
-                    <a href="/" class="btn btn-success">← Voltar</a>
+                    <a href="/" class="btn btn-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Voltar</a>
                 </div>
             </div>
         {% else %}
@@ -801,9 +801,9 @@
                         {% if dados.tipo_consulta == 'cnpj' %}
                             {{ dados.dados_pessoais.nome[0] if dados.dados_pessoais.nome else '?' }}
                         {% elif dados.tipo_consulta == 'placa' %}
-                            🚗
+                            {{ getSVG('car') }}
                         {% elif dados.tipo_consulta == 'nome' %}
-                            👥
+                            {{ getSVG('users') }}
                         {% else %}
                             {{ dados.dados_pessoais.nome[0] if dados.dados_pessoais.nome else '?' }}
                         {% endif %}
@@ -1468,8 +1468,7 @@
                                     </div>
                                 </div>
                                 <div style="margin-top: 20px;">
-                                    <button class="action-btn" onclick="openStreetView('{{ dados.dados_veiculo.endereco_veiculo }}')">Street View</button>
-                                    <button class="action-btn" onclick="reverseSearch('{{ dados.dados_veiculo.endereco_veiculo }}', 'address')">Buscar</button>
+                                    <button class="action-btn" onclick="openStreetView('{{ dados.dados_veiculo.endereco_veiculo }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
                                 </div>
                             </div>
                         {% else %}
@@ -1487,8 +1486,7 @@
                                 </div>
                             </div>
                             <div style="margin-top: 20px;">
-                                <button class="action-btn" onclick="openStreetView('{{ dados.endereco }}')">Street View</button>
-                                <button class="action-btn" onclick="reverseSearch('{{ dados.endereco }}', 'address')">Buscar</button>
+                                <button class="action-btn" onclick="openStreetView('{{ dados.endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
                             </div>
                         {% else %}
                             <div class="empty-state">
@@ -1513,9 +1511,8 @@
                                             <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
                                         </div>
                                         <div style="display: flex; gap: 10px;">
-                                            <button class="action-btn" onclick="openStreetView('{{ endereco }}')">Street View</button>
-                                            <button class="action-btn" onclick="validarEndereco({{ endereco | tojson }})">Validar</button>
-                                            <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
+                                            <button class="action-btn" onclick="openStreetView('{{ endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
+                                            <button class="action-btn" onclick="validarEndereco({{ endereco | tojson }})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
                                         </div>
                                     </li>
                                 {% endfor %}
@@ -1546,13 +1543,13 @@
                         </div>
                     {% elif dados.tipo_consulta == 'cnpj' %}
                         <!-- Mostrar contatos da EMPRESA (CNPJ) -->
-                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>E-mails</h3>
                         {% if dados.emails and dados.emails|length > 0 %}
                             <ul class="data-list">
                                 {% for email in dados.emails %}
                                     <li class="data-list-item">
                                         <span>{{ email }}</span>
-                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')">Buscar</button>
+                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>Buscar</button>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -1562,13 +1559,13 @@
                             </div>
                         {% endif %}
 
-                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
+                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>Telefones</h3>
                         {% if dados.telefones and dados.telefones|length > 0 %}
                             <ul class="data-list">
                                 {% for telefone in dados.telefones %}
                                     <li class="data-list-item">
                                         <span>{{ telefone }}</span>
-                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')">Buscar</button>
+                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>Buscar</button>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -1579,13 +1576,13 @@
                         {% endif %}
                     {% else %}
                         <!-- Mostrar contatos de CPF (padrão) -->
-                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">E-mails</h3>
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>E-mails</h3>
                         {% if dados.emails and dados.emails|length > 0 %}
                             <ul class="data-list">
                                 {% for email in dados.emails %}
                                     <li class="data-list-item">
                                         <span>{{ email }}</span>
-                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')">Buscar</button>
+                                        <button class="action-btn" onclick="reverseSearch('{{ email }}', 'email')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>Buscar</button>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -1595,13 +1592,13 @@
                             </div>
                         {% endif %}
 
-                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Telefones</h3>
+                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>Telefones</h3>
                         {% if dados.telefones and dados.telefones|length > 0 %}
                             <ul class="data-list">
                                 {% for telefone in dados.telefones %}
                                     <li class="data-list-item">
                                         <span>{{ telefone }}</span>
-                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')">Buscar</button>
+                                        <button class="action-btn" onclick="reverseSearch('{{ telefone }}', 'phone')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>Buscar</button>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -1697,30 +1694,146 @@
                     <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
                 </div>
 
-                <!-- Informações de Fontes Públicas (Wikipedia) - Sempre visível se disponível -->
+                <!-- Informações de Fontes Públicas - Sempre visível se disponível -->
                 {% if apis_data and apis_data.info_publica %}
                     <div style="margin-top: 30px; margin-bottom: 30px;">
-                        <div class="api-card" style="border-left: 4px solid #f59e0b;">
-                            <h4 style="color: #f59e0b; margin-bottom: 12px;">🌐 Informações de Fontes Públicas</h4>
-                            <div class="api-content" style="max-height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 15px;">
-                                <p>{{ apis_data.info_publica.resumo }}</p>
+                        <h3 style="margin-bottom: 20px; color: #f59e0b; display: flex; align-items: center; gap: 10px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            Informações Públicas
+                        </h3>
+                        
+                        <!-- Wikipedia -->
+                        {% if apis_data.info_publica.wikipedia %}
+                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 16px; background: linear-gradient(135deg, rgba(139,92,246,0.05) 0%, rgba(139,92,246,0.02) 100%);">
+                                <h4 style="color: #8b5cf6; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16M4 4h16v14H4z"></path></svg>
+                                    Wikipedia
+                                </h4>
+                                <div class="api-content" style="max-height: 300px; overflow-y: auto;">
+                                    <p style="margin: 0; line-height: 1.6; color: #64748b;">{{ apis_data.info_publica.wikipedia.resumo }}</p>
+                                </div>
                             </div>
-                            <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
-                        </div>
+                        {% endif %}
+                        
+                        <!-- Wikidata -->
+                        {% if apis_data.info_publica.wikidata %}
+                            <div class="api-card" style="border-left: 4px solid #3b82f6; margin-bottom: 16px; background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.02) 100%);">
+                                <h4 style="color: #3b82f6; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                    Wikidata (Dados Estruturados)
+                                </h4>
+                                <div class="api-content">
+                                    {% if apis_data.info_publica.wikidata.nome %}
+                                        <p style="margin: 8px 0;"><strong>Nome:</strong> {{ apis_data.info_publica.wikidata.nome }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.wikidata.descricao %}
+                                        <p style="margin: 8px 0;"><strong>Descrição:</strong> {{ apis_data.info_publica.wikidata.descricao }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.wikidata.url %}
+                                        <a href="{{ apis_data.info_publica.wikidata.url }}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                            Ver na Wikidata
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- CNAE (IBGE) -->
+                        {% if apis_data.info_publica.cnae %}
+                            <div class="api-card" style="border-left: 4px solid #10b981; margin-bottom: 16px; background: linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(16,185,129,0.02) 100%);">
+                                <h4 style="color: #10b981; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 3 20 7.5 20 19.5 4 19.5 4 7.5 12 3"></polyline><line x1="12" y1="12" x2="20" y2="7.5"></line><line x1="12" y1="12" x2="12" y2="22"></line><line x1="12" y1="12" x2="4" y2="7.5"></line></svg>
+                                    CNAE (IBGE) - Classificação de Empresas
+                                </h4>
+                                <div class="api-content">
+                                    <p style="margin: 8px 0;"><strong>Código:</strong> <span style="font-family: monospace; background: rgba(16,185,129,0.1); padding: 2px 6px; border-radius: 3px;">{{ apis_data.info_publica.cnae.codigo }}</span></p>
+                                    <p style="margin: 8px 0;"><strong>Descrição:</strong> {{ apis_data.info_publica.cnae.descricao }}</p>
+                                    {% if apis_data.info_publica.cnae.nivel %}
+                                        <p style="margin: 8px 0;"><strong>Nível:</strong> {{ apis_data.info_publica.cnae.nivel }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Gravatar (Perfil de Email) -->
+                        {% if apis_data.info_publica.gravatar %}
+                            <div class="api-card" style="border-left: 4px solid #ec4899; margin-bottom: 16px; background: linear-gradient(135deg, rgba(236,72,153,0.05) 0%, rgba(236,72,153,0.02) 100%);">
+                                <h4 style="color: #ec4899; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    Gravatar - Perfil de Email
+                                </h4>
+                                <div class="api-content">
+                                    {% if apis_data.info_publica.gravatar.avatar_url %}
+                                        <div style="margin-bottom: 12px;">
+                                            <img src="{{ apis_data.info_publica.gravatar.avatar_url }}" alt="Avatar" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid #ec4899;">
+                                        </div>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.gravatar.nome %}
+                                        <p style="margin: 8px 0;"><strong>Nome:</strong> {{ apis_data.info_publica.gravatar.nome }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.gravatar.localizacao %}
+                                        <p style="margin: 8px 0;"><strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>Localização:</strong> {{ apis_data.info_publica.gravatar.localizacao }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.gravatar.biografia %}
+                                        <p style="margin: 8px 0;"><strong>Bio:</strong> {{ apis_data.info_publica.gravatar.biografia }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.gravatar.redes_sociais %}
+                                        <p style="margin: 12px 0 8px 0;"><strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>Redes Sociais:</strong></p>
+                                        <div>
+                                            {% for rede in apis_data.info_publica.gravatar.redes_sociais %}
+                                                <a href="{{ rede.url }}" target="_blank" style="display: inline-block; padding: 6px 12px; background: rgba(236,72,153,0.2); border-radius: 20px; margin: 4px 4px 4px 0; color: #ec4899; text-decoration: none; font-size: 0.9rem; border: 1px solid rgba(236,72,153,0.3);">
+                                                    {{ rede.tipo }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
 
                 <!-- Ações -->
                 <div class="actions-section">
-                    <button class="action-btn primary" onclick="addToFavorites('{{ identifier }}')">⭐ Adicionar aos Favoritos</button>
-                    <button class="action-btn" onclick="addNote('{{ identifier }}')">Adicionar Nota</button>
-                    <button class="action-btn" onclick="goToSearch()">← Voltar</button>
+                    <button class="action-btn primary" onclick="addToFavorites('{{ identifier }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Adicionar aos Favoritos</button>
+                    <button class="action-btn" onclick="addNote('{{ identifier }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Adicionar Nota</button>
+                    <button class="action-btn" onclick="goToSearch()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Voltar</button>
                 </div>
             </div>
         {% endif %}
     </div>
 
     <script>
+        // ===========================
+        // SVG ICONS
+        // ===========================
+        const SVG_ICONS = {
+            pin: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
+            map: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>',
+            book: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5h16M4 4h16v14H4z"></path></svg>',
+            link: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>',
+            building: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 3 20 7.5 20 19.5 4 19.5 4 7.5 12 3"></polyline><line x1="12" y1="12" x2="20" y2="7.5"></line><line x1="12" y1="12" x2="12" y2="22"></line><line x1="12" y1="12" x2="4" y2="7.5"></line></svg>',
+            user: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+            globe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+            phone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+            mail: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>',
+            search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
+            star: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+            arrowLeft: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
+            check: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+            loader: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><style>@keyframes spin{to{transform:rotate(360deg)}}</style><circle cx="12" cy="12" r="10" style="animation:spin 1s linear infinite;transform-origin:center"></circle></svg>',
+            x: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+            checkCircle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><circle cx="12" cy="12" r="10"></circle></svg>',
+            shop: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
+            warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+            car: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M6 17v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2"></path><circle cx="9" cy="17" r="1"></circle><circle cx="15" cy="17" r="1"></circle></svg>',
+            users: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
+        };
+
+        function getSVG(iconName) {
+            return SVG_ICONS[iconName] || '';
+        }
         function switchTab(event, tabName) {
             event.preventDefault();
             
@@ -1824,7 +1937,7 @@
         async function validarEndereco(endereco) {
             const resultDiv = document.getElementById('endereco-resultado');
             resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '<div style="text-align: center; color: #06b6d4;">⏳ Validando endereço...</div>';
+            resultDiv.innerHTML = '<div style="text-align: center; color: #06b6d4; padding: 20px;"><div style="font-size: 1.5rem; margin-bottom: 8px; display: inline-block; color: #06b6d4;">' + getSVG('loader') + '</div><div>Validando e buscando informações...</div></div>';
             
             try {
                 const response = await fetch('/api/validar-endereco', {
@@ -1836,40 +1949,80 @@
                 });
                 
                 if (response.status === 401) {
-                    resultDiv.innerHTML = '<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Sessão expirada. Por favor, recarregue a página.</div>';
+                    resultDiv.innerHTML = '<div style="color: #ff6b6b; padding: 16px; background: rgba(255, 107, 107, 0.1); border-radius: 6px; border-left: 4px solid #ff6b6b;"><span style="display: inline-block; margin-right: 8px;">' + getSVG('x') + '</span>Sessão expirada. Por favor, recarregue a página.</div>';
                     return;
                 }
                 
                 const data = await response.json();
                 
                 if (response.ok && data.viacep) {
-                    let html = '<div class="api-card" style="border-left: 4px solid #06b6d4; margin-top: 12px;">';
-                    html += '<h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>';
-                    html += '<div class="api-content">';
-                    if (data.viacep.logradouro) html += `<p><strong>Rua:</strong> ${data.viacep.logradouro}</p>`;
-                    if (data.viacep.bairro) html += `<p><strong>Bairro:</strong> ${data.viacep.bairro}</p>`;
-                    if (data.viacep.localidade) html += `<p><strong>Cidade:</strong> ${data.viacep.localidade}</p>`;
-                    if (data.viacep.uf) html += `<p><strong>Estado:</strong> ${data.viacep.uf}</p>`;
-                    if (data.viacep.cep) html += `<p><strong>CEP:</strong> ${data.viacep.cep}</p>`;
+                    let html = '';
+                    
+                    // ===== VIACEPI + NOMINATIM =====
+                    html += '<div class="api-card" style="border-left: 4px solid #06b6d4; margin-bottom: 16px; background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.02) 100%); border-radius: 8px; padding: 16px;">';
+                    html += '<h4 style="color: #06b6d4; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; color: #06b6d4;">' + getSVG('pin') + '</span> Endereço Validado</h4>';
+                    html += '<div class="api-content" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
+                    if (data.viacep.logradouro) html += `<p style="margin: 0;"><strong>Rua:</strong><br><span style="color: #64748b;">${data.viacep.logradouro}</span></p>`;
+                    if (data.viacep.bairro) html += `<p style="margin: 0;"><strong>Bairro:</strong><br><span style="color: #64748b;">${data.viacep.bairro}</span></p>`;
+                    if (data.viacep.localidade) html += `<p style="margin: 0;"><strong>Cidade:</strong><br><span style="color: #64748b;">${data.viacep.localidade}</span></p>`;
+                    if (data.viacep.uf) html += `<p style="margin: 0;"><strong>Estado:</strong><br><span style="color: #64748b;">${data.viacep.uf}</span></p>`;
+                    if (data.viacep.cep) html += `<p style="margin: 0;"><strong>CEP:</strong><br><span style="color: #64748b; font-family: monospace;">${data.viacep.cep}</span></p>`;
                     html += '</div></div>';
                     
+                    // ===== GEOLOCALIZAÇÃO =====
                     if (data.nominatim) {
-                        html += '<div class="api-card" style="border-left: 4px solid #10b981; margin-top: 12px;">';
-                        html += '<h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>';
+                        html += '<div class="api-card" style="border-left: 4px solid #10b981; margin-bottom: 16px; background: linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(16,185,129,0.02) 100%); border-radius: 8px; padding: 16px;">';
+                        html += '<h4 style="color: #10b981; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; color: #10b981;">' + getSVG('map') + '</span> Geolocalização</h4>';
                         html += '<div class="api-content">';
-                        html += `<p><strong>Latitude:</strong> ${data.nominatim.latitude.toFixed(4)}</p>`;
-                        html += `<p><strong>Longitude:</strong> ${data.nominatim.longitude.toFixed(4)}</p>`;
-                        if (data.nominatim.endereco_completo) html += `<p><strong>Endereço:</strong> ${data.nominatim.endereco_completo}</p>`;
-                        html += `<a href="https://www.openstreetmap.org/?mlat=${data.nominatim.latitude}&mlon=${data.nominatim.longitude}&zoom=17&layers=M" target="_blank" style="color: #06b6d4;">🔗 Ver no Mapa</a>`;
+                        html += `<p style="margin: 8px 0;"><strong>Latitude:</strong> <span style="color: #64748b; font-family: monospace;">${data.nominatim.latitude.toFixed(4)}</span></p>`;
+                        html += `<p style="margin: 8px 0;"><strong>Longitude:</strong> <span style="color: #64748b; font-family: monospace;">${data.nominatim.longitude.toFixed(4)}</span></p>`;
+                        if (data.nominatim.endereco_completo) html += `<p style="margin: 8px 0;"><strong>Endereço Completo:</strong> <span style="color: #64748b;">${data.nominatim.endereco_completo}</span></p>`;
+                        html += `<a href="https://www.openstreetmap.org/?mlat=${data.nominatim.latitude}&mlon=${data.nominatim.longitude}&zoom=17&layers=M" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; display: inline-block; margin-top: 8px;"><span style="display: inline-block; color: #10b981;">${getSVG('link')}</span> Ver no Mapa</a>`;
                         html += '</div></div>';
+                    }
+                    
+                    // ===== INFORMAÇÕES PÚBLICAS =====
+                    if (data.info_publica) {
+                        const pub = data.info_publica;
+                        
+                        // Overpass - Pontos de Interesse
+                        if (pub.overpass && pub.overpass.pontos_interesse) {
+                            const pontos = pub.overpass.pontos_interesse;
+                            html += '<div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 16px; background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.02) 100%); border-radius: 8px; padding: 16px;">';
+                            html += '<h4 style="color: #f59e0b; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; color: #f59e0b;">' + getSVG('shop') + '</span> Pontos de Interesse (OpenStreetMap)</h4>';
+                            html += '<div class="api-content">';
+                            
+                            if (pontos.comercios && pontos.comercios.length > 0) {
+                                html += `<p style="margin: 8px 0; color: #64748b;"><strong>${getSVG('shop')} Comércios (${pontos.comercios.length}):</strong></p>`;
+                                pontos.comercios.slice(0, 5).forEach(c => {
+                                    html += `<span style="display: inline-block; background: rgba(245,158,11,0.1); padding: 4px 8px; border-radius: 4px; margin: 4px 4px 4px 0; font-size: 0.85rem;">${c.nome || c.tipo}</span>`;
+                                });
+                            }
+                            
+                            if (pontos.governanca && pontos.governanca.length > 0) {
+                                html += `<p style="margin: 12px 0 8px 0; color: #64748b;"><strong>${getSVG('building')} Governo (${pontos.governanca.length}):</strong></p>`;
+                                pontos.governanca.forEach(g => {
+                                    html += `<span style="display: inline-block; background: rgba(59,130,246,0.1); padding: 4px 8px; border-radius: 4px; margin: 4px 4px 4px 0; font-size: 0.85rem;">${g.nome || g.tipo}</span>`;
+                                });
+                            }
+                            
+                            if (pontos.servicos && pontos.servicos.length > 0) {
+                                html += `<p style="margin: 12px 0 8px 0; color: #64748b;"><strong>${getSVG('shop')} Serviços (${pontos.servicos.length}):</strong></p>`;
+                                pontos.servicos.slice(0, 8).forEach(s => {
+                                    html += `<span style="display: inline-block; background: rgba(16,185,129,0.1); padding: 4px 8px; border-radius: 4px; margin: 4px 4px 4px 0; font-size: 0.85rem;">${s.nome || s.tipo}</span>`;
+                                });
+                            }
+                            
+                            html += '</div></div>';
+                        }
                     }
                     
                     resultDiv.innerHTML = html;
                 } else {
-                    resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ ${data.erro || 'Não foi possível validar endereço'}</div>`;
+                    resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 16px; background: rgba(255, 107, 107, 0.1); border-radius: 6px; border-left: 4px solid #ff6b6b;"><span style="display: inline-block; margin-right: 8px;">${getSVG('x')}</span>${data.erro || 'Não foi possível validar endereço'}</div>`;
                 }
             } catch (error) {
-                resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Erro: ${error.message}</div>`;
+                resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 16px; background: rgba(255, 107, 107, 0.1); border-radius: 6px; border-left: 4px solid #ff6b6b;"><span style="display: inline-block; margin-right: 8px;">${getSVG('x')}</span>Erro: ${error.message}</div>`;
             }
         }
 
@@ -1894,7 +2047,7 @@
             modal.classList.add('show');
             
             // Mostrar loading
-            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">🗺️</div><div>Carregando mapa...</div></div></div>';
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">' + getSVG('map') + '</div><div>Carregando mapa...</div></div></div>';
             infoPanel.innerHTML = '<p style="color: #94a3b8;">Geocodificando endereço...</p>';
             
             // Geocodificar o endereço
@@ -1960,14 +2113,14 @@
             const mapContainer = document.getElementById('mapContainer');
             const errorMessages = {
                 'não localizado': {
-                    title: '⚠️ Endereço não localizado',
+                    title: 'Endereço não localizado',
                     message: 'O endereço não foi encontrado no serviço de mapas. Tente verificar a ortografia ou use uma versão simplificada do endereço.',
-                    icon: '⚠️'
+                    icon: 'warning'
                 },
                 'conexão': {
-                    title: '❌ Erro ao conectar',
+                    title: 'Erro ao conectar',
                     message: 'Não foi possível conectar ao serviço de mapas. Verifique sua conexão e tente novamente.',
-                    icon: '❌'
+                    icon: 'x'
                 }
             };
             
@@ -2024,9 +2177,9 @@
             
             // Atualizar info panel
             infoPanel.innerHTML = `
-                <p><strong>📍 Endereço:</strong> ${address}</p>
+                <p><strong>${getSVG('pin')} Endereço:</strong> ${address}</p>
                 <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700;">${typeLabel}</span></p>
-                <p><strong>🗺️ Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+                <p><strong>` + getSVG('map') + ` Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
             `;
         }
 

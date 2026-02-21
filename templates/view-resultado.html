@@ -469,6 +469,20 @@
     </div>
 
     <script>
+        // ===========================
+        // SVG ICONS
+        // ===========================
+        const SVG_ICONS = {
+            pin: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
+            map: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>',
+            warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+            x: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        };
+        
+        function getSVG(iconName) {
+            return SVG_ICONS[iconName] || '';
+        }
+        
         function switchTab(tabName) {
             // Hide all tabs
             const tabs = document.querySelectorAll('.tab-content');
@@ -510,7 +524,7 @@
             modal.classList.add('show');
             
             // Mostrar loading
-            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">🗺️</div><div>Carregando mapa...</div></div></div>';
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">' + getSVG('map') + '</div><div>Carregando mapa...</div></div></div>';
             infoPanel.innerHTML = '<p style="color: #94a3b8;">Geocodificando endereço...</p>';
             
             // Geocodificar o endereço
@@ -576,14 +590,14 @@
             const mapContainer = document.getElementById('mapContainer');
             const errorMessages = {
                 'não localizado': {
-                    title: '⚠️ Endereço não localizado',
+                    title: 'Endereço não localizado',
                     message: 'O endereço não foi encontrado no serviço de mapas. Tente verificar a ortografia ou use uma versão simplificada do endereço.',
-                    icon: '⚠️'
+                    icon: 'warning'
                 },
                 'conexão': {
-                    title: '❌ Erro ao conectar',
+                    title: 'Erro ao conectar',
                     message: 'Não foi possível conectar ao serviço de mapas. Verifique sua conexão e tente novamente.',
-                    icon: '❌'
+                    icon: 'x'
                 }
             };
             
@@ -640,9 +654,9 @@
             
             // Atualizar info panel
             infoPanel.innerHTML = `
-                <p><strong>📍 Endereço:</strong> ${address}</p>
+                <p><strong>${getSVG('pin')} Endereço:</strong> ${address}</p>
                 <p><strong>Tipo:</strong> <span style="color: ${typeColor}; font-weight: 700; display: flex; align-items: center;">${typeLabel}</span></p>
-                <p><strong>🗺️ Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+                <p><strong>${getSVG('map')} Coordenadas:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
             `;
         }
 

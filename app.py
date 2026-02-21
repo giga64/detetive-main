@@ -557,12 +557,18 @@ def format_timestamp_br(timestamp_str: str) -> str:
 
 async def enriquecher_endereco_selecionado(endereco: str) -> dict:
     """
-    Busca ViaCEP e Nominatim para um endereço específico (sob demanda)
+    Busca ViaCEP, Nominatim e Informações Públicas para um endereço específico
     Chamado quando usuário seleciona endereço na UI
     """
     result = {
         "viacep": None,
-        "nominatim": None
+        "nominatim": None,
+        "info_publica": {
+            "cnae": None,
+            "wikidata": None,
+            "overpass": None,
+            "gravatar": None
+        }
     }
     
     try:
@@ -580,6 +586,17 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
                 )
                 if localizacao:
                     result["nominatim"] = localizacao
+                    
+                    # Buscar Overpass (pontos de interesse) se temos coords
+                    try:
+                        overpass_data = await buscar_overpass_api(
+                            localizacao.get("latitude", 0),
+                            localizacao.get("longitude", 0)
+                        )
+                        if overpass_data:
+                            result["info_publica"]["overpass"] = overpass_data
+                    except Exception as op_err:
+                        print(f"⚠️ Erro ao buscar Overpass: {str(op_err)}")
             except Exception as nom_err:
                 print(f"⚠️ Erro ao buscar Nominatim: {str(nom_err)}")
     except Exception as e:
@@ -630,7 +647,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         print(f"⚠️ Erro ao processar endereços: {str(e)}")
     
     try:
-        # Wikipedia - Automática (para CNPJ e CPF)
+        # Wikipedia + Wikidata + CNAE + Gravatar - Automáticas
         nome_para_wiki = ""
         if tipo.lower() == "cnpj" and dados_estruturados.get("dados_pessoais", {}).get("nome"):
             nome_para_wiki = dados_estruturados["dados_pessoais"]["nome"]
@@ -638,12 +655,52 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             # Também buscar Wikipedia para CPF (pessoas famosas)
             nome_para_wiki = dados_estruturados["dados_pessoais"]["nome"]
         
+        info_publica_compilada = {}
+        
+        # 1. Wikipedia
         if nome_para_wiki and isinstance(nome_para_wiki, str):
             info_wiki = await buscar_wikipedia(nome_para_wiki)
             if info_wiki:
-                apis_data["info_publica"] = info_wiki
+                info_publica_compilada["wikipedia"] = info_wiki
+        
+        # 2. Wikidata - Complementa Wikipedia
+        if nome_para_wiki and isinstance(nome_para_wiki, str):
+            try:
+                info_wikidata = await buscar_wikidata(nome_para_wiki)
+                if info_wikidata:
+                    info_publica_compilada["wikidata"] = info_wikidata
+            except Exception as wd_err:
+                print(f"⚠️ Erro ao buscar Wikidata: {str(wd_err)}")
+        
+        # 3. CNAE (IBGE) - Para empresas
+        if tipo.lower() == "cnpj":
+            cnae_code = dados_estruturados.get("dados_empresa", {}).get("cnae")
+            if cnae_code:
+                try:
+                    info_cnae = await buscar_cnae_ibge(cnae_code)
+                    if info_cnae:
+                        info_publica_compilada["cnae"] = info_cnae
+                except Exception as cnae_err:
+                    print(f"⚠️ Erro ao buscar CNAE: {str(cnae_err)}")
+        
+        # 4. Gravatar - Para CPF/Pessoa
+        if tipo.lower() == "cpf":
+            # Tentar extrair email dos contatos
+            contatos = dados_estruturados.get("contatos", [])
+            emails = [c for c in contatos if isinstance(c, str) and "@" in c]
+            
+            if emails:
+                try:
+                    info_gravatar = await buscar_gravatar(emails[0])
+                    if info_gravatar:
+                        info_publica_compilada["gravatar"] = info_gravatar
+                except Exception as grav_err:
+                    print(f"⚠️ Erro ao buscar Gravatar: {str(grav_err)}")
+        
+        if info_publica_compilada:
+            apis_data["info_publica"] = info_publica_compilada
     except Exception as wiki_err:
-        print(f"⚠️ Erro ao buscar Wikipedia: {str(wiki_err)}")
+        print(f"⚠️ Erro ao buscar informações públicas: {str(wiki_err)}")
     
     return apis_data
 
@@ -777,6 +834,297 @@ async def buscar_wikipedia(nome_empresa: str) -> dict:
                     }
     except Exception as e:
         print(f"⚠️ Erro em buscar_wikipedia: {str(e)}")
+    
+    return None
+
+async def buscar_cnae_ibge(cnae_code: str) -> dict:
+    """
+    Busca classificação CNAE (IBGE) - Classifica atividade econômica
+    CNAE = Classificação Nacional de Atividades Econômicas
+    """
+    try:
+        if not cnae_code or not isinstance(cnae_code, str):
+            return None
+        
+        # Remover caracteres especiais
+        cnae_clean = re.sub(r'\D', '', cnae_code[:7])
+        if len(cnae_clean) < 4:
+            return None
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        # Usar executor para não bloquear event loop
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                f"https://servicodados.ibge.gov.br/api/v2/CNAE/{cnae_clean}",
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do CNAE: {str(json_err)}")
+                return None
+            
+            # CNAE pode vir como dict único ou list
+            cnae_data = data if isinstance(data, dict) else data[0] if data else None
+            
+            if cnae_data:
+                return {
+                    "codigo": cnae_data.get("id", ""),
+                    "descricao": cnae_data.get("descricao", ""),
+                    "nivel": cnae_data.get("nivel", ""),
+                    "fonte": "IBGE CNAE"
+                }
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_cnae_ibge: {str(e)}")
+    
+    return None
+
+async def buscar_wikidata(nome: str) -> dict:
+    """
+    Busca dados estruturados no Wikidata
+    Complementa Wikipedia com informações estruturadas em JSON
+    """
+    try:
+        if not nome or len(nome) < 2:
+            return None
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        # Usar executor para não bloquear event loop
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                "https://www.wikidata.org/w/api.php",
+                params={
+                    "action": "wbsearchentities",
+                    "search": nome,
+                    "language": "pt",
+                    "format": "json",
+                    "type": "item",
+                    "limit": 1
+                },
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do Wikidata: {str(json_err)}")
+                return None
+            
+            search = data.get("search", [])
+            if search:
+                primeiro = search[0]
+                entity_id = primeiro.get("id", "")
+                
+                # Se encontrou, buscar detalhes da entidade
+                if entity_id:
+                    details_response = await loop.run_in_executor(
+                        executor,
+                        lambda: requests.get(
+                            f"https://www.wikidata.org/wiki/Special:EntityData/{entity_id}.json",
+                            headers=headers,
+                            timeout=5
+                        )
+                    )
+                    
+                    if details_response.status_code == 200:
+                        try:
+                            details = details_response.json()
+                            entity = details.get("entities", {}).get(entity_id, {})
+                            
+                            labels = entity.get("labels", {})
+                            descriptions = entity.get("descriptions", {})
+                            
+                            label_pt = labels.get("pt", {}).get("value", "")
+                            desc_pt = descriptions.get("pt", {}).get("value", "")
+                            
+                            if label_pt or desc_pt:
+                                return {
+                                    "id": entity_id,
+                                    "nome": label_pt,
+                                    "descricao": desc_pt,
+                                    "url": f"https://www.wikidata.org/wiki/{entity_id}",
+                                    "fonte": "Wikidata"
+                                }
+                        except Exception as details_err:
+                            print(f"⚠️ Erro ao parsear detalhes Wikidata: {str(details_err)}")
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_wikidata: {str(e)}")
+    
+    return None
+
+async def buscar_overpass_api(latitude: float, longitude: float) -> dict:
+    """
+    Busca pontos de interesse via Overpass API (OpenStreetMap)
+    Mostra: Comércios, escolas, hospitais, delegacias, bancos etc.
+    """
+    try:
+        if not latitude or not longitude:
+            return None
+        
+        # Definir área de busca (0.01 graus ≈ 1km)
+        lat_min = latitude - 0.01
+        lat_max = latitude + 0.01
+        lon_min = longitude - 0.01
+        lon_max = longitude + 0.01
+        
+        # Query Overpass para pontos de interesse
+        query = f"""
+        [bbox:{lat_min},{lon_min},{lat_max},{lon_max}];
+        (
+            node[shop~".*"];
+            node[amenity~".*"];
+            node[office~".*"];
+        );
+        out center 10;
+        """
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.post(
+                "https://overpass-api.de/api/interpreter",
+                data=query,
+                headers=headers,
+                timeout=10
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do Overpass: {str(json_err)}")
+                return None
+            
+            elementos = data.get("elements", [])
+            
+            # Processar elementos e categorizar
+            pontos = {
+                "comercios": [],
+                "servicos": [],
+                "governanca": [],
+                "total": len(elementos)
+            }
+            
+            for elem in elementos[:15]:  # Limitar a 15 elementos
+                tags = elem.get("tags", {})
+                nome = tags.get("name", "")
+                
+                if "shop" in tags:
+                    pontos["comercios"].append({
+                        "nome": nome,
+                        "tipo": tags.get("shop", ""),
+                        "lat": elem.get("center", {}).get("lat", elem.get("lat", "")),
+                        "lon": elem.get("center", {}).get("lon", elem.get("lon", ""))
+                    })
+                elif tags.get("amenity") in ["police", "government_office", "courthouse"]:
+                    pontos["governanca"].append({
+                        "nome": nome,
+                        "tipo": tags.get("amenity", ""),
+                        "lat": elem.get("center", {}).get("lat", elem.get("lat", "")),
+                        "lon": elem.get("center", {}).get("lon", elem.get("lon", ""))
+                    })
+                else:
+                    pontos["servicos"].append({
+                        "nome": nome,
+                        "tipo": tags.get("amenity", tags.get("office", "")),
+                        "lat": elem.get("center", {}).get("lat", elem.get("lat", "")),
+                        "lon": elem.get("center", {}).get("lon", elem.get("lon", ""))
+                    })
+            
+            if pontos["total"] > 0:
+                return {
+                    "pontos_interesse": pontos,
+                    "fonte": "OpenStreetMap Overpass"
+                }
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_overpass_api: {str(e)}")
+    
+    return None
+
+async def buscar_gravatar(email: str) -> dict:
+    """
+    Busca perfil Gravatar por email
+    Retorna: Avatar, nome, localização, biografia, redes sociais verificadas
+    """
+    try:
+        import hashlib
+        
+        if not email or "@" not in email:
+            return None
+        
+        # Calcular SHA256 hash do email (lowercase + trimmed)
+        email_hash = hashlib.sha256(email.lower().strip().encode()).hexdigest()
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                f"https://api.gravatar.com/v3/profiles/{email_hash}",
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do Gravatar: {str(json_err)}")
+                return None
+            
+            # Extrair informações
+            perfil = {
+                "email": email,
+                "avatar_url": f"https://www.gravatar.com/avatar/{email_hash}?s=256",
+                "nome": "",
+                "localizacao": "",
+                "biografia": "",
+                "redes_sociais": [],
+                "fonte": "Gravatar"
+            }
+            
+            # Nome completo
+            if data.get("name"):
+                perfil["nome"] = data.get("name")
+            
+            # Localização
+            if data.get("location"):
+                perfil["localizacao"] = data.get("location")
+            
+            # Biografia
+            if data.get("bio"):
+                perfil["biografia"] = data.get("bio")[:200]  # Limitar a 200 chars
+            
+            # Redes sociais verificadas
+            if data.get("socialAccounts"):
+                for rede in data.get("socialAccounts", []):
+                    if rede.get("verified"):
+                        perfil["redes_sociais"].append({
+                            "tipo": rede.get("typeId", ""),
+                            "url": rede.get("url", "")
+                        })
+            
+            return perfil if perfil.get("nome") or perfil.get("biografia") else None
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_gravatar: {str(e)}")
     
     return None
 

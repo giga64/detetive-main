@@ -406,6 +406,18 @@
       canvas.height = window.innerHeight;
     });
 
+    // ===========================
+    // SVG ICONS
+    // ===========================
+    const SVG_ICONS = {
+        checkCircle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><circle cx="12" cy="12" r="10"></circle></svg>',
+        x: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+    };
+    
+    function getSVG(iconName) {
+        return SVG_ICONS[iconName] || '';
+    }
+
     async function unlockIP() {
       try {
         const response = await fetch('/api/unlock-ip', { method: 'POST' });
@@ -415,17 +427,17 @@
           // Mostrar sucesso e recarregar
           const btn = event.target;
           btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
-          btn.textContent = '✅ Desbloqueado!';
+          btn.innerHTML = getSVG('checkCircle') + ' Desbloqueado!';
           btn.disabled = true;
           
           // Recarregar página após 2 segundos
           setTimeout(() => location.reload(), 2000);
         } else {
-          alert('❌ ' + data.message);
+          alert(getSVG('x') + ' ' + data.message);
         }
       } catch (error) {
         console.error('Erro ao desbloquear IP:', error);
-        alert('❌ Erro ao desbloquear IP. Tente novamente mais tarde.');
+        alert(getSVG('x') + ' Erro ao desbloquear IP. Tente novamente mais tarde.');
       }
     }
   </script>

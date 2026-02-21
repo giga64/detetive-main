@@ -639,7 +639,7 @@
   
   <div class="container">
     <header>
-      <h1>{% if is_favorites %}⭐ FAVORITOS{% else %}HISTÓRICO{% endif %}</h1>
+      <h1>{% if is_favorites %}<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-right: 8px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>FAVORITOS{% else %}HISTÓRICO{% endif %}</h1>
       <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         {% if consultas %}
         {% if not is_favorites %}
@@ -651,7 +651,7 @@
         {% if is_favorites %}
         <a href="/historico" class="btn-back" style="background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.5); color: #06b6d4;">Histórico Completo</a>
         {% else %}
-        <a href="/favoritos" class="btn-back" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #fbbf24;">⭐ Favoritos</a>
+        <a href="/favoritos" class="btn-back" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #fbbf24;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-right: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Favoritos</a>
         {% endif %}
         <a href="/historico/exportar/csv" class="btn-export" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); color: #10b981;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
@@ -662,7 +662,7 @@
           Exportar Dados
         </a>
         {% endif %}
-        <a href="/" class="btn-back">← Painel Principal</a>
+        <a href="/" class="btn-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Painel Principal</a>
       </div>
     </header>
     
@@ -900,6 +900,18 @@
       canvas.height = window.innerHeight;
     });
 
+    // ===========================
+    // SVG ICONS
+    // ===========================
+    const SVG_ICONS = {
+        checkCircle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><circle cx="12" cy="12" r="10"></circle></svg>',
+        x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+    };
+    
+    function getSVG(iconName) {
+        return SVG_ICONS[iconName] || '';
+    }
+
     
     // ===========================
     // LIMPAR HISTÓRICO
@@ -924,16 +936,16 @@
         });
         
         if (response.ok || response.status === 303) {
-          showToast('✅ Histórico limpo com sucesso!', 'success');
+          showToast(getSVG('checkCircle') + ' Histórico limpo com sucesso!', 'success');
           setTimeout(() => {
             location.reload();
           }, 1000);
         } else {
-          showToast('❌ Erro ao limpar histórico', 'error');
+          showToast(getSVG('x') + ' Erro ao limpar histórico', 'error');
         }
       } catch (error) {
         console.error('Erro:', error);
-        showToast('❌ Erro ao conectar com o servidor', 'error');
+        showToast(getSVG('x') + ' Erro ao conectar com o servidor', 'error');
       }
     }
     
@@ -944,10 +956,10 @@
       try {
         // Abrir em nova aba
         window.open(`/view-resultado/${searchId}`, '_blank', 'width=1200,height=800');
-        showToast('✅ Abrindo resultado completo...', 'success');
+        showToast(getSVG('checkCircle') + ' Abrindo resultado completo...', 'success');
       } catch (error) {
         console.error('Erro:', error);
-        showToast('❌ Erro ao abrir resultado', 'error');
+        showToast(getSVG('x') + ' Erro ao abrir resultado', 'error');
       }
     }
     
@@ -967,7 +979,7 @@
         button.style.opacity = '0.5';
         button.style.transform = 'scale(1.15)';
         
-        showToast('✅ Resultado copiado para a área de transferência!', 'success');
+        showToast(getSVG('checkCircle') + ' Resultado copiado para a área de transferência!', 'success');
         
         setTimeout(() => {
           button.style.opacity = '1';
@@ -975,7 +987,7 @@
         }, 1500);
       } catch (error) {
         console.error('Erro ao copiar:', error);
-        showToast('❌ Erro ao copiar para área de transferência', 'error');
+        showToast(getSVG('x') + ' Erro ao copiar para área de transferência', 'error');
       }
     }
     
@@ -992,7 +1004,7 @@
         
         if (data.success) {
           button.classList.toggle('active');
-          const message = isActive ? '⭐ Removido dos favoritos' : '⭐ Adicionado aos favoritos';
+          const message = isActive ? getSVG('star') + ' Removido dos favoritos' : getSVG('star') + ' Adicionado aos favoritos';
           showToast(message, 'success');
         } else {
           showToast(data.error || 'Erro ao processar favorito', 'error');
