@@ -857,6 +857,12 @@
                             </svg>
                             Resultados
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Informações Públicas
+                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -879,6 +885,12 @@
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
                             Proprietário
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Informações Públicas
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -908,6 +920,12 @@
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                             </svg>
                             Contatos
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Informações Públicas
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -953,6 +971,12 @@
                                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                             </svg>
                             Empresas
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Informações Públicas
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -1505,19 +1529,21 @@
 
                             <ul class="data-list">
                                 {% for endereco in dados.enderecos %}
-                                    <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
-                                        <div style="flex: 1;">
-                                            <span>{{ endereco }}</span>
-                                            <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                    <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="flex: 1;">
+                                                <span>{{ endereco }}</span>
+                                                <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                            </div>
+                                            <div style="display: flex; gap: 10px;">
+                                                <button class="action-btn" onclick="openStreetView('{{ endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
+                                                <button class="action-btn" onclick="validarEndereco({{ endereco | tojson }}, 'endereco-resultado-{{ loop.index0 }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
+                                            </div>
                                         </div>
-                                        <div style="display: flex; gap: 10px;">
-                                            <button class="action-btn" onclick="openStreetView('{{ endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
-                                            <button class="action-btn" onclick="validarEndereco({{ endereco | tojson }})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
-                                        </div>
+                                        <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; margin-top: 15px; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4;"></div>
                                     </li>
                                 {% endfor %}
                             </ul>
-                            <div id="endereco-resultado" style="display: none; margin-top: 20px;"></div>
                         {% else %}
                             <div class="empty-state">
                                 <div class="empty-state-icon"></div>
@@ -1689,12 +1715,8 @@
                 <div id="proprietario" class="tab-content" style="display: none;">
                 </div>
 
-                <!-- TAB: Dados Brutos -->
-                <div id="raw" class="tab-content">
-                    <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
-                </div>
-
-                <!-- Informações de Fontes Públicas - Sempre visível se disponível -->
+                <!-- TAB: Informações Públicas -->
+                <div id="public-info" class="tab-content">
                 {% if apis_data and apis_data.info_publica %}
                     <div style="margin-top: 30px; margin-bottom: 30px;">
                         <h3 style="margin-bottom: 20px; color: #f59e0b; display: flex; align-items: center; gap: 10px;">
@@ -1791,8 +1813,17 @@
                                 </div>
                             </div>
                         {% endif %}
-                    </div>
-                {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Nenhuma informação pública disponível</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- TAB: Dados Brutos -->
+                <div id="raw" class="tab-content">
+                    <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
+                </div>
 
                 <!-- Ações -->
                 <div class="actions-section">
@@ -1934,8 +1965,13 @@
         // ===========================
         // VALIDAÇÃO DE ENDEREÇO SOB DEMANDA
         // ===========================
-        async function validarEndereco(endereco) {
-            const resultDiv = document.getElementById('endereco-resultado');
+        async function validarEndereco(endereco, resultDivId) {
+            const resultDiv = document.getElementById(resultDivId || 'endereco-resultado');
+            if (!resultDiv) {
+                console.error('Div de resultado não encontrada:', resultDivId);
+                return;
+            }
+            
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = '<div style="text-align: center; color: #06b6d4; padding: 20px;"><div style="font-size: 1.5rem; margin-bottom: 8px; display: inline-block; color: #06b6d4;">' + getSVG('loader') + '</div><div>Validando e buscando informações...</div></div>';
             
