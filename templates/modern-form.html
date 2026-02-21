@@ -948,41 +948,48 @@
       mouseX = e.clientX;
       mouseY = e.clientY;
       
-      // Create radar wave on mouse move (throttled)
+      // Create radar wave on mouse move (throttled) - máximo de 5 ondas
       const now = Date.now();
-      if (now - lastWaveTime > 150) {
+      if (now - lastWaveTime > 300 && radarWaves.length < 5) {
         radarWaves.push(new RadarWave(mouseX, mouseY));
         lastWaveTime = now;
       }
       
-      // Create binary trail
-      if (Math.random() > 0.7) {
+      // Create binary trail (reduzido) - máximo de 15 trails
+      if (Math.random() > 0.92 && binaryTrails.length < 15) {
         binaryTrails.push(new BinaryTrail(mouseX, mouseY));
       }
       
       // Clear timeout for helix creation
       clearTimeout(mouseMoveTimeout);
       mouseMoveTimeout = setTimeout(() => {
-        // Create DNA helix when mouse stops
-        helixPoints.push(new HelixPoint(mouseX, mouseY, 1));
-        helixPoints.push(new HelixPoint(mouseX, mouseY, -1));
-      }, 100);
+        // Create DNA helix when mouse stops - máximo de 10 pares
+        if (helixPoints.length < 20) {
+          helixPoints.push(new HelixPoint(mouseX, mouseY, 1));
+          helixPoints.push(new HelixPoint(mouseX, mouseY, -1));
+        }
+      }, 200);
     });
     
     // Click creates strong radar pulse
     document.addEventListener('click', (e) => {
-      for (let i = 0; i < 3; i++) {
+      // 2 ondas ao invés de 3
+      for (let i = 0; i < 2; i++) {
         setTimeout(() => {
-          radarWaves.push(new RadarWave(e.clientX, e.clientY));
+          if (radarWaves.length < 8) {
+            radarWaves.push(new RadarWave(e.clientX, e.clientY));
+          }
         }, i * 100);
       }
       
-      // Burst of binary code
-      for (let i = 0; i < 20; i++) {
-        binaryTrails.push(new BinaryTrail(
-          e.clientX + (Math.random() - 0.5) * 40,
-          e.clientY + (Math.random() - 0.5) * 40
-        ));
+      // Burst reduzido de binary code (10 ao invés de 20)
+      for (let i = 0; i < 10; i++) {
+        if (binaryTrails.length < 30) {
+          binaryTrails.push(new BinaryTrail(
+            e.clientX + (Math.random() - 0.5) * 40,
+            e.clientY + (Math.random() - 0.5) * 40
+          ));
+        }
       }
     });
     

@@ -472,27 +472,33 @@
     document.addEventListener('mousemove', (e) => {
       mouseX = e.clientX; mouseY = e.clientY;
       const now = Date.now();
-      if (now - lastWaveTime > 150) {
+      if (now - lastWaveTime > 300 && radarWaves.length < 5) {
         radarWaves.push(new RadarWave(mouseX, mouseY));
         lastWaveTime = now;
       }
-      if (Math.random() > 0.7) binaryTrails.push(new BinaryTrail(mouseX, mouseY));
+      if (Math.random() > 0.92 && binaryTrails.length < 15) binaryTrails.push(new BinaryTrail(mouseX, mouseY));
       clearTimeout(mouseMoveTimeout);
       mouseMoveTimeout = setTimeout(() => {
-        helixPoints.push(new HelixPoint(mouseX, mouseY, 1));
-        helixPoints.push(new HelixPoint(mouseX, mouseY, -1));
-      }, 100);
+        if (helixPoints.length < 20) {
+          helixPoints.push(new HelixPoint(mouseX, mouseY, 1));
+          helixPoints.push(new HelixPoint(mouseX, mouseY, -1));
+        }
+      }, 200);
     });
     
     document.addEventListener('click', (e) => {
-      for (let i = 0; i < 3; i++) {
-        setTimeout(() => radarWaves.push(new RadarWave(e.clientX, e.clientY)), i * 100);
+      for (let i = 0; i < 2; i++) {
+        setTimeout(() => {
+          if (radarWaves.length < 8) radarWaves.push(new RadarWave(e.clientX, e.clientY));
+        }, i * 100);
       }
-      for (let i = 0; i < 20; i++) {
-        binaryTrails.push(new BinaryTrail(
-          e.clientX + (Math.random() - 0.5) * 40,
-          e.clientY + (Math.random() - 0.5) * 40
-        ));
+      for (let i = 0; i < 10; i++) {
+        if (binaryTrails.length < 30) {
+          binaryTrails.push(new BinaryTrail(
+            e.clientX + (Math.random() - 0.5) * 40,
+            e.clientY + (Math.random() - 0.5) * 40
+          ));
+        }
       }
     });
     
