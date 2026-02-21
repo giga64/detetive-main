@@ -2065,34 +2065,41 @@ async def delete_user(request: Request, user_id: int):
 async def change_password(request: Request, user_id: int = Form(...), new_pass: str = Form(...), csrf_token: str = Form(...)):
     # Verificar autenticação e admin status
     if not request.cookies.get("auth_user"):
-        return {"success": False, "error": "Não autenticado"}
+        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
     
     if is_session_expired(request):
-        return {"success": False, "error": "Sessão expirada"}
+        return JSONResponse({"success": False, "error": "Sessão expirada"}, status_code=401)
     
     if request.cookies.get("is_admin") != "1":
-        return {"success": False, "error": "Acesso negado"}
+        return JSONResponse({"success": False, "error": "Acesso negado"}, status_code=403)
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
     
     # Validar CSRF token
-    if not validate_csrf_token(request, csrf_token):
-        record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de alterar senha com CSRF inválido")
-        return {"success": False, "error": "CSRF inválido"}
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_CHANGE_PASS", username, client_ip, "Tentativa de alterar senha com CSRF inválido")
+        return JSONResponse({"success": False, "error": "Sessão inválida. Recarregue a página."}, status_code=403)
     
     # Validar senha
     if not new_pass or len(new_pass) < 4:
-        return {"success": False, "error": "Senha deve ter no mínimo 4 caracteres"}
+        return JSONResponse({"success": False, "error": "Senha deve ter no mínimo 4 caracteres"}, status_code=400)
     
     try:
+        # Verificar se o usuário existe
+        cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            return JSONResponse({"success": False, "error": "Usuário não encontrado"}, status_code=404)
+        
         cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pass, user_id))
         conn.commit()
-        record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para ID: {user_id}")
-        return {"success": True, "message": "Senha alterada com sucesso"}
+        record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para usuário: {user[0]} (ID: {user_id})")
+        return JSONResponse({"success": True, "message": "Senha alterada com sucesso"})
     except Exception as e:
         record_audit_log("CHANGE_PASSWORD_FAILED", username, client_ip, f"Falha ao alterar senha para ID: {user_id} - {str(e)}")
-        return {"success": False, "error": "Erro ao alterar senha"}
+        return JSONResponse({"success": False, "error": f"Erro ao alterar senha: {str(e)}"}, status_code=500)
 
 # ──────────────────────────────────────────
 # Novas Rotas para Gerenciamento de Usuários

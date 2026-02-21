@@ -358,6 +358,9 @@
       font-size: 1.2rem;
       pointer-events: none;
       z-index: 1;
+      width: 1.2rem;
+      height: 1.2rem;
+      color: rgba(6, 182, 212, 0.6);
     }
 
     .form-input.with-icon {
@@ -600,7 +603,9 @@
     }
     
     .btn-historico {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
       padding: 0.8rem 1.8rem;
       background: rgba(6,182,212,0.15);
       border: 1.5px solid rgba(6,182,212,0.6);
@@ -614,6 +619,13 @@
       text-transform: uppercase;
       font-size: 0.9rem;
       box-shadow: 0 10px 30px rgba(6,182,212,0.2);
+    }
+    
+    .btn-historico svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      flex-shrink: 0;
     }
     
     .btn-historico:hover {
@@ -718,7 +730,10 @@
         <!-- Input Field -->
         <div class="form-group">
           <div class="input-wrapper">
-            <span class="input-icon">🔍</span>
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
             <input 
               type="text" 
               id="identificador" 
@@ -741,11 +756,41 @@
       
       <!-- History Button -->
       <div class="history-button-container">
-        <a href="/historico" class="btn-historico">Ver Histórico</a>
+        <a href="/historico" class="btn-historico">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Ver Histórico
+        </a>
         {% if request.cookies.get('is_admin') == '1' %}
-          <a href="/admin/dashboard" class="btn-historico btn-admin">Dashboard</a>
-          <a href="/admin/logs" class="btn-historico btn-admin">Ver Logs</a>
-          <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">Gerenciar Usuarios</a>
+          <a href="/admin/dashboard" class="btn-historico btn-admin">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Dashboard
+          </a>
+          <a href="/admin/logs" class="btn-historico btn-admin">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+              <line x1="9" y1="13" x2="15" y2="13"></line>
+              <line x1="9" y1="17" x2="15" y2="17"></line>
+            </svg>
+            Ver Logs
+          </a>
+          <a href="{{ request.url_for('list_users') }}" class="btn-historico btn-admin">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Gerenciar Usuarios
+          </a>
         {% endif %}
       </div>
     </div>

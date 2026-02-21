@@ -1078,21 +1078,35 @@
                 return;
             }
 
+            if (password.length < 4) {
+                showError('Senha deve ter no mínimo 4 caracteres');
+                return;
+            }
+
             const formData = new FormData();
             formData.append('user_id', userId);
             formData.append('new_pass', password);
             formData.append('csrf_token', '{{ csrf_token }}');
 
             try {
-                await fetch('/usuarios/alterar-senha', {
+                const response = await fetch('/usuarios/alterar-senha', {
                     method: 'POST',
                     body: formData
                 });
-                showSuccess('Senha alterada com sucesso!');
-                closePasswordModal();
-                setTimeout(() => location.reload(), 1500);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('✅ Senha alterada com sucesso!');
+                    document.getElementById('changePassword').value = '';
+                    closePasswordModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showError('❌ ' + (data.error || 'Erro ao alterar senha'));
+                }
             } catch (error) {
-                showError('Erro ao alterar senha');
+                console.error('Erro:', error);
+                showError('❌ Erro ao conectar com o servidor: ' + error.message);
             }
         }
 
