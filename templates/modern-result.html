@@ -954,18 +954,18 @@
                             </svg>
                             Empresas
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'sources')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                            Dados Públicos
+                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
                             </svg>
                             Dados Brutos
-                        </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'sources')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                                <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
-                            </svg>
-                            Fontes Públicas
                         </button>
                     {% endif %}
                 </div>
@@ -1536,46 +1536,15 @@
                     {% endif %}
                 </div>
 
-                <!-- TAB: Fontes Públicas (Risk Score + Processos + Wikipedia) -->
+                <!-- TAB: Fontes Públicas (Processos + Wikipedia) -->
                 <div id="sources" class="tab-content">
-                    {% if apis_data.risk_score or apis_data.processos_judiciais or apis_data.info_publica %}
-                        <!-- Score de Risco Jurídico -->
-                        {% if apis_data.risk_score %}
-                            <div class="api-card" style="border-left: 6px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); margin-bottom: 20px;">
-                                <h4 style="color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 24px;">⚖️</span>
-                                    Score de Risco Jurídico
-                                </h4>
-                                <div class="risk-score-container">
-                                    <div class="risk-score-gauge">
-                                        <div class="risk-score-value">{{ apis_data.risk_score.score }}/100</div>
-                                        <div class="risk-score-bar">
-                                            <div class="risk-score-fill" style="width: {{ apis_data.risk_score.score }}%; background: {% if apis_data.risk_score.score < 25 %}#10b981{% elif apis_data.risk_score.score < 50 %}#f59e0b{% elif apis_data.risk_score.score < 75 %}#f97316{% else %}#ef4444{% endif %};"></div>
-                                        </div>
-                                        <div class="risk-score-label" style="color: {% if 'BAIXO' in apis_data.risk_score.faixa %}#10b981{% elif 'MODERADO' in apis_data.risk_score.faixa %}#f59e0b{% elif 'ELEVADO' in apis_data.risk_score.faixa %}#f97316{% else %}#ef4444{% endif %};">
-                                            {{ apis_data.risk_score.faixa }}
-                                        </div>
-                                    </div>
-                                    
-                                    {% if apis_data.risk_score.alertas %}
-                                        <div class="risk-alertas">
-                                            <p style="font-weight: 600; color: #06b6d4; margin-bottom: 10px;">{{ apis_data.risk_score.criterios_avaliados }} critério(s) avaliado(s):</p>
-                                            {% for alerta in apis_data.risk_score.alertas %}
-                                                <div class="risk-alerta-item">{{ alerta }}</div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <small style="color: #888; margin-top: 12px; display: block;">Análise baseada em critérios jurídicos e cadastrais</small>
-                            </div>
-                        {% endif %}
-                        
+                    {% if apis_data.processos_judiciais or apis_data.info_publica %}
                         <!-- Processos Judiciais -->
-                        {% if apis_data.processos_judiciais and apis_data.processos_judiciais.tjs_disponiveis and apis_data.processos_judiciais.tjs_disponiveis|length > 0 %}
+                        {% if apis_data.processos_judiciais and apis_data.processos_judiciais.tjs_com_processos and apis_data.processos_judiciais.tjs_com_processos|length > 0 %}
                             <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 20px;">
                                 <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
                                 <div class="api-content">
-                                    <p style="margin-bottom: 12px;"><strong>✅ Pessoa possui processos em {{ apis_data.processos_judiciais.tjs_disponiveis|length }} estado(s):</strong></p>
+                                    <p style="margin-bottom: 12px;"><strong>✅ Pessoa possui processos em {{ apis_data.processos_judiciais.tjs_com_processos|length }} estado(s):</strong></p>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
                                         {% set tj_urls = {
                                             "SP": "https://www.tjsp.jus.br/",
@@ -1604,7 +1573,7 @@
                                             "AC": "https://www.tjac.jus.br/",
                                             "PI": "https://www.tjpi.jus.br/"
                                         } %}
-                                        {% for estado in apis_data.processos_judiciais.tjs_disponiveis %}
+                                        {% for estado in apis_data.processos_judiciais.tjs_com_processos %}
                                             <a href="{{ tj_urls.get(estado, '#') }}" target="_blank" style="background: rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #8b5cf6; text-decoration: none; text-align: center; border: 1px solid rgba(139, 92, 246, 0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">{{ estado }}</a>
                                         {% endfor %}
                                     </div>
@@ -1629,7 +1598,7 @@
                         {% if apis_data.info_publica %}
                             <div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 20px;">
                                 <h4 style="color: #f59e0b; margin-bottom: 12px;">🌐 Informações de Fontes Públicas</h4>
-                                <div class="api-content">
+                                <div class="api-content" style="max-height: 400px; overflow-y: auto; overflow-x: auto; padding-right: 15px;">
                                     <p>{{ apis_data.info_publica.resumo }}</p>
                                 </div>
                                 <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
@@ -1637,7 +1606,7 @@
                         {% endif %}
                     {% else %}
                         <div class="empty-state">
-                            <p>Sem informações de fontes públicas disponíveis</p>
+                            <p>Sem informações públicas disponíveis</p>
                         </div>
                     {% endif %}
                 </div>
@@ -1804,51 +1773,8 @@
 
                 <!-- TAB: Dados Brutos -->
                 <div id="raw" class="tab-content">
-                    <div class="raw-text">{{ resultado }}</div>
+                    <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
                 </div>
-
-                <!-- APIS ENRIQUECIDAS - Dados de Fontes Públicas -->
-                {% if apis_data %}
-                    <div class="apis-enrichment-section">
-                        <h3 style="margin-top: 30px; margin-bottom: 20px; color: #06b6d4; display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 20px;">🌐</span>
-                            Informações de Fontes Públicas
-                        </h3>
-                        
-                        <!-- Risk Score Jurídico -->
-                        {% if apis_data.risk_score %}
-                            <div class="api-card" style="border-left: 6px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));">
-                                <h4 style="color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 24px;">⚖️</span>
-                                    Score de Risco Jurídico
-                                </h4>
-                                <div class="risk-score-container">
-                                    <div class="risk-score-gauge">
-                                        <div class="risk-score-value">{{ apis_data.risk_score.score }}/100</div>
-                                        <div class="risk-score-bar">
-                                            <div class="risk-score-fill" style="width: {{ apis_data.risk_score.score }}%; background: {% if apis_data.risk_score.score < 25 %}#10b981{% elif apis_data.risk_score.score < 50 %}#f59e0b{% elif apis_data.risk_score.score < 75 %}#f97316{% else %}#ef4444{% endif %};"></div>
-                                        </div>
-                                        <div class="risk-score-label" style="color: {% if 'BAIXO' in apis_data.risk_score.faixa %}#10b981{% elif 'MODERADO' in apis_data.risk_score.faixa %}#f59e0b{% elif 'ELEVADO' in apis_data.risk_score.faixa %}#f97316{% else %}#ef4444{% endif %};">
-                                            {{ apis_data.risk_score.faixa }}
-                                        </div>
-                                    </div>
-                                    
-                                    {% if apis_data.risk_score.alertas %}
-                                        <div class="risk-alertas">
-                                            <p style="font-weight: 600; color: #06b6d4; margin-bottom: 10px;">{{ apis_data.risk_score.criterios_avaliados }} critério(s) avaliado(s):</p>
-                                            {% for alerta in apis_data.risk_score.alertas %}
-                                                <div class="risk-alerta-item">{{ alerta }}</div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <small style="color: #888; margin-top: 12px; display: block;">Análise baseada em critérios jurídicos e cadastrais</small>
-                            </div>
-                        {% endif %}
-                        
-
-                    </div>
-                {% endif %}
 
                 <!-- Ações -->
                 <div class="actions-section">

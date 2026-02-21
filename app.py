@@ -833,40 +833,14 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
     """
     Busca processos judiciais via TJs de TODO Brasil
     Integra todos os 27 TJs estaduais
+    Retorna apenas TJs que têm processos encontrados
     """
     try:
-        tjs_brasil = {
-            "SP": "https://www.tjsp.jus.br/",
-            "RJ": "https://www.tjrj.jus.br/",
-            "MG": "https://www.tjmg.jus.br/",
-            "BA": "https://www.tjba.jus.br/",
-            "RS": "https://www.tjrs.jus.br/",
-            "PR": "https://www.tjpr.jus.br/",
-            "PE": "https://www.tjpe.jus.br/",
-            "CE": "https://www.tjce.jus.br/",
-            "SC": "https://www.tjsc.jus.br/",
-            "GO": "https://www.tjgo.jus.br/",
-            "PA": "https://www.tjpa.jus.br/",
-            "ES": "https://www.tjes.jus.br/",
-            "PB": "https://www.tjpb.jus.br/",
-            "MA": "https://www.tjma.jus.br/",
-            "DF": "https://www.tjdft.jus.br/",
-            "AM": "https://www.tjam.jus.br/",
-            "MT": "https://www.tjmt.jus.br/",
-            "MS": "https://www.tjms.jus.br/",
-            "RN": "https://www.tjrn.jus.br/",
-            "AL": "https://www.tjal.jus.br/",
-            "RO": "https://www.tjro.jus.br/",
-            "TO": "https://www.tjto.jus.br/",
-            "AP": "https://www.tjap.jus.br/",
-            "AC": "https://www.tjac.jus.br/",
-            "PI": "https://www.tjpi.jus.br/"
-        }
-        
-        # Apenas retornar dados sem fazer requisições que podem bloquear
+        # Por padrão, retornar sem processos encontrados
+        # Quando houver integração real com CNJ, preencher tjs_com_processos
         return {
-            "total_tjs": len(tjs_brasil),
-            "tjs_disponiveis": list(tjs_brasil.keys()),
+            "total_tjs": 27,
+            "tjs_com_processos": [],  # TJs que têm processos encontrados
             "observacao": "Consulte o TJ de seu estado para processos específicos"
         }
     except Exception as e:
