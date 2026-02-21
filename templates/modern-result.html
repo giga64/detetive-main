@@ -1505,6 +1505,50 @@
                                 <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
                             </div>
 
+                            <!-- Seletor de Endereços para Validação com APIs -->
+                            {% if apis_data.enderecos_disponiveis and apis_data.enderecos_disponiveis|length > 1 %}
+                                <div class="api-card" style="border-left: 4px solid #0ea5a4; margin-bottom: 20px;">
+                                    <h4 style="color: #0ea5a4; margin-bottom: 12px;">📍 Validar Endereço com APIs</h4>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        {% for endereco in apis_data.enderecos_disponiveis %}
+                                            <button onclick='validarEndereco({{ endereco | tojson }})' 
+                                                    style="text-align: left; padding: 12px; background: rgba(10, 165, 164, 0.1); border: 1px solid rgba(10, 165, 164, 0.3); border-radius: 6px; color: #d0d0d0; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;">
+                                                {{ endereco }}
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                    <small style="color: #888; margin-top: 8px; display: block;">Clique para validar com ViaCEP + Geolocalização</small>
+                                </div>
+                                <div id="endereco-resultado" style="display: none; margin-bottom: 20px;"></div>
+                            {% endif %}
+
+                            <!-- Endereço Validado (se uma foi clicada) -->
+                            {% if apis_data.endereco_validado %}
+                                <div class="api-card" style="border-left: 4px solid #06b6d4; margin-bottom: 20px;">
+                                    <h4 style="color: #06b6d4; margin-bottom: 12px;">✅ Endereço Validado</h4>
+                                    <div class="api-content">
+                                        {% if apis_data.endereco_validado.logradouro %}<p><strong>Rua:</strong> {{ apis_data.endereco_validado.logradouro }}</p>{% endif %}
+                                        {% if apis_data.endereco_validado.bairro %}<p><strong>Bairro:</strong> {{ apis_data.endereco_validado.bairro }}</p>{% endif %}
+                                        {% if apis_data.endereco_validado.localidade %}<p><strong>Cidade:</strong> {{ apis_data.endereco_validado.localidade }}</p>{% endif %}
+                                        {% if apis_data.endereco_validado.uf %}<p><strong>Estado:</strong> {{ apis_data.endereco_validado.uf }}</p>{% endif %}
+                                        {% if apis_data.endereco_validado.cep %}<p><strong>CEP:</strong> {{ apis_data.endereco_validado.cep }}</p>{% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Geolocalização -->
+                            {% if apis_data.localizacao %}
+                                <div class="api-card" style="border-left: 4px solid #10b981; margin-bottom: 20px;">
+                                    <h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>
+                                    <div class="api-content">
+                                        <p><strong>Latitude:</strong> {{ apis_data.localizacao.latitude | round(4) }}</p>
+                                        <p><strong>Longitude:</strong> {{ apis_data.localizacao.longitude | round(4) }}</p>
+                                        {% if apis_data.localizacao.endereco_completo %}<p><strong>Endereço:</strong> {{ apis_data.localizacao.endereco_completo }}</p>{% endif %}
+                                        <a href="https://www.openstreetmap.org/?mlat={{ apis_data.localizacao.latitude }}&mlon={{ apis_data.localizacao.longitude }}&zoom=17&layers=M" target="_blank" style="color: #06b6d4; text-decoration: underline;">🔗 Ver no Mapa</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+
                             <ul class="data-list">
                                 {% for endereco in dados.enderecos %}
                                     <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
@@ -1737,84 +1781,49 @@
                             <div class="api-card" style="border-left: 4px solid #8b5cf6;">
                                 <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
                                 <div class="api-content">
-                                    <p><strong>Total de TJs:</strong> {{ apis_data.processos_judiciais.total_tjs }} (todos os estados)</p>
-                                    <p style="margin-top: 12px;"><strong>Estados com busca:</strong></p>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-                                        {% for estado in apis_data.processos_judiciais.todos_estados %}
-                                            <span style="background: rgba(139, 92, 246, 0.2); padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #8b5cf6;">{{ estado }}</span>
+                                    <p><strong>🏛️ Total de Tribunais:</strong> {{ apis_data.processos_judiciais.total_tjs }} (todos os estados)</p>
+                                    <p style="margin-top: 12px; margin-bottom: 12px;"><strong>📍 Estados Disponíveis:</strong></p>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
+                                        {% set tj_urls = {
+                                            "SP": "https://www.tjsp.jus.br/",
+                                            "RJ": "https://www.tjrj.jus.br/",
+                                            "MG": "https://www.tjmg.jus.br/",
+                                            "BA": "https://www.tjba.jus.br/",
+                                            "RS": "https://www.tjrs.jus.br/",
+                                            "PR": "https://www.tjpr.jus.br/",
+                                            "PE": "https://www.tjpe.jus.br/",
+                                            "CE": "https://www.tjce.jus.br/",
+                                            "SC": "https://www.tjsc.jus.br/",
+                                            "GO": "https://www.tjgo.jus.br/",
+                                            "PA": "https://www.tjpa.jus.br/",
+                                            "ES": "https://www.tjes.jus.br/",
+                                            "PB": "https://www.tjpb.jus.br/",
+                                            "MA": "https://www.tjma.jus.br/",
+                                            "DF": "https://www.tjdft.jus.br/",
+                                            "AM": "https://www.tjam.jus.br/",
+                                            "MT": "https://www.tjmt.jus.br/",
+                                            "MS": "https://www.tjms.jus.br/",
+                                            "RN": "https://www.tjrn.jus.br/",
+                                            "AL": "https://www.tjal.jus.br/",
+                                            "RO": "https://www.tjro.jus.br/",
+                                            "TO": "https://www.tjto.jus.br/",
+                                            "AP": "https://www.tjap.jus.br/",
+                                            "AC": "https://www.tjac.jus.br/",
+                                            "PI": "https://www.tjpi.jus.br/"
+                                        } %}
+                                        {% for estado in apis_data.processos_judiciais.tjs_disponiveis %}
+                                            <a href="{{ tj_urls.get(estado, '#') }}" target="_blank" style="background: rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #8b5cf6; text-decoration: none; text-align: center; border: 1px solid rgba(139, 92, 246, 0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">{{ estado }}</a>
                                         {% endfor %}
                                     </div>
                                     {% if apis_data.processos_judiciais.observacao %}
-                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">{{ apis_data.processos_judiciais.observacao }}</p>
+                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">💡 {{ apis_data.processos_judiciais.observacao }}</p>
                                     {% endif %}
                                 </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + TJs Estaduais</small>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais (todos os 27 estados)</small>
                             </div>
                         {% endif %}
                         
-                        <!-- Seletor de Endereços para Validação -->
-                        {% if apis_data.enderecos_disponiveis and apis_data.enderecos_disponiveis|length > 1 %}
-                            <div class="api-card" style="border-left: 4px solid #0ea5a4;">
-                                <h4 style="color: #0ea5a4; margin-bottom: 12px;">📍 Selecionar Endereço para Validar</h4>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    {% for endereco in apis_data.enderecos_disponiveis %}
-                                        <button onclick='validarEndereco({{ endereco | tojson }})' 
-                                                style="text-align: left; padding: 12px; background: rgba(10, 165, 164, 0.1); border: 1px solid rgba(10, 165, 164, 0.3); border-radius: 6px; color: #d0d0d0; cursor: pointer; transition: all 0.2s;">
-                                            {{ endereco }}
-                                        </button>
-                                    {% endfor %}
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Clique para validar endereço com ViaCEP e Geolocalização</small>
-                            </div>
-                            <div id="endereco-resultado" style="display: none; margin-top: 12px;"></div>
-                        {% endif %}
-                        
-                        <!-- Endereço Validado (ViaCEP) - automático se único -->
-                        {% if apis_data.endereco_validado %}
-                            <div class="api-card" style="border-left: 4px solid #06b6d4;">
-                                <h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>
-                                <div class="api-content">
-                                    {% if apis_data.endereco_validado.logradouro %}
-                                        <p><strong>Rua:</strong> {{ apis_data.endereco_validado.logradouro }}</p>
-                                    {% endif %}
-                                    {% if apis_data.endereco_validado.bairro %}
-                                        <p><strong>Bairro:</strong> {{ apis_data.endereco_validado.bairro }}</p>
-                                    {% endif %}
-                                    {% if apis_data.endereco_validado.localidade %}
-                                        <p><strong>Cidade:</strong> {{ apis_data.endereco_validado.localidade }}</p>
-                                    {% endif %}
-                                    {% if apis_data.endereco_validado.uf %}
-                                        <p><strong>Estado:</strong> {{ apis_data.endereco_validado.uf }}</p>
-                                    {% endif %}
-                                    {% if apis_data.endereco_validado.cep %}
-                                        <p><strong>CEP:</strong> {{ apis_data.endereco_validado.cep }}</p>
-                                    {% endif %}
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: ViaCEP (Receita Federal)</small>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Localização (Nominatim/OpenStreetMap) -->
-                        {% if apis_data.localizacao %}
-                            <div class="api-card" style="border-left: 4px solid #10b981;">
-                                <h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>
-                                <div class="api-content">
-                                    <p><strong>Latitude:</strong> {{ "%.4f" | format(apis_data.localizacao.latitude) }}</p>
-                                    <p><strong>Longitude:</strong> {{ "%.4f" | format(apis_data.localizacao.longitude) }}</p>
-                                    {% if apis_data.localizacao.endereco_completo %}
-                                        <p><strong>Endereço:</strong> {{ apis_data.localizacao.endereco_completo }}</p>
-                                    {% endif %}
-                                    <a href="https://www.openstreetmap.org/?mlat={{ apis_data.localizacao.latitude }}&mlon={{ apis_data.localizacao.longitude }}&zoom=17&layers=M" 
-                                       target="_blank" 
-                                       style="color: #06b6d4; text-decoration: none; word-break: break-all;">
-                                        🔗 Ver no Mapa
-                                    </a>
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: OpenStreetMap / Nominatim</small>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Informações Públicas (Wikipedia) - MOSTRAR SEMPRE -->
+                        <!-- Informações Públicas (Wikipedia) -->
                         {% if apis_data.info_publica %}
                             <div class="api-card" style="border-left: 4px solid #f59e0b;">
                                 <h4 style="color: #f59e0b; margin-bottom: 12px;">📚 Informações Públicas</h4>
