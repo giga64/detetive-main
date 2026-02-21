@@ -1973,7 +1973,7 @@
         });
 
         // ===========================
-        // CANVAS ANIMATION - Radar Sonar Effect
+        // CANVAS ANIMATION - Cyber Constellation Effect
         // ===========================
         const canvas = document.getElementById('detective-canvas');
         const ctx = canvas.getContext('2d');
@@ -1982,89 +1982,72 @@
         
         let mouseX = canvas.width / 2;
         let mouseY = canvas.height / 2;
-        const radarWaves = [];
-        let lastWaveTime = 0;
-        const binaryTrails = [];
-        const helixPoints = [];
+        let time = 0;
         
-        class RadarWave {
-            constructor(x, y) {
-                this.x = x; this.y = y; this.radius = 0;
-                this.maxRadius = 200; this.speed = 3; this.opacity = 1;
+        class Node {
+            constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.radius = Math.random() * 2 + 1;
+            this.pulseOffset = Math.random() * Math.PI * 2;
+          }
+          update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            const dx = mouseX - this.x;
+            const dy = mouseY - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 150) {
+              const force = (150 - distance) / 150;
+              this.x -= (dx / distance) * force * 2;
+              this.y -= (dy / distance) * force * 2;
             }
-            update() {
-                this.radius += this.speed;
-                this.opacity = 1 - (this.radius / this.maxRadius);
-                return this.radius < this.maxRadius;
-            }
-            draw() {
-                ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.6})`;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity * 0.1})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                const angle = (Date.now() * 0.003) % (Math.PI * 2);
-                ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.8})`;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + Math.cos(angle) * this.radius, this.y + Math.sin(angle) * this.radius);
-                ctx.stroke();
-            }
+          }
+          draw() {
+            const pulse = Math.sin(time * 0.002 + this.pulseOffset) * 0.5 + 0.5;
+            const glowSize = this.radius + pulse * 2;
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize * 3);
+            gradient.addColorStop(0, `rgba(139, 92, 246, ${0.6 * pulse})`);
+            gradient.addColorStop(0.5, `rgba(59, 130, 246, ${0.3 * pulse})`);
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, glowSize * 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.8 + pulse * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
+        class Particle {
+          constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 1.5 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 0.5;
+            this.speedY = (Math.random() - 0.5) * 0.5;
+            this.opacity = Math.random() * 0.5 + 0.2;
+          }
+          update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            if (this.x < 0) this.x = canvas.width;
+            if (this.x > canvas.width) this.x = 0;
+            if (this.y < 0) this.y = canvas.height;
+            if (this.y > canvas.height) this.y = 0;
+          }
+          draw() {
+            ctx.fillStyle = `rgba(147, 197, 253, ${this.opacity})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
         
-        class BinaryTrail {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.code = Math.random() > 0.5 ? '1' : '0';
-                this.opacity = 1;
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = Math.random() * 2 + 1;
-                this.life = 0; this.maxLife = 100;
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.life++;
-                this.opacity = 1 - (this.life / this.maxLife);
-                return this.life < this.maxLife;
-            }
-            draw() {
-                ctx.font = 'bold 14px monospace';
-                ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity})`;
-                ctx.fillText(this.code, this.x, this.y);
-            }
-        }
-        
-        class HelixPoint {
-            constructor(x, y, side) {
-                this.baseX = x; this.baseY = y; this.side = side;
-                this.angle = Math.random() * Math.PI * 2;
-                this.radius = 30; this.opacity = 1;
-                this.life = 0; this.maxLife = 180;
-            }
-            update() {
-                this.angle += 0.05; this.life++;
-                this.opacity = 1 - (this.life / this.maxLife);
-                this.baseY += 1;
-                return this.life < this.maxLife && this.baseY < canvas.height;
-            }
-            draw() {
-                const x = this.baseX + Math.cos(this.angle) * this.radius * this.side;
-                ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity})`;
-                ctx.beginPath();
-                ctx.arc(x, this.baseY, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = `rgba(6, 182, 212, ${this.opacity * 0.3})`;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(this.baseX, this.baseY);
-                ctx.lineTo(x, this.baseY);
-                ctx.stroke();
-            }
-        }
         
         function animateCanvas() {
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
