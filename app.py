@@ -604,47 +604,57 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         "risk_score": None
     }
     
-    # Listar endereços para seleção
-    if dados_estruturados.get("enderecos"):
-        apis_data["enderecos_disponiveis"] = dados_estruturados["enderecos"][:5]
-        
-        # Se apenas 1 endereço, validar automaticamente
-        if len(apis_data["enderecos_disponiveis"]) == 1:
-            try:
-                endereco = apis_data["enderecos_disponiveis"][0]
-                resultado = await enriquecher_endereco_selecionado(endereco)
-                if resultado.get("viacep"):
-                    apis_data["endereco_validado"] = resultado["viacep"]
-                if resultado.get("nominatim"):
-                    apis_data["localizacao"] = resultado["nominatim"]
-            except:
-                pass
+    try:
+        # Listar endereços para seleção
+        if dados_estruturados.get("enderecos"):
+            # Garantir que são strings
+            enderecos_limpos = []
+            for e in dados_estruturados["enderecos"][:5]:
+                if isinstance(e, str):
+                    enderecos_limpos.append(e)
+            apis_data["enderecos_disponiveis"] = enderecos_limpos
+            
+            # Se apenas 1 endereço, validar automaticamente
+            if len(apis_data["enderecos_disponiveis"]) == 1:
+                try:
+                    endereco = apis_data["enderecos_disponiveis"][0]
+                    resultado = await enriquecher_endereco_selecionado(endereco)
+                    if resultado and resultado.get("viacep"):
+                        apis_data["endereco_validado"] = resultado["viacep"]
+                    if resultado and resultado.get("nominatim"):
+                        apis_data["localizacao"] = resultado["nominatim"]
+                except Exception as end_err:
+                    print(f"⚠️ Erro ao validar 1 endereço: {str(end_err)}")
+                    pass
+    except Exception as e:
+        print(f"⚠️ Erro ao processar endereços: {str(e)}")
     
     try:
         # Wikipedia - Automática
         if tipo.lower() == "cnpj" and dados_estruturados.get("dados_pessoais", {}).get("nome"):
             nome_empresa = dados_estruturados["dados_pessoais"]["nome"]
-            info_wiki = await buscar_wikipedia(nome_empresa)
-            if info_wiki:
-                apis_data["info_publica"] = info_wiki
-    except:
-        pass
+            if isinstance(nome_empresa, str):
+                info_wiki = await buscar_wikipedia(nome_empresa)
+                if info_wiki:
+                    apis_data["info_publica"] = info_wiki
+    except Exception as wiki_err:
+        print(f"⚠️ Erro ao buscar Wikipedia: {str(wiki_err)}")
     
     try:
         # Processos Judiciais Brasil Todo - Automática
         processos = await buscar_processos_judiciais(identificador, tipo)
         if processos:
             apis_data["processos_judiciais"] = processos
-    except:
-        pass
+    except Exception as proc_err:
+        print(f"⚠️ Erro ao buscar processos: {str(proc_err)}")
     
     try:
         # Risk Score Jurídico - Automática
         risk_score = calcular_risk_score_juridico(dados_estruturados, tipo)
         if risk_score:
             apis_data["risk_score"] = risk_score
-    except:
-        pass
+    except Exception as risk_err:
+        print(f"⚠️ Erro ao calcular risk score: {str(risk_err)}")
     
     return apis_data
 
@@ -1022,6 +1032,9 @@ def parse_resultado_consulta(resultado_texto: str, tipo: str = None) -> dict:
     """Faz parsing do resultado textual e retorna dados estruturados"""
     import re
     
+    # Sanitizar entrada - remover caracteres de controle problemáticos
+    resultado_texto = resultado_texto.replace('\r', '').replace('\x00', '')
+    
     # Se tipo foi passado, usar diretamente (mais confiável)
     if tipo:
         tipo_lower = tipo.lower()
@@ -1063,10 +1076,20 @@ def parse_cpf_resultado(resultado_texto: str) -> dict:
         "tipo_consulta": "cpf"
     }
     
-    # Helper para extrair valor após label
+    # Helper para extrair valor após label com proteção
     def get_value(label, text=resultado_texto):
-        match = re.search(rf'{label}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
-        return match.group(1).strip() if match else None
+        try:
+            # Escapar caracteres especiais no label
+            label_escaped = re.escape(label)
+            match = re.search(rf'{label_escaped}:\s*(.+?)(?:\n|$)', text, re.IGNORECASE)
+            if match:
+                value = match.group(1).strip()
+                # Remover caracteres de controle
+                value = ''.join(c for c in value if c.isprintable() or c in '\n\t')
+                return value if value else None
+        except Exception as e:
+            print(f"⚠️ Erro em get_value para '{label}': {str(e)}")
+        return None
     
     # Dados pessoais
     data["dados_pessoais"]["cpf"] = get_value("CPF")
@@ -1227,18 +1250,24 @@ def parse_cnpj_resultado(resultado_texto: str) -> dict:
     }
     
     def get_value(label, text=resultado_texto):
-        # Tenta com bullet point primeiro (• LABEL:  valor com espaços)
-        match = re.search(rf'•\s*{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
-        if match:
-            value = match.group(1).strip()
-            if value:
-                return value
-        # Se não encontrar com bullet, tenta padrão normal (LABEL: valor)
-        match = re.search(rf'{label}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
-        if match:
-            value = match.group(1).strip()
-            if value:
-                return value
+        try:
+            # Tenta com bullet point primeiro (• LABEL:  valor com espaços)
+            label_escaped = re.escape(label)
+            match = re.search(rf'•\s*{label_escaped}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
+            if match:
+                value = match.group(1).strip()
+                value = ''.join(c for c in value if c.isprintable() or c in '\n\t')
+                if value:
+                    return value
+            # Se não encontrar com bullet, tenta padrão normal (LABEL: valor)
+            match = re.search(rf'{label_escaped}:\s+(.+?)(?:\n|$)', text, re.IGNORECASE)
+            if match:
+                value = match.group(1).strip()
+                value = ''.join(c for c in value if c.isprintable() or c in '\n\t')
+                if value:
+                    return value
+        except Exception as e:
+            print(f"⚠️ Erro em get_value CNPJ para '{label}': {str(e)}")
         return None
     
     # Dados da empresa
@@ -2054,6 +2083,16 @@ async def do_consulta(request: Request):
     try:
         resultado = await consulta_telegram(cmd)
         
+        # Limpar e sanitizar resultado para evitar problemas de encoding
+        if isinstance(resultado, bytes):
+            try:
+                resultado = resultado.decode('utf-8', errors='replace')
+            except:
+                resultado = str(resultado)
+        
+        # Garantir que é string
+        resultado = str(resultado)
+        
         # Salvar no histórico apenas se não for erro
         if not resultado.startswith("❌"):
             try:
@@ -2063,8 +2102,8 @@ async def do_consulta(request: Request):
                     (identificador, resultado, username)
                 )
                 conn.commit()
-            except:
-                pass
+            except Exception as save_err:
+                print(f"⚠️ Erro ao salvar no histórico: {str(save_err)}")
         
         # Parser do resultado para dados estruturados
         # Passar o 'tipo' detectado para garantir parser correto
@@ -2075,7 +2114,8 @@ async def do_consulta(request: Request):
             except Exception as parse_err:
                 print(f"🔴 Erro ao fazer parse do resultado: {str(parse_err)}")
                 print(f"   Tamanho do resultado: {len(resultado)}")
-                print(f"   Primeiros 500 chars: {resultado[:500]}")
+                print(f"   Primeiros 300 chars: {repr(resultado[:300])}")
+                print(f"   Últimos 300 chars: {repr(resultado[-300:])}")
                 # Continua mesmo com erro de parsing
         
         # Enriquecer dados com APIs públicas grátis
@@ -2092,7 +2132,7 @@ async def do_consulta(request: Request):
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
             "mensagem": identificador, 
-            "resultado": resultado, 
+            "resultado": resultado,  # Jinja2 escapará automaticamente
             "dados": dados_estruturados,
             "apis_data": apis_data,
             "identifier": identificador,
