@@ -345,6 +345,24 @@
       font-weight: 500;
       margin-bottom: 1rem;
     }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      font-size: 1.2rem;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .form-input.with-icon {
+      padding-left: 3rem;
+    }
     
     .form-label {
       display: block;
@@ -699,15 +717,18 @@
 
         <!-- Input Field -->
         <div class="form-group">
-          <input 
-            type="text" 
-            id="identificador" 
-            name="identificador" 
-            class="form-input"
-            placeholder="CPF, CNPJ, Placa ou Nome..."
-            value="{{ reuse_value or '' }}"
-            required
-          >
+          <div class="input-wrapper">
+            <span class="input-icon">🔍</span>
+            <input 
+              type="text" 
+              id="identificador" 
+              name="identificador" 
+              class="form-input with-icon"
+              placeholder="CPF, CNPJ, Placa ou Nome..."
+              value="{{ reuse_value or '' }}"
+              required
+            >
+          </div>
           {% if erro %}
             <p class="error-message">{{ erro }}</p>
           {% endif %}
@@ -847,8 +868,8 @@
         node.draw();
       });
       const cursorGlow = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 80);
-      cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
-      cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
+      cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.02)');
+      cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.01)');
       cursorGlow.addColorStop(1, 'rgba(59, 130, 246, 0)');
       ctx.fillStyle = cursorGlow;
       ctx.beginPath();

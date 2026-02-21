@@ -1249,15 +1249,18 @@ async def mudar_senha_obrigatoria(request: Request):
         return RedirectResponse(url="/login")
     
     username = request.cookies.get("auth_user")
+    csrf_token = get_or_create_csrf_token(request)
     return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
         "request": request,
-        "username": username
+        "username": username,
+        "csrf_token": csrf_token
     })
 
 @app.post("/mudar-senha-obrigatoria")
 async def processar_mudanca_senha_obrigatoria(request: Request, 
                                               nova_senha: str = Form(...), 
-                                              confirmar_senha: str = Form(...)):
+                                              confirmar_senha: str = Form(...),
+                                              csrf_token: str = Form(...)):
     """Processa a mudança obrigatória de senha"""
     # Verificar autenticação
     if not request.cookies.get("auth_user") or not request.cookies.get("senha_temporaria"):
@@ -1266,33 +1269,47 @@ async def processar_mudanca_senha_obrigatoria(request: Request,
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
     
+    # Validar CSRF token
+    if not validate_csrf_token(request, csrf_token):
+        record_audit_log("INVALID_CSRF_SENHA", username, client_ip, "Token CSRF inválido na mudança de senha")
+        return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
+            "request": request,
+            "username": username,
+            "erro": "Sessão inválida. Por favor, recarregue a página.",
+            "csrf_token": get_or_create_csrf_token(request)
+        })
+    
     # Validações
     if not nova_senha or not confirmar_senha:
         return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
             "request": request,
             "username": username,
-            "erro": "Informe a nova senha e confirmação"
+            "erro": "Informe a nova senha e confirmação",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     if len(nova_senha) < 4:
         return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
             "request": request,
             "username": username,
-            "erro": "Senha deve ter no mínimo 4 caracteres"
+            "erro": "Senha deve ter no mínimo 4 caracteres",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     if nova_senha != confirmar_senha:
         return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
             "request": request,
             "username": username,
-            "erro": "As senhas não coincidem"
+            "erro": "As senhas não coincidem",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     if nova_senha == "mdr123":
         return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
             "request": request,
             "username": username,
-            "erro": "A nova senha não pode ser a mesma que a senha padrão"
+            "erro": "A nova senha não pode ser a mesma que a senha padrão",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     # Atualizar senha e marcar que mudou
@@ -1315,7 +1332,8 @@ async def processar_mudanca_senha_obrigatoria(request: Request,
         return templates.TemplateResponse("mudar-senha-obrigatoria.html", {
             "request": request,
             "username": username,
-            "erro": "Erro ao alterar senha. Tente novamente."
+            "erro": "Erro ao alterar senha. Tente novamente.",
+            "csrf_token": get_or_create_csrf_token(request)
         })
 
 @app.post("/api/unlock-ip")
@@ -1820,18 +1838,19 @@ async def limpar_historico(request: Request, csrf_token: str = Form(...)):
     client_ip = get_client_ip(request)
     
     # Validar CSRF token
-    if not validate_csrf_token(request, csrf_token):
-        record_audit_log("INVALID_CSRF", username, client_ip, "Tentativa de limpar histórico com CSRF inválido")
-        return RedirectResponse(url="/historico", status_code=303)
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_CLEAR", username, client_ip, "Tentativa de limpar histórico com CSRF inválido")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
     
     try:
         cursor.execute("DELETE FROM searches WHERE username = ?", (username,))
         conn.commit()
         record_audit_log("CLEAR_HISTORY", username, client_ip, "Histórico limpo com sucesso")
-        return RedirectResponse(url="/historico", status_code=303)
+        return JSONResponse({"success": True, "message": "Histórico limpo com sucesso"})
     except Exception as e:
         record_audit_log("ERROR_CLEAR_HISTORY", username, client_ip, str(e))
-        return RedirectResponse(url="/historico", status_code=303)
+        return JSONResponse({"success": False, "error": f"Erro ao limpar histórico: {str(e)}"}, status_code=500)
 
 @app.get("/historico/exportar/csv")
 async def export_historico_csv(request: Request):

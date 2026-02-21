@@ -643,9 +643,9 @@
       <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         {% if consultas %}
         {% if not is_favorites %}
-        <form action="/historico/limpar" method="post" onsubmit="return confirm('Tem certeza que deseja limpar todo o histórico?');" style="display: inline;">
+        <form id="clearHistoryForm" style="display: inline;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn-clear">Limpar Histórico</button>
+          <button type="button" class="btn-clear" onclick="clearHistory(event)">Limpar Histórico</button>
         </form>
         {% endif %}
         {% if is_favorites %}
@@ -881,8 +881,8 @@
         node.draw();
       });
       const cursorGlow = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 80);
-      cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
-      cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
+      cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.02)');
+      cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.01)');
       cursorGlow.addColorStop(1, 'rgba(59, 130, 246, 0)');
       ctx.fillStyle = cursorGlow;
       ctx.beginPath();
@@ -900,6 +900,42 @@
       canvas.height = window.innerHeight;
     });
 
+    
+    // ===========================
+    // LIMPAR HISTÓRICO
+    // ===========================
+    async function clearHistory(event) {
+      event.preventDefault();
+      
+      if (!confirm('Tem certeza que deseja limpar todo o histórico? Esta ação não pode ser desfeita.')) {
+        return;
+      }
+      
+      const form = document.getElementById('clearHistoryForm');
+      const csrfToken = form.querySelector('input[name="csrf_token"]').value;
+      
+      try {
+        const formData = new FormData();
+        formData.append('csrf_token', csrfToken);
+        
+        const response = await fetch('/historico/limpar', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok || response.status === 303) {
+          showToast('✅ Histórico limpo com sucesso!', 'success');
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        } else {
+          showToast('❌ Erro ao limpar histórico', 'error');
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+        showToast('❌ Erro ao conectar com o servidor', 'error');
+      }
+    }
     
     // ===========================
     // VER RESULTADO COMPLETO

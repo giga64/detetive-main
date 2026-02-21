@@ -402,6 +402,7 @@
         </div>
 
         <form method="post" id="changePasswordForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group">
                 <label for="nova_senha">Nova Senha *</label>
                 <div class="input-container">
@@ -660,8 +661,8 @@
             node.draw();
           });
           const cursorGlow = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 80);
-          cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
-          cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
+          cursorGlow.addColorStop(0, 'rgba(139, 92, 246, 0.02)');
+          cursorGlow.addColorStop(0.5, 'rgba(59, 130, 246, 0.01)');
           cursorGlow.addColorStop(1, 'rgba(59, 130, 246, 0)');
           ctx.fillStyle = cursorGlow;
           ctx.beginPath();
