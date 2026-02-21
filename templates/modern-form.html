@@ -355,12 +355,17 @@
     .input-icon {
       position: absolute;
       left: 1rem;
-      font-size: 1.2rem;
+      top: 50%;
+      transform: translateY(-50%);
       pointer-events: none;
       z-index: 1;
       width: 1.2rem;
       height: 1.2rem;
       color: rgba(6, 182, 212, 0.6);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .form-input.with-icon {
@@ -730,9 +735,9 @@
         <!-- Input Field -->
         <div class="form-group">
           <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10" cy="10" r="6.5"></circle>
+              <polyline points="15 15 21 21"></polyline>
             </svg>
             <input 
               type="text" 

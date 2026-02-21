@@ -1952,9 +1952,14 @@
                     body: JSON.stringify({ endereco: endereco })
                 });
                 
+                if (response.status === 401) {
+                    resultDiv.innerHTML = '<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Sessão expirada. Por favor, recarregue a página.</div>';
+                    return;
+                }
+                
                 const data = await response.json();
                 
-                if (data.viacep) {
+                if (response.ok && data.viacep) {
                     let html = '<div class="api-card" style="border-left: 4px solid #06b6d4; margin-top: 12px;">';
                     html += '<h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>';
                     html += '<div class="api-content">';
@@ -1978,7 +1983,7 @@
                     
                     resultDiv.innerHTML = html;
                 } else {
-                    resultDiv.innerHTML = '<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Não foi possível validar endereço</div>';
+                    resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ ${data.erro || 'Não foi possível validar endereço'}</div>`;
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Erro: ${error.message}</div>`;

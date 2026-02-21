@@ -2303,11 +2303,12 @@ async def limpar_historico(request: Request, csrf_token: str = Form(...)):
 @app.post("/api/validar-endereco")
 async def api_validar_endereco(request: Request):
     """Endpoint para validar endereço específico sob demanda"""
-    session_error = validate_user_session(request)
-    if session_error:
-        return JSONResponse({"erro": "Sessão inválida"}, status_code=401)
-    
     try:
+        # Validar usuário (sem redirecionar)
+        username = request.cookies.get("auth_user")
+        if not username:
+            return JSONResponse({"erro": "Não autenticado"}, status_code=401)
+        
         data = await request.json()
         endereco = data.get("endereco", "").strip()
         
@@ -2317,9 +2318,12 @@ async def api_validar_endereco(request: Request):
         # Buscar APIs para endereço
         resultado = await enriquecher_endereco_selecionado(endereco)
         
+        if not resultado.get("viacep") and not resultado.get("nominatim"):
+            return JSONResponse({"erro": "Não foi possível validar endereço"}, status_code=400)
+        
         return JSONResponse(resultado)
     except Exception as e:
-        return JSONResponse({"erro": str(e)}, status_code=500)
+        return JSONResponse({"erro": f"Erro ao validar: {str(e)[:50]}"}, status_code=500)
 
 @app.get("/historico/exportar/csv")
 async def export_historico_csv(request: Request):
