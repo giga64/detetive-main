@@ -961,6 +961,12 @@
                             </svg>
                             Dados Brutos
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'sources')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                            Fontes Públicas
+                        </button>
                     {% endif %}
                 </div>
 
@@ -1505,50 +1511,6 @@
                                 <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
                             </div>
 
-                            <!-- Seletor de Endereços para Validação com APIs -->
-                            {% if apis_data.enderecos_disponiveis and apis_data.enderecos_disponiveis|length > 1 %}
-                                <div class="api-card" style="border-left: 4px solid #0ea5a4; margin-bottom: 20px;">
-                                    <h4 style="color: #0ea5a4; margin-bottom: 12px;">📍 Validar Endereço com APIs</h4>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        {% for endereco in apis_data.enderecos_disponiveis %}
-                                            <button onclick='validarEndereco({{ endereco | tojson }})' 
-                                                    style="text-align: left; padding: 12px; background: rgba(10, 165, 164, 0.1); border: 1px solid rgba(10, 165, 164, 0.3); border-radius: 6px; color: #d0d0d0; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;">
-                                                {{ endereco }}
-                                            </button>
-                                        {% endfor %}
-                                    </div>
-                                    <small style="color: #888; margin-top: 8px; display: block;">Clique para validar com ViaCEP + Geolocalização</small>
-                                </div>
-                                <div id="endereco-resultado" style="display: none; margin-bottom: 20px;"></div>
-                            {% endif %}
-
-                            <!-- Endereço Validado (se uma foi clicada) -->
-                            {% if apis_data.endereco_validado %}
-                                <div class="api-card" style="border-left: 4px solid #06b6d4; margin-bottom: 20px;">
-                                    <h4 style="color: #06b6d4; margin-bottom: 12px;">✅ Endereço Validado</h4>
-                                    <div class="api-content">
-                                        {% if apis_data.endereco_validado.logradouro %}<p><strong>Rua:</strong> {{ apis_data.endereco_validado.logradouro }}</p>{% endif %}
-                                        {% if apis_data.endereco_validado.bairro %}<p><strong>Bairro:</strong> {{ apis_data.endereco_validado.bairro }}</p>{% endif %}
-                                        {% if apis_data.endereco_validado.localidade %}<p><strong>Cidade:</strong> {{ apis_data.endereco_validado.localidade }}</p>{% endif %}
-                                        {% if apis_data.endereco_validado.uf %}<p><strong>Estado:</strong> {{ apis_data.endereco_validado.uf }}</p>{% endif %}
-                                        {% if apis_data.endereco_validado.cep %}<p><strong>CEP:</strong> {{ apis_data.endereco_validado.cep }}</p>{% endif %}
-                                    </div>
-                                </div>
-                            {% endif %}
-
-                            <!-- Geolocalização -->
-                            {% if apis_data.localizacao %}
-                                <div class="api-card" style="border-left: 4px solid #10b981; margin-bottom: 20px;">
-                                    <h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>
-                                    <div class="api-content">
-                                        <p><strong>Latitude:</strong> {{ apis_data.localizacao.latitude | round(4) }}</p>
-                                        <p><strong>Longitude:</strong> {{ apis_data.localizacao.longitude | round(4) }}</p>
-                                        {% if apis_data.localizacao.endereco_completo %}<p><strong>Endereço:</strong> {{ apis_data.localizacao.endereco_completo }}</p>{% endif %}
-                                        <a href="https://www.openstreetmap.org/?mlat={{ apis_data.localizacao.latitude }}&mlon={{ apis_data.localizacao.longitude }}&zoom=17&layers=M" target="_blank" style="color: #06b6d4; text-decoration: underline;">🔗 Ver no Mapa</a>
-                                    </div>
-                                </div>
-                            {% endif %}
-
                             <ul class="data-list">
                                 {% for endereco in dados.enderecos %}
                                     <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
@@ -1558,17 +1520,125 @@
                                         </div>
                                         <div style="display: flex; gap: 10px;">
                                             <button class="action-btn" onclick="openStreetView('{{ endereco }}')">Street View</button>
+                                            <button class="action-btn" onclick="validarEndereco({{ endereco | tojson }})">Validar</button>
                                             <button class="action-btn" onclick="reverseSearch('{{ endereco }}', 'address')">Buscar</button>
                                         </div>
                                     </li>
                                 {% endfor %}
                             </ul>
+                            <div id="endereco-resultado" style="display: none; margin-top: 20px;"></div>
                         {% else %}
                             <div class="empty-state">
                                 <div class="empty-state-icon"></div>
                                 <p>Nenhum endereço encontrado</p>
                             </div>
                         {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- TAB: Fontes Públicas (Risk Score + Processos + Wikipedia) -->
+                <div id="sources" class="tab-content">
+                    {% if apis_data.risk_score or apis_data.processos_judiciais or apis_data.info_publica %}
+                        <!-- Score de Risco Jurídico -->
+                        {% if apis_data.risk_score %}
+                            <div class="api-card" style="border-left: 6px solid #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)); margin-bottom: 20px;">
+                                <h4 style="color: #f59e0b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px;">⚖️</span>
+                                    Score de Risco Jurídico
+                                </h4>
+                                <div class="risk-score-container">
+                                    <div class="risk-score-gauge">
+                                        <div class="risk-score-value">{{ apis_data.risk_score.score }}/100</div>
+                                        <div class="risk-score-bar">
+                                            <div class="risk-score-fill" style="width: {{ apis_data.risk_score.score }}%; background: {% if apis_data.risk_score.score < 25 %}#10b981{% elif apis_data.risk_score.score < 50 %}#f59e0b{% elif apis_data.risk_score.score < 75 %}#f97316{% else %}#ef4444{% endif %};"></div>
+                                        </div>
+                                        <div class="risk-score-label" style="color: {% if 'BAIXO' in apis_data.risk_score.faixa %}#10b981{% elif 'MODERADO' in apis_data.risk_score.faixa %}#f59e0b{% elif 'ELEVADO' in apis_data.risk_score.faixa %}#f97316{% else %}#ef4444{% endif %};">
+                                            {{ apis_data.risk_score.faixa }}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if apis_data.risk_score.alertas %}
+                                        <div class="risk-alertas">
+                                            <p style="font-weight: 600; color: #06b6d4; margin-bottom: 10px;">{{ apis_data.risk_score.criterios_avaliados }} critério(s) avaliado(s):</p>
+                                            {% for alerta in apis_data.risk_score.alertas %}
+                                                <div class="risk-alerta-item">{{ alerta }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <small style="color: #888; margin-top: 12px; display: block;">Análise baseada em critérios jurídicos e cadastrais</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Processos Judiciais -->
+                        {% if apis_data.processos_judiciais and apis_data.processos_judiciais.tjs_disponiveis and apis_data.processos_judiciais.tjs_disponiveis|length > 0 %}
+                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 20px;">
+                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
+                                <div class="api-content">
+                                    <p style="margin-bottom: 12px;"><strong>✅ Pessoa possui processos em {{ apis_data.processos_judiciais.tjs_disponiveis|length }} estado(s):</strong></p>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
+                                        {% set tj_urls = {
+                                            "SP": "https://www.tjsp.jus.br/",
+                                            "RJ": "https://www.tjrj.jus.br/",
+                                            "MG": "https://www.tjmg.jus.br/",
+                                            "BA": "https://www.tjba.jus.br/",
+                                            "RS": "https://www.tjrs.jus.br/",
+                                            "PR": "https://www.tjpr.jus.br/",
+                                            "PE": "https://www.tjpe.jus.br/",
+                                            "CE": "https://www.tjce.jus.br/",
+                                            "SC": "https://www.tjsc.jus.br/",
+                                            "GO": "https://www.tjgo.jus.br/",
+                                            "PA": "https://www.tjpa.jus.br/",
+                                            "ES": "https://www.tjes.jus.br/",
+                                            "PB": "https://www.tjpb.jus.br/",
+                                            "MA": "https://www.tjma.jus.br/",
+                                            "DF": "https://www.tjdft.jus.br/",
+                                            "AM": "https://www.tjam.jus.br/",
+                                            "MT": "https://www.tjmt.jus.br/",
+                                            "MS": "https://www.tjms.jus.br/",
+                                            "RN": "https://www.tjrn.jus.br/",
+                                            "AL": "https://www.tjal.jus.br/",
+                                            "RO": "https://www.tjro.jus.br/",
+                                            "TO": "https://www.tjto.jus.br/",
+                                            "AP": "https://www.tjap.jus.br/",
+                                            "AC": "https://www.tjac.jus.br/",
+                                            "PI": "https://www.tjpi.jus.br/"
+                                        } %}
+                                        {% for estado in apis_data.processos_judiciais.tjs_disponiveis %}
+                                            <a href="{{ tj_urls.get(estado, '#') }}" target="_blank" style="background: rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #8b5cf6; text-decoration: none; text-align: center; border: 1px solid rgba(139, 92, 246, 0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">{{ estado }}</a>
+                                        {% endfor %}
+                                    </div>
+                                    {% if apis_data.processos_judiciais.observacao %}
+                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">💡 {{ apis_data.processos_judiciais.observacao }}</p>
+                                    {% endif %}
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais</small>
+                            </div>
+                        {% elif apis_data.processos_judiciais %}
+                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 20px;">
+                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
+                                <div class="api-content" style="text-align: center; padding: 20px; color: #10b981;">
+                                    <p style="font-size: 1.1rem;">✅ <strong>Sem processos judiciais registrados</strong></p>
+                                    <p style="color: #888; margin-top: 8px; font-size: 0.9rem;">Esta pessoa não possui processos nos tribunais consultados</p>
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais</small>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Informações Públicas (Wikipedia) -->
+                        {% if apis_data.info_publica %}
+                            <div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 20px;">
+                                <h4 style="color: #f59e0b; margin-bottom: 12px;">🌐 Informações de Fontes Públicas</h4>
+                                <div class="api-content">
+                                    <p>{{ apis_data.info_publica.resumo }}</p>
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Sem informações de fontes públicas disponíveis</p>
+                        </div>
                     {% endif %}
                 </div>
 
@@ -1776,63 +1846,7 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Processos Judiciais - Brasil Todo -->
-                        {% if apis_data.processos_judiciais %}
-                            <div class="api-card" style="border-left: 4px solid #8b5cf6;">
-                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
-                                <div class="api-content">
-                                    <p><strong>🏛️ Total de Tribunais:</strong> {{ apis_data.processos_judiciais.total_tjs }} (todos os estados)</p>
-                                    <p style="margin-top: 12px; margin-bottom: 12px;"><strong>📍 Estados Disponíveis:</strong></p>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
-                                        {% set tj_urls = {
-                                            "SP": "https://www.tjsp.jus.br/",
-                                            "RJ": "https://www.tjrj.jus.br/",
-                                            "MG": "https://www.tjmg.jus.br/",
-                                            "BA": "https://www.tjba.jus.br/",
-                                            "RS": "https://www.tjrs.jus.br/",
-                                            "PR": "https://www.tjpr.jus.br/",
-                                            "PE": "https://www.tjpe.jus.br/",
-                                            "CE": "https://www.tjce.jus.br/",
-                                            "SC": "https://www.tjsc.jus.br/",
-                                            "GO": "https://www.tjgo.jus.br/",
-                                            "PA": "https://www.tjpa.jus.br/",
-                                            "ES": "https://www.tjes.jus.br/",
-                                            "PB": "https://www.tjpb.jus.br/",
-                                            "MA": "https://www.tjma.jus.br/",
-                                            "DF": "https://www.tjdft.jus.br/",
-                                            "AM": "https://www.tjam.jus.br/",
-                                            "MT": "https://www.tjmt.jus.br/",
-                                            "MS": "https://www.tjms.jus.br/",
-                                            "RN": "https://www.tjrn.jus.br/",
-                                            "AL": "https://www.tjal.jus.br/",
-                                            "RO": "https://www.tjro.jus.br/",
-                                            "TO": "https://www.tjto.jus.br/",
-                                            "AP": "https://www.tjap.jus.br/",
-                                            "AC": "https://www.tjac.jus.br/",
-                                            "PI": "https://www.tjpi.jus.br/"
-                                        } %}
-                                        {% for estado in apis_data.processos_judiciais.tjs_disponiveis %}
-                                            <a href="{{ tj_urls.get(estado, '#') }}" target="_blank" style="background: rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #8b5cf6; text-decoration: none; text-align: center; border: 1px solid rgba(139, 92, 246, 0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">{{ estado }}</a>
-                                        {% endfor %}
-                                    </div>
-                                    {% if apis_data.processos_judiciais.observacao %}
-                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">💡 {{ apis_data.processos_judiciais.observacao }}</p>
-                                    {% endif %}
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais (todos os 27 estados)</small>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Informações Públicas (Wikipedia) -->
-                        {% if apis_data.info_publica %}
-                            <div class="api-card" style="border-left: 4px solid #f59e0b;">
-                                <h4 style="color: #f59e0b; margin-bottom: 12px;">📚 Informações Públicas</h4>
-                                <div class="api-content">
-                                    <p>{{ apis_data.info_publica.resumo }}</p>
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
-                            </div>
-                        {% endif %}
+
                     </div>
                 {% endif %}
 
