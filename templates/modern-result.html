@@ -1732,21 +1732,44 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Processos Judiciais -->
+                        <!-- Processos Judiciais - Brasil Todo -->
                         {% if apis_data.processos_judiciais %}
                             <div class="api-card" style="border-left: 4px solid #8b5cf6;">
-                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais</h4>
+                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
                                 <div class="api-content">
-                                    <p><strong>Total encontrado:</strong> {{ apis_data.processos_judiciais.total_processos }}</p>
+                                    <p><strong>Total de TJs:</strong> {{ apis_data.processos_judiciais.total_tjs }} (todos os estados)</p>
+                                    <p style="margin-top: 12px;"><strong>Estados com busca:</strong></p>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                                        {% for estado in apis_data.processos_judiciais.todos_estados %}
+                                            <span style="background: rgba(139, 92, 246, 0.2); padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #8b5cf6;">{{ estado }}</span>
+                                        {% endfor %}
+                                    </div>
                                     {% if apis_data.processos_judiciais.observacao %}
-                                        <p style="color: #aaa; margin-top: 8px; font-style: italic;">{{ apis_data.processos_judiciais.observacao }}</p>
+                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">{{ apis_data.processos_judiciais.observacao }}</p>
                                     {% endif %}
                                 </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ (Conselho Nacional de Justiça)</small>
+                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + TJs Estaduais</small>
                             </div>
                         {% endif %}
                         
-                        <!-- Endereço Validado (ViaCEP) -->
+                        <!-- Seletor de Endereços para Validação -->
+                        {% if apis_data.enderecos_disponiveis and apis_data.enderecos_disponiveis|length > 1 %}
+                            <div class="api-card" style="border-left: 4px solid #0ea5a4;">
+                                <h4 style="color: #0ea5a4; margin-bottom: 12px;">📍 Selecionar Endereço para Validar</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    {% for endereco in apis_data.enderecos_disponiveis %}
+                                        <button onclick="validarEndereco('{{ endereco | replace(\"'\", \"\\\\\") }}')" 
+                                                style="text-align: left; padding: 12px; background: rgba(10, 165, 164, 0.1); border: 1px solid rgba(10, 165, 164, 0.3); border-radius: 6px; color: #d0d0d0; cursor: pointer; transition: all 0.2s;">
+                                            {{ endereco }}
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                                <small style="color: #888; margin-top: 8px; display: block;">Clique para validar endereço com ViaCEP e Geolocalização</small>
+                            </div>
+                            <div id="endereco-resultado" style="display: none; margin-top: 12px;"></div>
+                        {% endif %}
+                        
+                        <!-- Endereço Validado (ViaCEP) - automático se único -->
                         {% if apis_data.endereco_validado %}
                             <div class="api-card" style="border-left: 4px solid #06b6d4;">
                                 <h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>
@@ -1791,7 +1814,7 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Informações Públicas (Wikipedia) -->
+                        <!-- Informações Públicas (Wikipedia) - MOSTRAR SEMPRE -->
                         {% if apis_data.info_publica %}
                             <div class="api-card" style="border-left: 4px solid #f59e0b;">
                                 <h4 style="color: #f59e0b; margin-bottom: 12px;">📚 Informações Públicas</h4>
@@ -1910,6 +1933,56 @@
 
         function goToSearch() {
             window.location.href = '/';
+        }
+
+        // ===========================
+        // VALIDAÇÃO DE ENDEREÇO SOB DEMANDA
+        // ===========================
+        async function validarEndereco(endereco) {
+            const resultDiv = document.getElementById('endereco-resultado');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div style="text-align: center; color: #06b6d4;">⏳ Validando endereço...</div>';
+            
+            try {
+                const response = await fetch('/api/validar-endereco', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ endereco: endereco })
+                });
+                
+                const data = await response.json();
+                
+                if (data.viacep) {
+                    let html = '<div class="api-card" style="border-left: 4px solid #06b6d4; margin-top: 12px;">';
+                    html += '<h4 style="color: #06b6d4; margin-bottom: 12px;">📍 Endereço Validado</h4>';
+                    html += '<div class="api-content">';
+                    if (data.viacep.logradouro) html += `<p><strong>Rua:</strong> ${data.viacep.logradouro}</p>`;
+                    if (data.viacep.bairro) html += `<p><strong>Bairro:</strong> ${data.viacep.bairro}</p>`;
+                    if (data.viacep.localidade) html += `<p><strong>Cidade:</strong> ${data.viacep.localidade}</p>`;
+                    if (data.viacep.uf) html += `<p><strong>Estado:</strong> ${data.viacep.uf}</p>`;
+                    if (data.viacep.cep) html += `<p><strong>CEP:</strong> ${data.viacep.cep}</p>`;
+                    html += '</div></div>';
+                    
+                    if (data.nominatim) {
+                        html += '<div class="api-card" style="border-left: 4px solid #10b981; margin-top: 12px;">';
+                        html += '<h4 style="color: #10b981; margin-bottom: 12px;">🗺️ Geolocalização</h4>';
+                        html += '<div class="api-content">';
+                        html += `<p><strong>Latitude:</strong> ${data.nominatim.latitude.toFixed(4)}</p>`;
+                        html += `<p><strong>Longitude:</strong> ${data.nominatim.longitude.toFixed(4)}</p>`;
+                        if (data.nominatim.endereco_completo) html += `<p><strong>Endereço:</strong> ${data.nominatim.endereco_completo}</p>`;
+                        html += `<a href="https://www.openstreetmap.org/?mlat=${data.nominatim.latitude}&mlon=${data.nominatim.longitude}&zoom=17&layers=M" target="_blank" style="color: #06b6d4;">🔗 Ver no Mapa</a>`;
+                        html += '</div></div>';
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Não foi possível validar endereço</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #ff6b6b; padding: 12px; background: rgba(255, 107, 107, 0.1); border-radius: 6px;">❌ Erro: ${error.message}</div>`;
+            }
         }
 
         // ===========================

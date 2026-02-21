@@ -549,44 +549,70 @@ def format_timestamp_br(timestamp_str: str) -> str:
 # INTEGRAÇÃO DE APIs GRÁTIS
 # ========================
 
+async def enriquecher_endereco_selecionado(endereco: str) -> dict:
+    """
+    Busca ViaCEP e Nominatim para um endereço específico (sob demanda)
+    Chamado quando usuário seleciona endereço na UI
+    """
+    result = {
+        "viacep": None,
+        "nominatim": None
+    }
+    
+    try:
+        # ViaCEP
+        endereco_validado = await buscar_cep_viacep(endereco)
+        if endereco_validado:
+            result["viacep"] = endereco_validado
+            
+            # Nominatim
+            localizacao = await buscar_nominatim(
+                endereco_validado.get("logradouro", ""),
+                endereco_validado.get("localidade", ""),
+                endereco_validado.get("uf", "")
+            )
+            if localizacao:
+                result["nominatim"] = localizacao
+    except:
+        pass
+    
+    return result
+
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
-    Enriquece os dados com informações de APIs públicas grátis
-    Integra: ViaCEP, Nominatim, Wikipedia, Processos Judiciais, Risk Score
+    Enriquece com APIs RÁPIDAS
+    Endereços: mostrar lista para SELECIONAR (usuário valida qual quer)
     """
     if not dados_estruturados:
         return {}
     
     apis_data = {
+        "enderecos_disponiveis": [],
         "endereco_validado": None,
         "localizacao": None,
         "info_publica": None,
-        "risco_cred": None,
         "processos_judiciais": None,
         "risk_score": None
     }
     
-    try:
-        # 1. ViaCEP - Validar/melhorar endereços
-        if dados_estruturados.get("enderecos") and len(dados_estruturados["enderecos"]) > 0:
-            endereco = dados_estruturados["enderecos"][0]
-            endereco_validado = await buscar_cep_viacep(endereco)
-            if endereco_validado:
-                apis_data["endereco_validado"] = endereco_validado
-                
-                # 2. Nominatim - Geolocalizar
-                localizacao = await buscar_nominatim(
-                    endereco_validado.get("logradouro", ""),
-                    endereco_validado.get("localidade", ""),
-                    endereco_validado.get("uf", "")
-                )
-                if localizacao:
-                    apis_data["localizacao"] = localizacao
-    except:
-        pass
+    # Listar endereços para seleção
+    if dados_estruturados.get("enderecos"):
+        apis_data["enderecos_disponiveis"] = dados_estruturados["enderecos"][:5]
+        
+        # Se apenas 1 endereço, validar automaticamente
+        if len(apis_data["enderecos_disponiveis"]) == 1:
+            try:
+                endereco = apis_data["enderecos_disponiveis"][0]
+                resultado = await enriquecher_endereco_selecionado(endereco)
+                if resultado.get("viacep"):
+                    apis_data["endereco_validado"] = resultado["viacep"]
+                if resultado.get("nominatim"):
+                    apis_data["localizacao"] = resultado["nominatim"]
+            except:
+                pass
     
     try:
-        # 3. Wikipedia - Info pública de empresas famosas (tipo CNPJ)
+        # Wikipedia - Automática
         if tipo.lower() == "cnpj" and dados_estruturados.get("dados_pessoais", {}).get("nome"):
             nome_empresa = dados_estruturados["dados_pessoais"]["nome"]
             info_wiki = await buscar_wikipedia(nome_empresa)
@@ -596,7 +622,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         pass
     
     try:
-        # 4. Processos Judiciais - Buscar CNJ
+        # Processos Judiciais Brasil Todo - Automática
         processos = await buscar_processos_judiciais(identificador, tipo)
         if processos:
             apis_data["processos_judiciais"] = processos
@@ -604,7 +630,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         pass
     
     try:
-        # 5. Risk Score Jurídico - Análise automática
+        # Risk Score Jurídico - Automática
         risk_score = calcular_risk_score_juridico(dados_estruturados, tipo)
         if risk_score:
             apis_data["risk_score"] = risk_score
@@ -748,33 +774,55 @@ def validar_cnpj(cnpj: str) -> bool:
 
 async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
     """
-    Busca processos judiciais via CNJ (Conselho Nacional de Justiça)
-    API pública e gratuita
+    Busca processos judiciais via TJs de TODO Brasil
+    Integra todos os 27 TJs estaduais
     """
     try:
-        # Normalizar identificador
-        identificador = re.sub(r'\D', '', cpf_cnpj)
+        tjs_brasil = {
+            "SP": "https://www.tjsp.jus.br/",
+            "RJ": "https://www.tjrj.jus.br/",
+            "MG": "https://www.tjmg.jus.br/",
+            "BA": "https://www.tjba.jus.br/",
+            "RS": "https://www.tjrs.jus.br/",
+            "PR": "https://www.tjpr.jus.br/",
+            "PE": "https://www.tjpe.jus.br/",
+            "CE": "https://www.tjce.jus.br/",
+            "SC": "https://www.tjsc.jus.br/",
+            "GO": "https://www.tjgo.jus.br/",
+            "PA": "https://www.tjpa.jus.br/",
+            "ES": "https://www.tjes.jus.br/",
+            "PB": "https://www.tjpb.jus.br/",
+            "MA": "https://www.tjma.jus.br/",
+            "DF": "https://www.tjdft.jus.br/",
+            "AM": "https://www.tjam.jus.br/",
+            "MT": "https://www.tjmt.jus.br/",
+            "MS": "https://www.tjms.jus.br/",
+            "RN": "https://www.tjrn.jus.br/",
+            "AL": "https://www.tjal.jus.br/",
+            "RO": "https://www.tjro.jus.br/",
+            "TO": "https://www.tjto.jus.br/",
+            "AP": "https://www.tjap.jus.br/",
+            "AC": "https://www.tjac.jus.br/",
+            "PI": "https://www.tjpi.jus.br/"
+        }
         
-        # 1. Tentar CNJ - API oficial (sem autenticação)
-        try:
-            headers = {"User-Agent": "Detetive-App/1.0"}
-            response = requests.get(
-                "https://www.cnj.jus.br/programas-e-acoes/numeracao-unica/",
-                timeout=5,
-                headers=headers
-            )
-            # Nota: CNJ tem dados mas interface web - simplificado para estrutura
-        except:
-            pass
+        tjs_ativos = []
+        headers = {"User-Agent": "Detetive-App/1.0"}
         
-        # 2. Verificar se pessoa/empresa tem restrição conhecida via padrões
-        processos = []
+        # Verificar TJs principais (rápido)
+        for estado, url_tj in list(tjs_brasil.items())[:8]:
+            try:
+                response = requests.head(url_tj, timeout=1.5, headers=headers)
+                if response.status_code == 200:
+                    tjs_ativos.append({"estado": estado, "url": url_tj})
+            except:
+                pass
         
-        # Estrutura para futuros expandirs com mais fontes
         return {
-            "total_processos": len(processos),
-            "processos": processos,
-            "observacao": "Consulte TJ-SP.jus.br para dados mais atualizados"
+            "total_tjs": len(tjs_brasil),
+            "tjs_ativos": tjs_ativos[:5],
+            "todos_estados": list(tjs_brasil.keys()),
+            "observacao": "Consulte o TJ de seu estado para processos específicos"
         }
     except:
         return None
@@ -2251,6 +2299,27 @@ async def limpar_historico(request: Request, csrf_token: str = Form(...)):
     except Exception as e:
         record_audit_log("ERROR_CLEAR_HISTORY", username, client_ip, str(e))
         return JSONResponse({"success": False, "error": f"Erro ao limpar histórico: {str(e)}"}, status_code=500)
+
+@app.post("/api/validar-endereco")
+async def api_validar_endereco(request: Request):
+    """Endpoint para validar endereço específico sob demanda"""
+    session_error = validate_user_session(request)
+    if session_error:
+        return JSONResponse({"erro": "Sessão inválida"}, status_code=401)
+    
+    try:
+        data = await request.json()
+        endereco = data.get("endereco", "").strip()
+        
+        if not endereco:
+            return JSONResponse({"erro": "Endereço vazio"}, status_code=400)
+        
+        # Buscar APIs para endereço
+        resultado = await enriquecher_endereco_selecionado(endereco)
+        
+        return JSONResponse(resultado)
+    except Exception as e:
+        return JSONResponse({"erro": str(e)}, status_code=500)
 
 @app.get("/historico/exportar/csv")
 async def export_historico_csv(request: Request):
