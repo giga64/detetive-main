@@ -1568,7 +1568,7 @@
                                                     <button class="action-btn" onclick="validarEnderecoByElement(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
                                                 </div>
                                             </div>
-                                            <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4;"></div>
+                                            <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;"></div>
                                         </div>
                                     </li>
                                 {% endfor %}
@@ -2007,20 +2007,64 @@
             const endereco = listItem.getAttribute('data-address');
             const index = listItem.getAttribute('data-index');
             const resultDivId = 'endereco-resultado-' + index;
+            const resultDiv = document.getElementById(resultDivId);
             
             if (!endereco) {
                 console.error('Endereço não encontrado no data-address');
                 return;
             }
             
-            validarEndereco(endereco, resultDivId);
+            if (!resultDiv) {
+                console.error('Div de resultado não encontrada:', resultDivId);
+                return;
+            }
+            
+            // Toggle: se já está visível, fecha. Se está fechado, abre e valida
+            if (resultDiv.style.display === 'block' && resultDiv.innerHTML.trim() !== '') {
+                // Fechar com animação suave
+                resultDiv.style.opacity = '0';
+                resultDiv.style.maxHeight = '0px';
+                resultDiv.style.padding = '0 15px';
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                }, 300);
+                
+                // Mudar ícone do botão de volta para "check" (original)
+                const svg = buttonElement.querySelector('svg');
+                if (svg) {
+                    svg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+                }
+                
+                // Remover estilo ativo do botão
+                buttonElement.style.background = '';
+                buttonElement.style.borderColor = '';
+            } else {
+                // Abrir e validar
+                resultDiv.style.opacity = '1';
+                resultDiv.style.maxHeight = '2000px';
+                resultDiv.style.padding = '15px';
+                
+                // Adicionar estilo ativo ao botão
+                buttonElement.style.background = 'rgba(6, 182, 212, 0.15)';
+                buttonElement.style.borderColor = '#06b6d4';
+                
+                validarEndereco(endereco, resultDivId, buttonElement);
+            }
         }
         
-        async function validarEndereco(endereco, resultDivId) {
+        async function validarEndereco(endereco, resultDivId, buttonElement) {
             const resultDiv = document.getElementById(resultDivId || 'endereco-resultado');
             if (!resultDiv) {
                 console.error('Div de resultado não encontrada:', resultDivId);
                 return;
+            }
+            
+            // Mudar ícone do botão para "X" (fechar)
+            if (buttonElement) {
+                const svg = buttonElement.querySelector('svg');
+                if (svg) {
+                    svg.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+                }
             }
             
             resultDiv.style.display = 'block';
