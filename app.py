@@ -1635,7 +1635,11 @@ def historico(request: Request):
             "tags": tags_list
         })
     
-    return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas})
+    return templates.TemplateResponse("historico.html", {
+        "request": request, 
+        "consultas": consultas,
+        "csrf_token": get_or_create_csrf_token(request)
+    })
 
 @app.get("/search/by-phone/{phone}", response_class=JSONResponse)
 async def reverse_search_phone(request: Request, phone: str):
@@ -2361,7 +2365,12 @@ async def get_favorites(request: Request):
             "tags": tags_list
         })
     
-    return templates.TemplateResponse("historico.html", {"request": request, "consultas": consultas, "is_favorites": True})
+    return templates.TemplateResponse("historico.html", {
+        "request": request, 
+        "consultas": consultas, 
+        "is_favorites": True,
+        "csrf_token": get_or_create_csrf_token(request)
+    })
 
 # ----------------------
 # ROTAS DE NOTAS/COMENTÁRIOS
