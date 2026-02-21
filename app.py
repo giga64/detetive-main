@@ -571,16 +571,19 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
         if endereco_validado:
             result["viacep"] = endereco_validado
             
-            # Nominatim
-            localizacao = await buscar_nominatim(
-                endereco_validado.get("logradouro", ""),
-                endereco_validado.get("localidade", ""),
-                endereco_validado.get("uf", "")
-            )
-            if localizacao:
-                result["nominatim"] = localizacao
-    except:
-        pass
+            try:
+                # Nominatim
+                localizacao = await buscar_nominatim(
+                    endereco_validado.get("logradouro", ""),
+                    endereco_validado.get("localidade", ""),
+                    endereco_validado.get("uf", "")
+                )
+                if localizacao:
+                    result["nominatim"] = localizacao
+            except Exception as nom_err:
+                print(f"⚠️ Erro ao buscar Nominatim: {str(nom_err)}")
+    except Exception as e:
+        print(f"⚠️ Erro em enriquecher_endereco_selecionado: {str(e)}")
     
     return result
 
@@ -666,7 +669,13 @@ async def buscar_cep_viacep(endereco: str) -> dict:
         )
         
         if response.status_code == 200:
-            data = response.json()
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do ViaCEP: {str(json_err)}")
+                print(f"   Resposta bruta: {response.text[:200]}")
+                return None
+            
             if "erro" not in data:
                 return {
                     "cep": f"{data.get('cep', '')}".replace("-", ""),
@@ -702,14 +711,22 @@ async def buscar_nominatim(rua: str, cidade: str, estado: str) -> dict:
             )
         )
         
-        if response.status_code == 200 and response.json():
-            data = response.json()[0]
-            return {
-                "latitude": float(data.get("lat", 0)),
-                "longitude": float(data.get("lon", 0)),
-                "endereco_completo": data.get("display_name", ""),
-                "tipo": data.get("type", "")
-            }
+        if response.status_code == 200:
+            try:
+                resp_json = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do Nominatim: {str(json_err)}")
+                print(f"   Status: {response.status_code}, Tamanho: {len(response.text)}")
+                return None
+            
+            if resp_json:
+                data = resp_json[0]
+                return {
+                    "latitude": float(data.get("lat", 0)),
+                    "longitude": float(data.get("lon", 0)),
+                    "endereco_completo": data.get("display_name", ""),
+                    "tipo": data.get("type", "")
+                }
     except Exception as e:
         print(f"⚠️ Erro em buscar_nominatim: {str(e)}")
     
@@ -743,7 +760,13 @@ async def buscar_wikipedia(nome_empresa: str) -> dict:
         )
         
         if response.status_code == 200:
-            data = response.json()
+            try:
+                data = response.json()
+            except Exception as json_err:
+                print(f"❌ Erro ao fazer parse JSON do Wikipedia: {str(json_err)}")
+                print(f"   Tamanho da resposta: {len(response.text)}")
+                return None
+            
             pages = data.get("query", {}).get("pages", {})
             for page in pages.values():
                 if "extract" in page and page["extract"]:
@@ -2045,7 +2068,15 @@ async def do_consulta(request: Request):
         
         # Parser do resultado para dados estruturados
         # Passar o 'tipo' detectado para garantir parser correto
-        dados_estruturados = parse_resultado_consulta(resultado, tipo) if not resultado.startswith("❌") else None
+        dados_estruturados = None
+        if not resultado.startswith("❌"):
+            try:
+                dados_estruturados = parse_resultado_consulta(resultado, tipo)
+            except Exception as parse_err:
+                print(f"🔴 Erro ao fazer parse do resultado: {str(parse_err)}")
+                print(f"   Tamanho do resultado: {len(resultado)}")
+                print(f"   Primeiros 500 chars: {resultado[:500]}")
+                # Continua mesmo com erro de parsing
         
         # Enriquecer dados com APIs públicas grátis
         apis_data = {}
@@ -2054,6 +2085,8 @@ async def do_consulta(request: Request):
                 apis_data = await enriquecer_dados_com_apis(identificador, tipo, dados_estruturados)
             except Exception as api_error:
                 print(f"⚠️ Erro ao enriquecer APIs: {str(api_error)}")
+                import traceback
+                traceback.print_exc()
                 pass  # Se falhar, continua sem enriquecimento
         
         return templates.TemplateResponse("modern-result.html", {
@@ -2071,10 +2104,12 @@ async def do_consulta(request: Request):
         error_msg = str(e)
         print(f"🔴 ERRO NA CONSULTA: {error_msg}")
         print(f"Tipo: {tipo}, Identificador: {identificador}")
+        import traceback
+        traceback.print_exc()
         record_audit_log("QUERY_ERROR", username, client_ip, error_msg)
         return templates.TemplateResponse("modern-form.html", {
             "request": request,
-            "erro": f"Erro ao processar consulta. Detalhes: {error_msg[:100]}"
+            "erro": f"Erro ao processar consulta. Detalhes: {error_msg[:150]}"
         })
 
 @app.get("/historico", response_class=HTMLResponse)
@@ -2326,7 +2361,12 @@ async def api_validar_endereco(request: Request):
         if not username:
             return JSONResponse({"erro": "Não autenticado"}, status_code=401)
         
-        data = await request.json()
+        try:
+            data = await request.json()
+        except Exception as json_err:
+            print(f"❌ Erro ao fazer parse JSON do request: {str(json_err)}")
+            return JSONResponse({"erro": "JSON inválido no request"}, status_code=400)
+        
         endereco = data.get("endereco", "").strip()
         
         if not endereco:
@@ -2340,7 +2380,8 @@ async def api_validar_endereco(request: Request):
         
         return JSONResponse(resultado)
     except Exception as e:
-        return JSONResponse({"erro": f"Erro ao validar: {str(e)[:50]}"}, status_code=500)
+        print(f"🔴 Erro em /api/validar-endereco: {str(e)}")
+        return JSONResponse({"erro": f"Erro ao validar: {str(e)[:100]}"}, status_code=500)
 
 @app.get("/historico/exportar/csv")
 async def export_historico_csv(request: Request):
