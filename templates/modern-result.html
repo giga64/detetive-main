@@ -1547,28 +1547,40 @@
                     {% else %}
                         <!-- Mostrar endereços de CPF (padrão) -->
                         {% if dados.enderecos and dados.enderecos|length > 0 %}
-                            <!-- Filtros de endereço: Urbano vs Rural -->
-                            <div class="address-filter-container">
-                                <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
-                                <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
-                                <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
+                            <!-- Cabeçalho com filtros e botão de copiar -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px;">
+                                <!-- Filtros de endereço: Urbano vs Rural -->
+                                <div class="address-filter-container" style="margin-bottom: 0; flex: 1;">
+                                    <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
+                                    <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
+                                    <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
+                                </div>
+                                
+                                <!-- Botão de copiar todos os endereços -->
+                                <button class="action-btn" onclick="copiarTodosEnderecos()" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(10, 165, 164, 0.15)); border: 1px solid rgba(6, 182, 212, 0.3); white-space: nowrap; min-width: 180px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px;">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copiar Todos
+                                </button>
                             </div>
 
                             <ul class="data-list">
                                 {% for endereco in dados.enderecos %}
                                     <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" data-index="{{ loop.index0 }}" style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                <div style="flex: 1;">
-                                                    <span>{{ endereco }}</span>
+                                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                                <div style="flex: 1; min-width: 0;">
+                                                    <span style="display: block; word-break: break-word;">{{ endereco }}</span>
                                                     <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
                                                 </div>
-                                                <div style="display: flex; gap: 10px; margin-left: 20px;">
-                                                    <button class="action-btn" onclick="openStreetView({{ endereco | tojson }})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
-                                                    <button class="action-btn" onclick="validarEnderecoByElement(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
+                                                <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                                                    <button class="action-btn" style="min-width: 85px;" onclick="openStreetView({{ endereco | tojson }})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
+                                                    <button class="action-btn" style="min-width: 165px;" onclick="validarEnderecoByElement(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
                                                 </div>
                                             </div>
-                                            <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;"></div>
+                                            <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; position: relative; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;"></div>
                                         </div>
                                     </li>
                                 {% endfor %}
@@ -2019,52 +2031,38 @@
                 return;
             }
             
-            // Toggle: se já está visível, fecha. Se está fechado, abre e valida
-            if (resultDiv.style.display === 'block' && resultDiv.innerHTML.trim() !== '') {
-                // Fechar com animação suave
-                resultDiv.style.opacity = '0';
-                resultDiv.style.maxHeight = '0px';
-                resultDiv.style.padding = '0 15px';
-                setTimeout(() => {
-                    resultDiv.style.display = 'none';
-                }, 300);
-                
-                // Mudar ícone do botão de volta para "check" (original)
-                const svg = buttonElement.querySelector('svg');
-                if (svg) {
-                    svg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-                }
-                
-                // Remover estilo ativo do botão
-                buttonElement.style.background = '';
-                buttonElement.style.borderColor = '';
-            } else {
-                // Abrir e validar
-                resultDiv.style.opacity = '1';
-                resultDiv.style.maxHeight = '2000px';
-                resultDiv.style.padding = '15px';
-                
-                // Adicionar estilo ativo ao botão
-                buttonElement.style.background = 'rgba(6, 182, 212, 0.15)';
-                buttonElement.style.borderColor = '#06b6d4';
-                
-                validarEndereco(endereco, resultDivId, buttonElement);
+            // Se já está aberto, não faz nada (o botão de fechar interno que fecha)
+            if (resultDiv.style.display === 'block') {
+                return;
             }
+            
+            // Abrir e validar
+            resultDiv.style.opacity = '1';
+            resultDiv.style.maxHeight = '2000px';
+            resultDiv.style.padding = '15px';
+            
+            validarEndereco(endereco, resultDivId);
         }
         
-        async function validarEndereco(endereco, resultDivId, buttonElement) {
+        // Função para fechar a validação
+        function fecharValidacao(resultDivId) {
+            const resultDiv = document.getElementById(resultDivId);
+            if (!resultDiv) return;
+            
+            // Fechar com animação suave
+            resultDiv.style.opacity = '0';
+            resultDiv.style.maxHeight = '0px';
+            resultDiv.style.padding = '0 15px';
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 300);
+        }
+        
+        async function validarEndereco(endereco, resultDivId) {
             const resultDiv = document.getElementById(resultDivId || 'endereco-resultado');
             if (!resultDiv) {
                 console.error('Div de resultado não encontrada:', resultDivId);
                 return;
-            }
-            
-            // Mudar ícone do botão para "X" (fechar)
-            if (buttonElement) {
-                const svg = buttonElement.querySelector('svg');
-                if (svg) {
-                    svg.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
-                }
             }
             
             resultDiv.style.display = 'block';
@@ -2088,6 +2086,11 @@
                 
                 if (response.ok && data.viacep) {
                     let html = '';
+                    
+                    // Botão de fechar no canto superior direito
+                    html += '<button onclick="fecharValidacao(\'' + resultDivId + '\')" style="position: absolute; top: 8px; right: 8px; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: #ff6b6b; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; padding: 0;" onmouseover="this.style.background=\'rgba(255,107,107,0.2)\'; this.style.borderColor=\'#ff6b6b\';" onmouseout="this.style.background=\'rgba(255,107,107,0.1)\'; this.style.borderColor=\'rgba(255,107,107,0.3)\';" title="Fechar validação">';
+                    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                    html += '</button>';
                     
                     // ===== VIACEPI + NOMINATIM =====
                     html += '<div class="api-card" style="border-left: 4px solid #06b6d4; margin-bottom: 16px; background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.02) 100%); border-radius: 8px; padding: 16px;">';
@@ -2371,6 +2374,100 @@
                 closeMapModal();
             }
         });
+
+        // ===========================
+        // COPIAR TODOS OS ENDEREÇOS
+        // ===========================
+        function copiarTodosEnderecos() {
+            // Pegar todos os endereços visíveis
+            const addressItems = document.querySelectorAll('.address-item');
+            const visibleAddresses = [];
+            
+            addressItems.forEach(item => {
+                // Verificar se o endereço está visível (não filtrado)
+                if (item.style.display !== 'none') {
+                    const address = item.getAttribute('data-address');
+                    if (address) {
+                        visibleAddresses.push(address);
+                    }
+                }
+            });
+            
+            if (visibleAddresses.length === 0) {
+                // Se não há endereços visíveis
+                mostrarToast('Nenhum endereço para copiar', 'warning');
+                return;
+            }
+            
+            // Juntar todos os endereços (um por linha)
+            const textoParaCopiar = visibleAddresses.join('\n');
+            
+            // Copiar para área de transferência
+            navigator.clipboard.writeText(textoParaCopiar)
+                .then(() => {
+                    mostrarToast(`${visibleAddresses.length} endereço(s) copiado(s)!`, 'success');
+                })
+                .catch(err => {
+                    console.error('Erro ao copiar:', err);
+                    mostrarToast('Erro ao copiar endereços', 'error');
+                });
+        }
+        
+        // Função auxiliar para mostrar toast de feedback
+        function mostrarToast(mensagem, tipo = 'success') {
+            // Criar elemento de toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                background: ${tipo === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : tipo === 'warning' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #ef4444, #dc2626)'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideInRight 0.3s ease;
+            `;
+            
+            // Adicionar ícone
+            const icon = tipo === 'success' 
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                : tipo === 'warning'
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05l-8.47-14.14a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+            
+            toast.innerHTML = icon + '<span>' + mensagem + '</span>';
+            
+            // Adicionar animação CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Adicionar ao DOM
+            document.body.appendChild(toast);
+            
+            // Remover após 3 segundos
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // ===========================
         // FILTROS DE ENDEREÇO - URBANO vs RURAL
