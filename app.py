@@ -15,6 +15,7 @@ from io import StringIO
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +23,11 @@ from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
 from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
+
+# ----------------------
+# Executor para chamadas síncronas
+# ----------------------
+executor = ThreadPoolExecutor(max_workers=5)
 
 # ----------------------
 # Configurações de diretórios
@@ -651,7 +657,13 @@ async def buscar_cep_viacep(endereco: str) -> dict:
             return None
         
         cep = f"{cep_match.group(1)}{cep_match.group(2)}"
-        response = requests.get(f"https://viacep.com.br/ws/{cep}/json/", timeout=5)
+        
+        # Usar executor para não bloquear event loop
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(f"https://viacep.com.br/ws/{cep}/json/", timeout=5)
+        )
         
         if response.status_code == 200:
             data = response.json()
@@ -664,8 +676,8 @@ async def buscar_cep_viacep(endereco: str) -> dict:
                     "uf": data.get("uf", ""),
                     "complemento": data.get("complemento", "")
                 }
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_cep_viacep: {str(e)}")
     
     return None
 
@@ -677,11 +689,17 @@ async def buscar_nominatim(rua: str, cidade: str, estado: str) -> dict:
     try:
         query = f"{rua}, {cidade}, {estado}, Brasil"
         headers = {"User-Agent": "Detetive-App/1.0"}
-        response = requests.get(
-            "https://nominatim.openstreetmap.org/search",
-            params={"q": query, "format": "json", "limit": 1},
-            headers=headers,
-            timeout=5
+        
+        # Usar executor para não bloquear event loop
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": query, "format": "json", "limit": 1},
+                headers=headers,
+                timeout=5
+            )
         )
         
         if response.status_code == 200 and response.json():
@@ -692,8 +710,8 @@ async def buscar_nominatim(rua: str, cidade: str, estado: str) -> dict:
                 "endereco_completo": data.get("display_name", ""),
                 "tipo": data.get("type", "")
             }
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_nominatim: {str(e)}")
     
     return None
 
@@ -704,18 +722,24 @@ async def buscar_wikipedia(nome_empresa: str) -> dict:
     """
     try:
         headers = {"User-Agent": "Detetive-App/1.0"}
-        response = requests.get(
-            "https://pt.wikipedia.org/w/api.php",
-            params={
-                "action": "query",
-                "format": "json",
-                "titles": nome_empresa,
-                "prop": "extracts",
-                "explaintext": True,
-                "exsectionformat": "plain"
-            },
-            headers=headers,
-            timeout=5
+        
+        # Usar executor para não bloquear event loop
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                "https://pt.wikipedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "format": "json",
+                    "titles": nome_empresa,
+                    "prop": "extracts",
+                    "explaintext": True,
+                    "exsectionformat": "plain"
+                },
+                headers=headers,
+                timeout=5
+            )
         )
         
         if response.status_code == 200:
@@ -729,8 +753,8 @@ async def buscar_wikipedia(nome_empresa: str) -> dict:
                         "resumo": extract,
                         "fonte": "Wikipedia"
                     }
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_wikipedia: {str(e)}")
     
     return None
 
@@ -806,25 +830,14 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
             "PI": "https://www.tjpi.jus.br/"
         }
         
-        tjs_ativos = []
-        headers = {"User-Agent": "Detetive-App/1.0"}
-        
-        # Verificar TJs principais (rápido)
-        for estado, url_tj in list(tjs_brasil.items())[:8]:
-            try:
-                response = requests.head(url_tj, timeout=1.5, headers=headers)
-                if response.status_code == 200:
-                    tjs_ativos.append({"estado": estado, "url": url_tj})
-            except:
-                pass
-        
+        # Apenas retornar dados sem fazer requisições que podem bloquear
         return {
             "total_tjs": len(tjs_brasil),
-            "tjs_ativos": tjs_ativos[:5],
-            "todos_estados": list(tjs_brasil.keys()),
+            "tjs_disponiveis": list(tjs_brasil.keys()),
             "observacao": "Consulte o TJ de seu estado para processos específicos"
         }
-    except:
+    except Exception as e:
+        print(f"⚠️ Erro ao buscar processos judiciais: {str(e)}")
         return None
 
 def calcular_risk_score_juridico(dados: dict, tipo: str) -> dict:
@@ -2039,7 +2052,8 @@ async def do_consulta(request: Request):
         if dados_estruturados:
             try:
                 apis_data = await enriquecer_dados_com_apis(identificador, tipo, dados_estruturados)
-            except:
+            except Exception as api_error:
+                print(f"⚠️ Erro ao enriquecer APIs: {str(api_error)}")
                 pass  # Se falhar, continua sem enriquecimento
         
         return templates.TemplateResponse("modern-result.html", {
@@ -2054,10 +2068,13 @@ async def do_consulta(request: Request):
     except Exception as e:
         username = request.cookies.get("auth_user", "unknown")
         client_ip = get_client_ip(request)
-        record_audit_log("QUERY_ERROR", username, client_ip, str(e))
+        error_msg = str(e)
+        print(f"🔴 ERRO NA CONSULTA: {error_msg}")
+        print(f"Tipo: {tipo}, Identificador: {identificador}")
+        record_audit_log("QUERY_ERROR", username, client_ip, error_msg)
         return templates.TemplateResponse("modern-form.html", {
             "request": request,
-            "erro": "Erro ao processar consulta. Tente novamente mais tarde."
+            "erro": f"Erro ao processar consulta. Detalhes: {error_msg[:100]}"
         })
 
 @app.get("/historico", response_class=HTMLResponse)
