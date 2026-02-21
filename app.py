@@ -630,31 +630,20 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         print(f"⚠️ Erro ao processar endereços: {str(e)}")
     
     try:
-        # Wikipedia - Automática
+        # Wikipedia - Automática (para CNPJ e CPF)
+        nome_para_wiki = ""
         if tipo.lower() == "cnpj" and dados_estruturados.get("dados_pessoais", {}).get("nome"):
-            nome_empresa = dados_estruturados["dados_pessoais"]["nome"]
-            if isinstance(nome_empresa, str):
-                info_wiki = await buscar_wikipedia(nome_empresa)
-                if info_wiki:
-                    apis_data["info_publica"] = info_wiki
+            nome_para_wiki = dados_estruturados["dados_pessoais"]["nome"]
+        elif tipo.lower() == "cpf" and dados_estruturados.get("dados_pessoais", {}).get("nome"):
+            # Também buscar Wikipedia para CPF (pessoas famosas)
+            nome_para_wiki = dados_estruturados["dados_pessoais"]["nome"]
+        
+        if nome_para_wiki and isinstance(nome_para_wiki, str):
+            info_wiki = await buscar_wikipedia(nome_para_wiki)
+            if info_wiki:
+                apis_data["info_publica"] = info_wiki
     except Exception as wiki_err:
         print(f"⚠️ Erro ao buscar Wikipedia: {str(wiki_err)}")
-    
-    try:
-        # Processos Judiciais Brasil Todo - Automática
-        processos = await buscar_processos_judiciais(identificador, tipo)
-        if processos:
-            apis_data["processos_judiciais"] = processos
-    except Exception as proc_err:
-        print(f"⚠️ Erro ao buscar processos: {str(proc_err)}")
-    
-    try:
-        # Risk Score Jurídico - Automática
-        risk_score = calcular_risk_score_juridico(dados_estruturados, tipo)
-        if risk_score:
-            apis_data["risk_score"] = risk_score
-    except Exception as risk_err:
-        print(f"⚠️ Erro ao calcular risk score: {str(risk_err)}")
     
     return apis_data
 

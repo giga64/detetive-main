@@ -954,12 +954,6 @@
                             </svg>
                             Empresas
                         </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'sources')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                                <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
-                            </svg>
-                            Dados Públicos
-                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1537,79 +1531,6 @@
                 </div>
 
                 <!-- TAB: Fontes Públicas (Processos + Wikipedia) -->
-                <div id="sources" class="tab-content">
-                    {% if apis_data.processos_judiciais or apis_data.info_publica %}
-                        <!-- Processos Judiciais -->
-                        {% if apis_data.processos_judiciais and apis_data.processos_judiciais.tjs_com_processos and apis_data.processos_judiciais.tjs_com_processos|length > 0 %}
-                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 20px;">
-                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
-                                <div class="api-content">
-                                    <p style="margin-bottom: 12px;"><strong>✅ Pessoa possui processos em {{ apis_data.processos_judiciais.tjs_com_processos|length }} estado(s):</strong></p>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;">
-                                        {% set tj_urls = {
-                                            "SP": "https://www.tjsp.jus.br/",
-                                            "RJ": "https://www.tjrj.jus.br/",
-                                            "MG": "https://www.tjmg.jus.br/",
-                                            "BA": "https://www.tjba.jus.br/",
-                                            "RS": "https://www.tjrs.jus.br/",
-                                            "PR": "https://www.tjpr.jus.br/",
-                                            "PE": "https://www.tjpe.jus.br/",
-                                            "CE": "https://www.tjce.jus.br/",
-                                            "SC": "https://www.tjsc.jus.br/",
-                                            "GO": "https://www.tjgo.jus.br/",
-                                            "PA": "https://www.tjpa.jus.br/",
-                                            "ES": "https://www.tjes.jus.br/",
-                                            "PB": "https://www.tjpb.jus.br/",
-                                            "MA": "https://www.tjma.jus.br/",
-                                            "DF": "https://www.tjdft.jus.br/",
-                                            "AM": "https://www.tjam.jus.br/",
-                                            "MT": "https://www.tjmt.jus.br/",
-                                            "MS": "https://www.tjms.jus.br/",
-                                            "RN": "https://www.tjrn.jus.br/",
-                                            "AL": "https://www.tjal.jus.br/",
-                                            "RO": "https://www.tjro.jus.br/",
-                                            "TO": "https://www.tjto.jus.br/",
-                                            "AP": "https://www.tjap.jus.br/",
-                                            "AC": "https://www.tjac.jus.br/",
-                                            "PI": "https://www.tjpi.jus.br/"
-                                        } %}
-                                        {% for estado in apis_data.processos_judiciais.tjs_com_processos %}
-                                            <a href="{{ tj_urls.get(estado, '#') }}" target="_blank" style="background: rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 4px; font-size: 12px; color: #8b5cf6; text-decoration: none; text-align: center; border: 1px solid rgba(139, 92, 246, 0.4); transition: all 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(139, 92, 246, 0.4)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.2)'">{{ estado }}</a>
-                                        {% endfor %}
-                                    </div>
-                                    {% if apis_data.processos_judiciais.observacao %}
-                                        <p style="color: #aaa; margin-top: 12px; font-style: italic;">💡 {{ apis_data.processos_judiciais.observacao }}</p>
-                                    {% endif %}
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais</small>
-                            </div>
-                        {% elif apis_data.processos_judiciais %}
-                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 20px;">
-                                <h4 style="color: #8b5cf6; margin-bottom: 12px;">⚖️ Processos Judiciais - Brasil</h4>
-                                <div class="api-content" style="text-align: center; padding: 20px; color: #10b981;">
-                                    <p style="font-size: 1.1rem;">✅ <strong>Sem processos judiciais registrados</strong></p>
-                                    <p style="color: #888; margin-top: 8px; font-size: 0.9rem;">Esta pessoa não possui processos nos tribunais consultados</p>
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: CNJ + Tribunais de Justiça Estaduais</small>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Informações Públicas (Wikipedia) -->
-                        {% if apis_data.info_publica %}
-                            <div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 20px;">
-                                <h4 style="color: #f59e0b; margin-bottom: 12px;">🌐 Informações de Fontes Públicas</h4>
-                                <div class="api-content" style="max-height: 400px; overflow-y: auto; overflow-x: auto; padding-right: 15px;">
-                                    <p>{{ apis_data.info_publica.resumo }}</p>
-                                </div>
-                                <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="empty-state">
-                            <p>Sem informações públicas disponíveis</p>
-                        </div>
-                    {% endif %}
-                </div>
 
                 <!-- TAB: Contatos -->
                 <div id="contacts" class="tab-content">
@@ -1775,6 +1696,19 @@
                 <div id="raw" class="tab-content">
                     <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
                 </div>
+
+                <!-- Informações de Fontes Públicas (Wikipedia) - Sempre visível se disponível -->
+                {% if apis_data and apis_data.info_publica %}
+                    <div style="margin-top: 30px; margin-bottom: 30px;">
+                        <div class="api-card" style="border-left: 4px solid #f59e0b;">
+                            <h4 style="color: #f59e0b; margin-bottom: 12px;">🌐 Informações de Fontes Públicas</h4>
+                            <div class="api-content" style="max-height: 500px; overflow-y: auto; overflow-x: auto; padding-right: 15px;">
+                                <p>{{ apis_data.info_publica.resumo }}</p>
+                            </div>
+                            <small style="color: #888; margin-top: 8px; display: block;">Fonte: Wikipedia</small>
+                        </div>
+                    </div>
+                {% endif %}
 
                 <!-- Ações -->
                 <div class="actions-section">
