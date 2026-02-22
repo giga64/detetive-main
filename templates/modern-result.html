@@ -1755,17 +1755,22 @@
                             {% if dados.socios and dados.socios|length > 0 %}
                                 {% for socio in dados.socios %}
                                     <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 4px;">
-                                        <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.nome }}</div>
-                                        {% if socio.qualificacao %}
-                                            <div><strong>QUALIFICAÇÃO:</strong> {{ socio.qualificacao }}</div>
-                                        {% endif %}
-                                        {% if socio.cpf %}
-                                            <div style="color: #a0a0a0; font-size: 0.9rem; margin-top: 6px;">CPF: {{ socio.cpf }}</div>
+                                        {% if socio is mapping %}
+                                            <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.get('nome', socio) }}</div>
+                                            {% if socio.get('qualificacao') %}
+                                                <div><strong>QUALIFICAÇÃO:</strong> {{ socio.get('qualificacao') }}</div>
+                                            {% endif %}
+                                            {% if socio.get('cpf') %}
+                                                <div style="color: #a0a0a0; font-size: 0.9rem; margin-top: 6px;">CPF: {{ socio.get('cpf') }}</div>
+                                            {% endif %}
+                                        {% else %}
+                                            <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio }}</div>
                                         {% endif %}
                                     </div>
                                 {% endfor %}
                             {% else %}
                                 <div class="empty-state">
+                                    <p>Debug: {{ dados.socios }} | Length: {{ dados.socios|length if dados.socios else 'null' }}</p>
                                     <p>Nenhum sócio ou administrador encontrado</p>
                                 </div>
                             {% endif %}
