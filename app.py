@@ -685,11 +685,10 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
         
         # 4. Gravatar - Para CPF/Pessoa
         if tipo.lower() == "cpf":
-            # Tentar extrair email dos contatos
-            contatos = dados_estruturados.get("contatos", [])
-            emails = [c for c in contatos if isinstance(c, str) and "@" in c]
+            # Tentar extrair email dos dados estruturados
+            emails = dados_estruturados.get("emails", [])
             
-            if emails:
+            if emails and len(emails) > 0:
                 try:
                     info_gravatar = await buscar_gravatar(emails[0])
                     if info_gravatar:
@@ -697,16 +696,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
                 except Exception as grav_err:
                     print(f"⚠️ Erro ao buscar Gravatar: {str(grav_err)}")
         
-        # 5. Redes Sociais - Para todos
-        if nome_para_wiki:
-            try:
-                info_redes = await buscar_redes_sociais(nome_para_wiki)
-                if info_redes and info_redes.get("encontrado"):
-                    info_publica_compilada["redes_sociais"] = info_redes
-            except Exception as rede_err:
-                print(f"⚠️ Erro ao buscar Redes Sociais: {str(rede_err)}")
-        
-        # 6. ReceitaWS - CNPJ
+        # 5. ReceitaWS - CNPJ
         if tipo.lower() == "cnpj":
             try:
                 info_receitaws = await buscar_cnpj_receitaws(identificador)
@@ -715,7 +705,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             except Exception as rws_err:
                 print(f"⚠️ Erro ao buscar ReceitaWS: {str(rws_err)}")
         
-        # 7. BrasilAPI CNPJ
+        # 6. BrasilAPI CNPJ
         if tipo.lower() == "cnpj":
             try:
                 info_brasilapi = await buscar_cnpj_brasilapi(identificador)
@@ -724,16 +714,6 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             except Exception as bapi_err:
                 print(f"⚠️ Erro ao buscar BrasilAPI: {str(bapi_err)}")
         
-        # 8. Buscar Empresa por CPF (se for CPF)
-        if tipo.lower() == "cpf":
-            try:
-                nome_cpf = dados_estruturados.get("dados_pessoais", {}).get("nome", "")
-                if nome_cpf:
-                    info_empresa = await buscar_empresa_por_cpf(nome_cpf, identificador)
-                    if info_empresa:
-                        info_publica_compilada["empresa_cpf"] = info_empresa
-            except Exception as emp_err:
-                print(f"⚠️ Erro ao buscar Empresa por CPF: {str(emp_err)}")
         
         if info_publica_compilada:
             apis_data["info_publica"] = info_publica_compilada
