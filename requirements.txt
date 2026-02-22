@@ -7,3 +7,8 @@ python-multipart
 psutil
 tenacity
 requests
+# Dependências para OCR da Ficha OAB
+easyocr
+pillow
+torch
+torchvision
