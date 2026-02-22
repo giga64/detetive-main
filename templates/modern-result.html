@@ -1597,9 +1597,9 @@
                                     </button>
                                 </div>
 
-                                <ul class="data-list">
+                                <div class="data-grid">
                                     {% for endereco in dados.enderecos %}
-                                        <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" data-index="{{ loop.index0 }}" style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                        <div class="data-item address-item" data-address="{{ endereco }}" data-type="auto" data-index="{{ loop.index0 }}" style="grid-column: 1 / -1;">
                                             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
                                                 <div style="flex: 1; min-width: 0;">
                                                     <span style="display: block; word-break: break-word;">{{ endereco }}</span>
@@ -1611,9 +1611,9 @@
                                                 </div>
                                             </div>
                                             <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; position: relative; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden; margin-top: 10px;"></div>
-                                        </li>
+                                        </div>
                                     {% endfor %}
-                                </ul>
+                                </div>
                             </div>
                         {% else %}
                             <div class="empty-state">
