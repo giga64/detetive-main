@@ -697,6 +697,34 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
                 except Exception as grav_err:
                     print(f"⚠️ Erro ao buscar Gravatar: {str(grav_err)}")
         
+        # 5. PEP - Pessoas Politicamente Expostas
+        if nome_para_wiki:
+            try:
+                info_pep = await buscar_pep(nome_para_wiki)
+                if info_pep and info_pep.get("encontrado"):
+                    info_publica_compilada["pep"] = info_pep
+            except Exception as pep_err:
+                print(f"⚠️ Erro ao buscar PEP: {str(pep_err)}")
+        
+        # 6. Servidores Públicos - Por nome
+        if nome_para_wiki and tipo.lower() == "cpf":
+            try:
+                cpf_val = dados_estruturados.get("dados_pessoais", {}).get("cpf")
+                info_servidores = await buscar_servidores_publicos(nome_para_wiki, cpf_val)
+                if info_servidores and info_servidores.get("encontrado"):
+                    info_publica_compilada["servidores_publicos"] = info_servidores
+            except Exception as srv_err:
+                print(f"⚠️ Erro ao buscar Servidores Públicos: {str(srv_err)}")
+        
+        # 7. Redes Sociais - Para todos
+        if nome_para_wiki:
+            try:
+                info_redes = await buscar_redes_sociais(nome_para_wiki)
+                if info_redes and info_redes.get("encontrado"):
+                    info_publica_compilada["redes_sociais"] = info_redes
+            except Exception as rede_err:
+                print(f"⚠️ Erro ao buscar Redes Sociais: {str(rede_err)}")
+        
         if info_publica_compilada:
             apis_data["info_publica"] = info_publica_compilada
     except Exception as wiki_err:
@@ -1127,6 +1155,139 @@ async def buscar_gravatar(email: str) -> dict:
         print(f"⚠️ Erro em buscar_gravatar: {str(e)}")
     
     return None
+
+async def buscar_pep(nome: str, cpf_cnpj: str = None) -> dict:
+    """
+    Busca se pessoa/empresa é PEP (Politicamente Exposta)
+    API: Transparência.gov.br
+    """
+    try:
+        if not nome or len(nome) < 2:
+            return None
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        # Buscar em API de transparência (Pessoas Politicamente Expostas)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                "https://www.transparencia.gov.br/api/pep",
+                params={"nome": nome},
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                if isinstance(data, list) and data:
+                    pessoa = data[0]
+                    return {
+                        "encontrado": True,
+                        "nome": pessoa.get("nome", nome),
+                        "cargo": pessoa.get("cargo", ""),
+                        "orgao": pessoa.get("orgao", ""),
+                        "data_inicio": pessoa.get("dataPosse", ""),
+                        "data_fim": pessoa.get("dataFimExercicio", ""),
+                        "alerta": "⚠️ PESSOA POLITICAMENTE EXPOSTA",
+                        "fonte": "Transparência.gov.br"
+                    }
+            except Exception as json_err:
+                print(f"⚠️ Erro ao fazer parse JSON do PEP: {str(json_err)}")
+        
+        return {"encontrado": False, "fonte": "Transparência.gov.br"}
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_pep: {str(e)}")
+        return None
+
+async def buscar_servidores_publicos(nome: str, cpf: str = None) -> dict:
+    """
+    Busca servidor público no Portal da Transparência
+    Retorna: cargo, salário, histórico de cargos
+    API: Portal da Transparência (dados públicos)
+    """
+    try:
+        if not nome or len(nome) < 2:
+            return None
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        # Buscar servidores públicos (busca por nome)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                "https://www.portaldatransparencia.gov.br/api-de-dados/servidores",
+                params={"nome": nome, "pagina": 1},
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                
+                # Dados podem vir como dict com 'data' ou como list direto
+                servidores = data.get("dados", data) if isinstance(data, dict) else data
+                
+                if isinstance(servidores, list) and servidores:
+                    servidor = servidores[0]
+                    return {
+                        "encontrado": True,
+                        "nome": servidor.get("nome", nome),
+                        "cpf": servidor.get("cpf", cpf or ""),
+                        "cargo": servidor.get("cargo", ""),
+                        "orgao": servidor.get("orgaoLotacao", servidor.get("orgao", "")),
+                        "tipo_vínculo": servidor.get("tipoVinculo", ""),
+                        "data_entrada": servidor.get("dataPosse", ""),
+                        "salario": servidor.get("remuneracaoMensal", ""),
+                        "fonte": "Portal da Transparência"
+                    }
+            except Exception as json_err:
+                print(f"⚠️ Erro ao fazer parse JSON do Portal Transparência: {str(json_err)}")
+        
+        return {"encontrado": False, "fonte": "Portal da Transparência"}
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_servidores_publicos: {str(e)}")
+        return None
+
+async def buscar_redes_sociais(nome: str) -> dict:
+    """
+    Verifica presença em redes sociais principais
+    Retorna: lista de redes encontradas com links de busca
+    """
+    try:
+        if not nome or len(nome) < 2:
+            return None
+        
+        # Preparar nome adequado para URLs
+        nome_url = nome.replace(" ", "%20").lower()
+        
+        redes = {
+            "Google": f"https://www.google.com/search?q={nome_url}",
+            "Twitter": f"https://twitter.com/search?q={nome_url}",
+            "LinkedIn": f"https://www.linkedin.com/search/results/people/?keywords={nome_url}",
+            "Instagram": f"https://www.instagram.com/web/search/topsearch/?query={nome_url}",
+            "Facebook": f"https://www.facebook.com/search/people/?q={nome_url}",
+            "GitHub": f"https://github.com/search?q={nome_url}&type=users",
+            "YouTube": f"https://www.youtube.com/results?search_query={nome_url}",
+        }
+        
+        return {
+            "encontrado": True,
+            "redes_verificadas": [
+                {"rede": rede, "url": url, "status": "disponível para busca"}
+                for rede, url in redes.items()
+            ],
+            "google_search": redes["Google"],
+            "fonte": "Agregador de Redes Sociais"
+        }
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_redes_sociais: {str(e)}")
+        return None
 
 async def buscar_risco_credito(cpf_cnpj: str, tipo: str) -> dict:
     """

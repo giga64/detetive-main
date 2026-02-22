@@ -1915,6 +1915,89 @@
                                 </div>
                             </div>
                         {% endif %}
+                        
+                        <!-- PEP - Pessoas Politicamente Expostas -->
+                        {% if apis_data.info_publica.pep %}
+                            <div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 16px; background: linear-gradient(135deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.05) 100%); border: 1px solid rgba(245,158,11,0.3);">
+                                <h4 style="color: #f59e0b; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"></path><circle cx="12" cy="12" r="10"></circle></svg>
+                                    ⚠️ PEP - Pessoa Politicamente Exposta
+                                </h4>
+                                <div class="api-content">
+                                    {% if apis_data.info_publica.pep.alerta %}
+                                        <p style="margin: 0 0 12px 0; padding: 10px; background: rgba(245,158,11,0.2); border-radius: 4px; color: #f59e0b; font-weight: bold; border-left: 3px solid #f59e0b;">{{ apis_data.info_publica.pep.alerta }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.pep.nome %}
+                                        <p style="margin: 8px 0;"><strong>Nome:</strong> {{ apis_data.info_publica.pep.nome }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.pep.cargo %}
+                                        <p style="margin: 8px 0;"><strong>Cargo:</strong> {{ apis_data.info_publica.pep.cargo }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.pep.orgao %}
+                                        <p style="margin: 8px 0;"><strong>Órgão:</strong> {{ apis_data.info_publica.pep.orgao }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.pep.data_inicio %}
+                                        <p style="margin: 8px 0;"><strong>Data de Início:</strong> {{ apis_data.info_publica.pep.data_inicio }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Servidores Públicos -->
+                        {% if apis_data.info_publica.servidores_publicos and apis_data.info_publica.servidores_publicos.encontrado %}
+                            <div class="api-card" style="border-left: 4px solid #06b6d4; margin-bottom: 16px; background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(6,182,212,0.02) 100%);">
+                                <h4 style="color: #06b6d4; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M16 11h6"></path></svg>
+                                    Servidor Público
+                                </h4>
+                                <div class="api-content">
+                                    {% if apis_data.info_publica.servidores_publicos.nome %}
+                                        <p style="margin: 8px 0;"><strong>Nome:</strong> {{ apis_data.info_publica.servidores_publicos.nome }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.servidores_publicos.cargo %}
+                                        <p style="margin: 8px 0;"><strong>Cargo:</strong> {{ apis_data.info_publica.servidores_publicos.cargo }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.servidores_publicos.orgao %}
+                                        <p style="margin: 8px 0;"><strong>Órgão:</strong> {{ apis_data.info_publica.servidores_publicos.orgao }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.servidores_publicos.tipo_vínculo %}
+                                        <p style="margin: 8px 0;"><strong>Tipo de Vínculo:</strong> {{ apis_data.info_publica.servidores_publicos.tipo_vínculo }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.servidores_publicos.data_entrada %}
+                                        <p style="margin: 8px 0;"><strong>Data de Entrada:</strong> {{ apis_data.info_publica.servidores_publicos.data_entrada }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.servidores_publicos.salario %}
+                                        <p style="margin: 8px 0;"><strong>Salário Mensal:</strong> R$ {{ apis_data.info_publica.servidores_publicos.salario }}</p>
+                                    {% endif %}
+                                    <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #666;">
+                                        📊 Fonte: {{ apis_data.info_publica.servidores_publicos.fonte }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Redes Sociais & Buscas Online -->
+                        {% if apis_data.info_publica.redes_sociais %}
+                            <div class="api-card" style="border-left: 4px solid #8b5cf6; margin-bottom: 16px; background: linear-gradient(135deg, rgba(139,92,246,0.05) 0%, rgba(139,92,246,0.02) 100%);">
+                                <h4 style="color: #8b5cf6; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                    Redes Sociais & Verificações Online
+                                </h4>
+                                <div class="api-content">
+                                    <p style="margin: 0 0 12px 0; font-size: 0.9rem; color: #666;">Clique nos links abaixo para buscar presença em redes sociais e motores de busca:</p>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                                        {% for rede in apis_data.info_publica.redes_sociais.redes_verificadas %}
+                                            <a href="{{ rede.url }}" target="_blank" style="display: inline-block; padding: 10px; background: rgba(139,92,246,0.15); border-radius: 6px; color: #8b5cf6; text-decoration: none; font-size: 0.85rem; border: 1px solid rgba(139,92,246,0.3); text-align: center; font-weight: 500; transition: all 0.2s;">
+                                                🔍 {{ rede.rede }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                    <p style="margin: 12px 0 0 0; font-size: 0.8rem; color: #999;">
+                                        💡 Dica: Use "Buscar no Google" para uma verificação rápida de presença online
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <div class="empty-state">
                             <p>Nenhuma informação pública disponível</p>
