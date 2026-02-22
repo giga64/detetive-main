@@ -969,7 +969,7 @@
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            Empresas
+                            Sócios
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'public-info')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -1755,11 +1755,11 @@
                             {% if dados.socios and dados.socios|length > 0 %}
                                 {% for socio in dados.socios %}
                                     <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 4px;">
-                                        <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.nome }}</div>
-                                        {% if socio.qualificacao %}
+                                        <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.get('nome') if socio is mapping else socio }}</div>
+                                        {% if socio is mapping and socio.get('qualificacao') %}
                                             <div><strong>QUALIFICAÇÃO:</strong> {{ socio.qualificacao }}</div>
                                         {% endif %}
-                                        {% if socio.cpf %}
+                                        {% if socio is mapping and socio.get('cpf') %}
                                             <div style="color: #a0a0a0; font-size: 0.9rem; margin-top: 6px;">CPF: {{ socio.cpf }}</div>
                                         {% endif %}
                                     </div>
