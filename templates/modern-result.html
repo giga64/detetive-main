@@ -1919,6 +1919,9 @@
         function switchTab(event, tabName) {
             event.preventDefault();
             
+            // Pegar o botão correto (pode ser clicado no SVG ou texto dentro dele)
+            const button = event.target.closest('.tab-btn');
+            
             // Esconder todos os tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -1930,8 +1933,14 @@
             });
             
             // Mostrar tab selecionado
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const tabElement = document.getElementById(tabName);
+            if (tabElement) {
+                tabElement.classList.add('active');
+            }
+            
+            if (button) {
+                button.classList.add('active');
+            }
         }
 
         async function reverseSearch(value, type) {
@@ -2184,14 +2193,20 @@
             const mapTitle = document.getElementById('mapTitle');
             const infoPanel = document.getElementById('mapInfoPanel');
             
+            if (!modal || !mapContainer || !mapTitle || !infoPanel) {
+                console.error('Elementos do modal não encontrados');
+                return;
+            }
+            
             // Atualizar título
             mapTitle.textContent = 'Street View: ' + address;
             
             // Mostrar modal
             modal.classList.add('show');
             
-            // Mostrar loading
-            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem; font-size: 3rem;">' + getSVG('map') + '</div><div>Carregando mapa...</div></div></div>';
+            // Mostrar loading com SVG inline
+            const mapIconSVG = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>';
+            mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #06b6d4; font-size: 1.2rem;"><div style="text-align: center;"><div style="margin-bottom: 1rem;">' + mapIconSVG + '</div><div>Carregando mapa...</div></div></div>';
             infoPanel.innerHTML = '<p style="color: #94a3b8;">Geocodificando endereço...</p>';
             
             // Geocodificar o endereço
