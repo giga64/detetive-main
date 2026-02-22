@@ -661,6 +661,10 @@
             box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
         }
 
+        .hidden-address {
+            display: none !important;
+        }
+
         /* ===== APIs ENRIQUECIDAS ===== */
         .apis-enrichment-section {
             margin-top: 30px;
@@ -2608,7 +2612,13 @@
                     shouldShow = detectedType === 'rural';
                 }
                 
-                item.style.display = shouldShow ? 'flex' : 'none';
+                // Usar classe para ocultar em vez de style display
+                if (shouldShow) {
+                    item.style.removeProperty('display');
+                    item.classList.remove('hidden-address');
+                } else {
+                    item.classList.add('hidden-address');
+                }
             });
         }
         
