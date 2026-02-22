@@ -1,0 +1,9 @@
+# Railway Configuration
+[environments.production]
+builder = "nixpacks"
+
+[[build.nixpacks.deps]]
+apt = ["tesseract-ocr", "python3.13"]
+
+[start]
+cmd = "uvicorn app:app --host 0.0.0.0 --port $PORT"
