@@ -1513,7 +1513,9 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
 async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dict:
     """
     Busca informações completas de advogado/estagiário no site da OAB
-    Extrai: nome, endereço, telefone, seccional, situação, data, foto
+    1. Faz busca inicial para encontrar o link oculto (hdLink)
+    2. Acessa a página de detalhes usando o link
+    3. Extrai dados completos: nome, endereço, telefone, seccional, situação, data, foto
     
     Args:
         numero: Número da inscrição OAB (aceita múltiplos formatos)
@@ -1552,7 +1554,7 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             "Content-Type": "application/x-www-form-urlencoded"
         }
         
-        # Faz a requisição
+        # REQUISIÇÃO 1: Busca inicial
         response = requests.post(url, data=payload, headers=headers, timeout=15, allow_redirects=True)
         
         if response.status_code != 200:
@@ -1573,9 +1575,9 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
                 "fonte": "OAB - Cadastro Nacional de Advogados"
             }
         
-        # Parse do HTML com regex
         import re
         
+        # ===== EXTRAÇÃO DADOS RESUMIDOS (da página de busca) =====
         dados = {
             "encontrado": True,
             "numero_inscricao": f"{numero}/{estado}",
@@ -1585,103 +1587,147 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             "fonte": "OAB - Cadastro Nacional de Advogados"
         }
         
-        # ===== EXTRAÇÃO DE DADOS =====
-        
-        # 1. Nome completo
+        # Extrai nome da página resumida
         nome_patterns = [
-            r'<strong[^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</strong>',  # Em <strong>
-            r'<h[23][^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</h[23]>',   # Em títulos
-            r'Nome:[^<]*</[^>]+>\s*([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)',  # Após label
+            r'<span><strong>Nome:</strong></span>\s*<span>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</span>',
+            r'<strong[^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</strong>',
+            r'Nome:[^<]*</[^>]+>\s*([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)',
         ]
         
         for pattern in nome_patterns:
             nome_match = re.search(pattern, html, re.IGNORECASE)
             if nome_match:
                 nome = nome_match.group(1).strip()
-                if len(nome) > 5:  # Garante que é um nome válido
+                if len(nome) > 5:
                     dados["nome"] = nome
                     break
         
-        # 2. Inscrição (número OAB)
-        inscricao_match = re.search(r'Inscrição[:\s]*([0-9\.]+)', html, re.IGNORECASE)
-        if inscricao_match:
-            dados["inscricao"] = inscricao_match.group(1).strip()
+        # ===== BUSCAR LINK OCULTO (hdLink) =====
+        # Este é o link que leva aos dados completos
+        hdlink_match = re.search(r'<input[^>]*name=["\']hdLink["\'][^>]*value=["\']([^"\']+)["\']', html)
         
-        # 3. Seccional/UF
-        seccional_match = re.search(r'Seccional[:\s]*([A-Z]{2})', html, re.IGNORECASE)
-        if seccional_match:
-            dados["seccional"] = seccional_match.group(1).strip()
+        if not hdlink_match:
+            # Tenta padrão alternativo
+            hdlink_match = re.search(r'name=["\']hdLink["\'][^>]*value=["\']([^"\']+)["\']', html)
         
-        # 4. Subseção
-        subseccao_match = re.search(r'Subseção[:\s]*([^\n<]+)', html, re.IGNORECASE)
-        if subseccao_match:
-            dados["subseccao"] = subseccao_match.group(1).strip()
-        
-        # 5. Situação (status)
-        situacao_match = re.search(r'Situação[:\s]*([^\n<]+)', html, re.IGNORECASE)
-        if situacao_match:
-            situacao = situacao_match.group(1).strip()
-            # Limpar HTML tags
-            situacao = re.sub(r'<[^>]+>', '', situacao).strip()
-            dados["situacao"] = situacao
-        
-        # 6. Data de Inscrição
-        data_match = re.search(r'Data de Inscrição[:\s]*(\d{1,2}/\d{1,2}/\d{4})', html, re.IGNORECASE)
-        if data_match:
-            dados["data_inscricao"] = data_match.group(1).strip()
-        
-        # 7. Endereço Profissional (completo)
-        endereco_patterns = [
-            r'Endereço[^:]*:\s*([^\n<]+)',
-            r'RUA\s+([^\n<]+)',
-            r'AVENIDA\s+([^\n<]+)',
-        ]
-        
-        endereco_completo = []
-        
-        # Tenta capturar rua
-        rua_match = re.search(r'(?:RUA|AV|AVENIDA|ALAMEDA)[^:]*[:\s]+([^\n<]+)', html, re.IGNORECASE)
-        if rua_match:
-            endereco_completo.append(rua_match.group(1).strip())
-        
-        # Tenta capturar bairro
-        bairro_match = re.search(r'Bairro[:\s]*([^\n<]+)', html, re.IGNORECASE)
-        if bairro_match:
-            endereco_completo.append(bairro_match.group(1).strip())
-        
-        # Tenta capturar cidade
-        cidade_match = re.search(r'Cidade[:\s]*([^\n<]+)', html, re.IGNORECASE)
-        if cidade_match:
-            endereco_completo.append(cidade_match.group(1).strip())
-        
-        # Tenta capturar CEP
-        cep_match = re.search(r'(?:CEP|Cep)[:\s]*(\d{5}-?\d{3})', html, re.IGNORECASE)
-        if cep_match:
-            endereco_completo.append(cep_match.group(1).strip())
-        
-        if endereco_completo:
-            dados["endereco"] = " - ".join(endereco_completo)
-        
-        # 8. Telefone Profissional
-        telefone_match = re.search(r'Telefone[^:]*:\s*(\(?[\d\s\-\.]+\)?)', html, re.IGNORECASE)
-        if telefone_match:
-            dados["telefone"] = telefone_match.group(1).strip()
-        
-        # 9. Email Profissional (se houver)
-        email_match = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', html)
-        if email_match:
-            dados["email"] = email_match.group(1).strip()
-        
-        # 10. Foto/Avatar (URL da imagem)
-        foto_match = re.search(r'<img[^>]*src=["\']([^"\']*(?:\.png|\.jpg|\.jpeg))["\'][^>]*>', html, re.IGNORECASE)
-        if foto_match:
-            foto_url = foto_match.group(1).strip()
-            # Se for URL relativa, converte para absoluta
-            if not foto_url.startswith('http'):
-                foto_url = 'https://cna.oab.org.br/' + foto_url.lstrip('/')
-            dados["foto"] = foto_url
+        if hdlink_match:
+            # REQUISIÇÃO 2: Acessar página de detalhes
+            detail_link = hdlink_match.group(1).strip()
+            if not detail_link.startswith('http'):
+                detail_link = 'https://cna.oab.org.br' + detail_link
+            
+            print(f"📄 Acessando detalhes: {detail_link[:80]}...")
+            
+            try:
+                response_detail = requests.get(
+                    detail_link, 
+                    headers=headers, 
+                    timeout=15, 
+                    allow_redirects=True
+                )
+                
+                if response_detail.status_code == 200:
+                    html_detail = response_detail.text
+                    
+                    # ===== EXTRAÇÃO DADOS COMPLETOS =====
+                    
+                    # 1. Nome (completo, pode ser mais preciso)
+                    nome_det = re.search(r'<h1[^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</h1>', html_detail, re.IGNORECASE)
+                    if not nome_det:
+                        nome_det = re.search(r'<strong[^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</strong>', html_detail)
+                    if nome_det:
+                        nome = nome_det.group(1).strip()
+                        if len(nome) > 5:
+                            dados["nome"] = nome
+                    
+                    # 2. Inscrição
+                    inscricao = re.search(r'Inscrição[:\s]*(\d+(?:[.\-]\d+)?)', html_detail, re.IGNORECASE)
+                    if inscricao:
+                        dados["inscricao"] = inscricao.group(1).strip()
+                    
+                    # 3. Seccional
+                    seccional = re.search(r'Seccional[:\s]*([A-Z]{2})', html_detail, re.IGNORECASE)
+                    if seccional:
+                        dados["seccional"] = seccional.group(1).strip()
+                    
+                    # 4. Subseção
+                    subseccao = re.search(r'Subseção[:\s]*([^\n<]+?)(?:</|<br|$)', html_detail, re.IGNORECASE)
+                    if subseccao:
+                        dados["subseccao"] = subseccao.group(1).strip()
+                    
+                    # 5. Situação
+                    situacao = re.search(r'Situação[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
+                    if situacao:
+                        situ = situacao.group(1).strip()
+                        situ = re.sub(r'<[^>]+>', '', situ).strip()
+                        dados["situacao"] = situ
+                    
+                    # 6. Data de Inscrição
+                    data = re.search(r'Data de Inscrição[:\s]*(\d{1,2}/\d{1,2}/\d{4})', html_detail, re.IGNORECASE)
+                    if data:
+                        dados["data_inscricao"] = data.group(1).strip()
+                    
+                    # 7. Endereço Profissional (completo)
+                    endereco_parts = []
+                    
+                    # Rua/Avenida
+                    rua = re.search(r'(?:RUA|AVENIDA|ALAMEDA|AV\.?)[^:]*[:\s]+([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
+                    if rua:
+                        endereco_parts.append(rua.group(1).strip())
+                    
+                    # Bairro
+                    bairro = re.search(r'Bairro[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
+                    if bairro:
+                        endereco_parts.append(bairro.group(1).strip())
+                    
+                    # Cidade
+                    cidade = re.search(r'Cidade[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
+                    if cidade:
+                        endereco_parts.append(cidade.group(1).strip())
+                    
+                    # CEP
+                    cep = re.search(r'CEP[:\s]*(\d{5}-?\d{3})', html_detail, re.IGNORECASE)
+                    if cep:
+                        endereco_parts.append(cep.group(1).strip())
+                    
+                    if endereco_parts:
+                        dados["endereco"] = " - ".join(endereco_parts)
+                    
+                    # 8. Telefone Profissional
+                    telefone = re.search(r'Telefone(?:\s+Profissional)?[:\s]*(\(?[\d\s\-\.]+\)?)', html_detail, re.IGNORECASE)
+                    if telefone:
+                        dados["telefone"] = telefone.group(1).strip()
+                    
+                    # 9. Email
+                    email = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', html_detail)
+                    if email:
+                        dados["email"] = email.group(1).strip()
+                    
+                    # 10. Foto (busca URL de imagem)
+                    foto = re.search(r'<img[^>]*src=["\']([^"\']*(?:\.png|\.jpg|\.jpeg|\.gif))["\']', html_detail, re.IGNORECASE)
+                    if foto:
+                        foto_url = foto.group(1).strip()
+                        if not foto_url.startswith('http'):
+                            foto_url = 'https://cna.oab.org.br/' + foto_url.lstrip('/')
+                        dados["foto"] = foto_url
+                    
+                    print(f"✅ Dados completos extraídos com sucesso")
+                    
+            except Exception as detail_err:
+                print(f"⚠️ Erro ao extrair detalhes completos: {str(detail_err)}")
+                # Continua mesmo se falhar em extrair detalhes
         
         return dados
+        
+    except requests.Timeout:
+        print(f"⚠️ Timeout ao consultar OAB")
+        return {
+            "encontrado": False,
+            "erro": "Timeout ao consultar servidor da OAB",
+            "fonte": "OAB - Cadastro Nacional de Advogados"
+        }
+    except Exception as e:
+        print(f"⚠️ Erro ao buscar OAB: {str(e)}")
         
     except requests.Timeout:
         print(f"⚠️ Timeout ao consultar OAB")
