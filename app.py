@@ -1536,7 +1536,8 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
         try:
             from oab_ocr import buscar_dados_completos_oab_com_ocr
         except ImportError:
-            print("⚠️ Módulo oab_ocr não encontrado, usando fallback API")
+            print("⚠️ Módulo oab_ocr não encontrado, usando método anterior")
+            # Fallback para método anterior
             return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
         url_base = "https://cna.oab.org.br"

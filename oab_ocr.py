@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
     """
-    Extrai dados da ficha OAB usando OCR via PaddleOCR.
+    Extrai dados da ficha OAB usando OCR na imagem.
     
     Args:
         imagem_bytes: Bytes da imagem JPEG da ficha
@@ -17,139 +17,23 @@ def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
         Dict com campos: nome, inscrição, seccional, subseccao, endereco, telefone, tipo
     """
     try:
-        from paddleocr import PaddleOCR
+        import easyocr
         from PIL import Image
     except ImportError:
-        raise ImportError("Instale paddleocr e pillow com: pip install paddleocr pillow")
+        raise ImportError("Instale easyocr e pillow com: pip install easyocr pillow")
     
-    # Inicializar PaddleOCR com português
-    ocr = PaddleOCR(use_angle_cls=True, lang='pt')
+    # Inicializar OCR (cache de modelo)
+    reader = easyocr.Reader(['pt'], gpu=False)
     
     # Converter bytes para imagem PIL
     img = Image.open(io.BytesIO(imagem_bytes))
     
-    # Salvar temporariamente para processar com PaddleOCR
-    import tempfile
-    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
-        img.save(tmp.name)
-        tmp_path = tmp.name
+    # Fazer OCR
+    resultado_ocr = reader.readtext(img)
     
-    try:
-        # Fazer OCR com PaddleOCR
-        resultado = ocr.ocr(tmp_path, cls=True)
-        
-        # Extrair texto de todas as linhas
-        texto_completo = "\n".join([line[0][1] for linha in resultado for line in linha]) if resultado else ""
-    finally:
-        import os
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-    
-    # Inicializar dados
-    dados = {
-        "nome": None,
-        "inscricao": None,
-        "tipo": None,
-        "seccional": None,
-        "subseccao": None,
-        "endereco": None,
-        "telefone": None,
-        "cep": None,
-    }
-    
-    # ========== EXTRAÇÃO DE CAMPOS ==========
-    
-    linhas_texto = texto_completo.split("\n")
-    
-    # 1. NOME - primeira linha que começa com maiúscula
-    for linha in linhas_texto:
-        if re.match(r'^[A-Z].*[A-Z].*', linha) and 'Inscrição' not in linha and len(linha) > 5:
-            dados['nome'] = linha.strip()
-            break
-    
-    # 2. INSCRIÇÃO - linha que é apenas 4 dígitos
-    for i, linha in enumerate(linhas_texto):
-        if re.match(r'^\d{4}$', linha.strip()):
-            dados['inscricao'] = linha.strip()
-            break
-    
-    # 3. TIPO - procura por palavras-chave
-    if 'ADVOGADO' in texto_completo.upper():
-        dados['tipo'] = 'Advogado'
-    elif 'ESTAGIÁRIO' in texto_completo.upper():
-        dados['tipo'] = 'Estagiário'
-    elif 'SUPLEMENTAR' in texto_completo.upper():
-        dados['tipo'] = 'Suplementar'
-    
-    # 4. SECCIONAL - UF específica
-    uf_pattern = r'\b([A-Z]{2})\b'
-    matches_uf = re.finditer(uf_pattern, texto_completo)
-    
-    estados_validos = {
-        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
-        'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
-        'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-    }
-    
-    for match in matches_uf:
-        uf = match.group(1)
-        if uf in estados_validos:
-            contexto_ante = texto_completo[max(0, match.start()-20):match.start()]
-            if 'Seccional' in contexto_ante or re.search(r'\d', contexto_ante):
-                dados['seccional'] = uf
-                break
-    
-    if not dados['seccional']:
-        for match in matches_uf:
-            if match.group(1) in estados_validos:
-                dados['seccional'] = match.group(1)
-                break
-    
-    # 5. SUBSEÇÃO - procura por "CONSELHO"
-    subsec_match = re.search(
-        r'(CONSELHO\s+SECCIONAL[^\n]*(?:RN|RIO\s+GRANDE\s+DO\s+NORTE)?)',
-        texto_completo,
-        re.IGNORECASE
-    )
-    if subsec_match:
-        subsec_raw = subsec_match.group(1).replace('\n', ' ').strip()
-        subsec_clean = re.sub(r'\s+(Endereço|Telefone|situacao|E-mail).*', '', subsec_raw, flags=re.IGNORECASE)
-        dados['subseccao'] = subsec_clean.strip()
-    
-    # 6. ENDEREÇO - procura por RUA, AV, etc
-    endereco_pattern = r'(RUA|AV(?:ENIDA)?|PRAÇA|TRAVESSA|TV|R\.)\s+[^,\n]*'
-    endereco_match = re.search(endereco_pattern, texto_completo, re.IGNORECASE)
-    
-    if endereco_match:
-        start = endereco_match.start()
-        resto_texto = texto_completo[start:]
-        
-        fim = len(resto_texto)
-        match_fim = re.search(r'\b(RN|59020|NATAL|Telefone|situacao)', resto_texto, re.IGNORECASE)
-        if match_fim:
-            fim = match_fim.start()
-        
-        endereco_bruto = resto_texto[:fim].strip()
-        endereco_limpo = ' '.join(endereco_bruto.split())
-        dados['endereco'] = endereco_limpo
-    
-    # 7. TELEFONE - padrão (XX) XXXX-XXXX
-    tel_pattern = r'\(?(\d{2})\)?\s*(\d{4,5})-?(\d{4})'
-    tel_match = re.search(tel_pattern, texto_completo)
-    
-    if tel_match:
-        dados['telefone'] = f"({tel_match.group(1)}) {tel_match.group(2)}-{tel_match.group(3)}"
-    
-    # 8. CEP - extras para complementar endereço
-    cep_pattern = r'(\d{5})-?(\d{3,4})'
-    cep_match = re.search(cep_pattern, texto_completo)
-    if cep_match:
-        dados['cep'] = f"{cep_match.group(1)}-{cep_match.group(2)}"
-    
-    # Limpar valores None e vazios
-    dados = {k: v for k, v in dados.items() if v}
-    
-    return dados
+    # Extrair texto
+    linhas_texto = [deteccao[1] for deteccao in resultado_ocr]
+    texto_completo = "\n".join(linhas_texto)
     
     # Inicializar dados
     dados = {
