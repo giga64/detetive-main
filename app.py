@@ -1512,270 +1512,87 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
 
 async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dict:
     """
-    Busca informações completas de advogado/estagiário no site da OAB
-    1. Faz busca inicial para encontrar o link oculto (hdLink)
-    2. Acessa a página de detalhes usando o link
-    3. Extrai dados completos: nome, endereço, telefone, seccional, situação, data, foto
+    Busca informações completas de advogado OAB usando OCR da ficha.
+    
+    Extrai 7+ campos: nome, inscrição, seccional, subseção, endereço, telefone, tipo
     
     Args:
-        numero: Número da inscrição OAB (aceita múltiplos formatos)
+        numero: Número da inscrição OAB
         estado: Sigla do estado (UF)
         tipo_inscricao: A=Advogado, E=Estagiário, S=Suplementar
-    Returns:
-        dict com dados completos do advogado ou erro se não encontrado
     """
     try:
-        # Normaliza o número OAB conforme o estado
+        # Normaliza número
         numero_normalizado, valido = normalizar_numero_oab(numero, estado)
         
         if not valido:
             return {
                 "encontrado": False,
-                "erro": f"Formato de OAB inválido para o estado {estado}",
+                "erro": f"Formato de OAB inválido para {estado}",
                 "fonte": "OAB - Cadastro Nacional de Advogados"
             }
         
-        # URL do site da OAB
-        url = "https://cna.oab.org.br/"
+        # Importar função OCR
+        try:
+            from oab_ocr import buscar_dados_completos_oab_com_ocr
+        except ImportError:
+            print("⚠️ Módulo oab_ocr não encontrado, usando método anterior")
+            # Fallback para método anterior
+            return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
-        # Prepara os dados do formulário
-        payload = {
-            "nome": "",  # Pode deixar vazio se tiver número
-            "numero": numero_normalizado,
-            "uf": estado.upper(),
-            "tipoInscricao": tipo_inscricao.upper()
-        }
-        
+        url_base = "https://cna.oab.org.br"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": "https://cna.oab.org.br/",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "pt-BR,pt;q=0.9",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
         }
         
-        # REQUISIÇÃO 1: Busca inicial
-        print(f"🔍 Buscando OAB: {numero_normalizado}/{estado}")
-        response = requests.post(url, data=payload, headers=headers, timeout=15, allow_redirects=True)
+        print(f"🔍 Buscando OAB completa com OCR: {numero_normalizado}/{estado}")
         
-        if response.status_code != 200:
-            print(f"⚠️ OAB retornou status {response.status_code}")
-            return {
-                "encontrado": False,
-                "erro": f"Servidor OAB retornou status {response.status_code}",
-                "fonte": "OAB - Cadastro Nacional de Advogados"
+        session = requests.Session()
+        session.headers.update(headers)
+        
+        # Usar nova função com OCR
+        try:
+            resultado = buscar_dados_completos_oab_com_ocr(numero_normalizado, estado, session, url_base)
+            
+            if not resultado.get('encontrado'):
+                return {
+                    "encontrado": False,
+                    "mensagem": resultado.get('erro', 'Não encontrado'),
+                    "fonte": "OAB - OCR"
+                }
+            
+            # Estruturar resposta
+            dados = {
+                "encontrado": True,
+                "numero_inscricao": f"{resultado.get('inscricao', numero)}/{estado}",
+                "numero_normalizado": numero_normalizado,
+                "estado": estado,
+                "tipo_inscricao": resultado.get('tipo', 'Advogado'),
+                "fonte": "OAB - OCR da Ficha",
+                "nome": resultado.get('nome', ''),
+                "inscricao": resultado.get('inscricao', ''),
+                "seccional": resultado.get('seccional', ''),
+                "subseccao": resultado.get('subseccao', ''),
+                "endereco": resultado.get('endereco', ''),
+                "telefone": resultado.get('telefone', ''),
+                "cep": resultado.get('cep', '')
             }
-        
-        html = response.text
-        print(f"📄 HTML recebido: {len(html)} bytes")
-        
-        # Verifica se encontrou resultado
-        if "Nenhum resultado encontrado" in html or "não foi encontrado" in html.lower():
-            print(f"❌ Nenhum resultado encontrado")
-            return {
-                "encontrado": False,
-                "mensagem": f"OAB {numero}/{estado} não encontrada",
-                "fonte": "OAB - Cadastro Nacional de Advogados"
-            }
-        
-        # Verifica se divResult existe
-        if "divResult" not in html:
-            print(f"⚠️ divResult não encontrado no HTML - tentando parsing alternativo")
-        
-        import re
-        
-        # ===== EXTRAÇÃO DADOS RESUMIDOS (da página de busca) =====
-        dados = {
-            "encontrado": True,
-            "numero_inscricao": f"{numero}/{estado}",
-            "numero_normalizado": numero_normalizado,
-            "estado": estado,
-            "tipo_inscricao": "Advogado" if tipo_inscricao == "A" else ("Estagiário" if tipo_inscricao == "E" else "Suplementar"),
-            "fonte": "OAB - Cadastro Nacional de Advogados"
-        }
-        
-        # Extrai bloco divResult com o resultado
-        divresult = re.search(r'<div\s+id=["\']?divResult["\']?[^>]*>(.*?)</div>\s*</div>', html, re.DOTALL | re.IGNORECASE)
-        
-        if divresult:
-            div_content = divresult.group(1)
-            print(f"✅ divResult encontrado: {len(div_content)} bytes de conteúdo")
             
-            # Extrai Nome (rowName)
-            nome_search = re.search(r'<div\s+class=["\']?rowName["\']?[^>]*>(.*?)</div>', div_content, re.DOTALL)
-            if nome_search:
-                nome_html = nome_search.group(1)
-                # Remove tags e pega o texto
-                nome_text = re.sub(r'<[^>]+>', ' ', nome_html)
-                # Pega após "Nome:" ou simplesmente a segunda ocorrência de texto
-                nome_parts = [t.strip() for t in nome_text.split(':') if t.strip()]
-                if len(nome_parts) >= 2:
-                    dados["nome"] = nome_parts[1].strip()
-                    print(f"📝 Nome: {dados['nome']}")
+            print(f"✅ Busca concluída com sucesso!")
+            print(f"   Nome: {dados['nome']}")
+            print(f"   Telefone: {dados.get('telefone', 'N/A')}")
             
-            # Extrai Tipo (rowTipoInsc)
-            tipo_search = re.search(r'<div\s+class=["\']?rowTipoInsc["\']?[^>]*>(.*?)</div>', div_content, re.DOTALL)
-            if tipo_search:
-                tipo_html = tipo_search.group(1)
-                tipo_text = re.sub(r'<[^>]+>', '', tipo_html).strip()
-                # Remove "Tipo:" e pega o valor
-                tipo_val = re.sub(r'Tipo:\s*', '', tipo_text, flags=re.IGNORECASE).strip()
-                if tipo_val:
-                    dados["tipo_inscricao_raw"] = tipo_val
-                    print(f"💼 Tipo: {tipo_val}")
+            return dados
             
-            # Extrai Inscrição (rowInsc)
-            insc_search = re.search(r'<div\s+class=["\']?rowInsc["\']?[^>]*>(.*?)</div>', div_content, re.DOTALL)
-            if insc_search:
-                insc_html = insc_search.group(1)
-                insc_text = re.sub(r'<[^>]+>', '', insc_html).strip()
-                insc_val = re.sub(r'Inscrição:\s*', '', insc_text, flags=re.IGNORECASE).strip()
-                if insc_val:
-                    dados["inscricao"] = insc_val
-                    print(f"🔢 Inscrição: {insc_val}")
-            
-            # Extrai UF (rowUf)
-            uf_search = re.search(r'<div\s+class=["\']?rowUf["\']?[^>]*>(.*?)</div>', div_content, re.DOTALL)
-            if uf_search:
-                uf_html = uf_search.group(1)
-                uf_text = re.sub(r'<[^>]+>', '', uf_html).strip()
-                uf_val = re.sub(r'UF:\s*', '', uf_text, flags=re.IGNORECASE).strip()
-                if uf_val:
-                    dados["seccional"] = uf_val
-                    print(f"🗺️ Seccional: {uf_val}")
-            
-            # Extrai hdLink (link para detalhes completos)
-            hdlink = re.search(r'<input[^>]*name=["\']hdLink["\'][^>]*value=["\']([^"\']+)["\']', div_content)
-            
-            if hdlink:
-                hdlink_value = hdlink.group(1).strip()
-                print(f"🔗 hdLink encontrado: {hdlink_value[:60]}...")
-                
-                # REQUISIÇÃO 2: Acessar página de detalhes
-                detail_url = hdlink_value
-                if not detail_url.startswith('http'):
-                    detail_url = 'https://cna.oab.org.br' + detail_url
-                
-                print(f"📄 Acessando detalhes...")
-                
-                try:
-                    response_detail = requests.get(
-                        detail_url, 
-                        headers=headers, 
-                        timeout=15, 
-                        allow_redirects=True
-                    )
-                    
-                    if response_detail.status_code == 200:
-                        html_detail = response_detail.text
-                        print(f"✅ Página de detalhes recebida: {len(html_detail)} bytes")
-                        
-                        # ===== EXTRAÇÃO DADOS COMPLETOS =====
-                        
-                        # 1. Nome (mais preciso da página detalhe)
-                        nome_det = re.search(r'<h1[^>]*>([^<]+)</h1>', html_detail, re.IGNORECASE)
-                        if nome_det:
-                            nome = nome_det.group(1).strip()
-                            if len(nome) > 5:
-                                dados["nome"] = nome
-                                print(f"📝 Nome (detalhes): {nome}")
-                        
-                        # 2. Inscrição
-                        insc_det = re.search(r'Inscrição[:\s]*(\d+(?:[.\-]\d+)?)', html_detail, re.IGNORECASE)
-                        if insc_det:
-                            dados["inscricao"] = insc_det.group(1).strip()
-                        
-                        # 3. Seccional
-                        secc_det = re.search(r'Seccional[:\s]*([A-Z]{2})', html_detail, re.IGNORECASE)
-                        if secc_det:
-                            dados["seccional"] = secc_det.group(1).strip()
-                        
-                        # 4. Subseção
-                        subsec_det = re.search(r'Subseção[:\s]*([^\n<]+?)(?:</|<br|$)', html_detail, re.IGNORECASE)
-                        if subsec_det:
-                            dados["subseccao"] = subsec_det.group(1).strip()
-                            print(f"🏛️ Subseção: {dados['subseccao']}")
-                        
-                        # 5. Situação
-                        situ_det = re.search(r'Situação[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
-                        if situ_det:
-                            situ = situ_det.group(1).strip()
-                            situ = re.sub(r'<[^>]+>', '', situ).strip()
-                            dados["situacao"] = situ
-                            print(f"🟢 Situação: {situ}")
-                        
-                        # 6. Data de Inscrição
-                        data_det = re.search(r'Data de Inscrição[:\s]*(\d{1,2}/\d{1,2}/\d{4})', html_detail, re.IGNORECASE)
-                        if data_det:
-                            dados["data_inscricao"] = data_det.group(1).strip()
-                            print(f"📅 Data: {dados['data_inscricao']}")
-                        
-                        # 7. Endereço Profissional
-                        endereco_parts = []
-                        
-                        rua_det = re.search(r'(?:RUA|AVENIDA|ALAMEDA|AV\.?)[^:]*[:\s]+([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
-                        if rua_det:
-                            rua = rua_det.group(1).strip()
-                            endereco_parts.append(rua)
-                            print(f"🏠 Rua: {rua}")
-                        
-                        bairro_det = re.search(r'Bairro[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
-                        if bairro_det:
-                            endereco_parts.append(bairro_det.group(1).strip())
-                        
-                        cidade_det = re.search(r'Cidade[:\s]*([^\n<]+?)(?:</|$)', html_detail, re.IGNORECASE)
-                        if cidade_det:
-                            endereco_parts.append(cidade_det.group(1).strip())
-                        
-                        cep_det = re.search(r'CEP[:\s]*(\d{5}-?\d{3})', html_detail, re.IGNORECASE)
-                        if cep_det:
-                            endereco_parts.append(cep_det.group(1).strip())
-                        
-                        if endereco_parts:
-                            dados["endereco"] = " - ".join(endereco_parts)
-                            print(f"📍 Endereço: {dados['endereco']}")
-                        
-                        # 8. Telefone Profissional
-                        tel_det = re.search(r'Telefone(?:\s+Profissional)?[:\s]*(\(?[\d\s\-\(\)\.]+\)?)', html_detail, re.IGNORECASE)
-                        if tel_det:
-                            dados["telefone"] = tel_det.group(1).strip()
-                            print(f"☎️ Telefone: {dados['telefone']}")
-                        
-                        # 9. Email
-                        email_det = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', html_detail)
-                        if email_det:
-                            dados["email"] = email_det.group(1).strip()
-                            print(f"📧 Email: {dados['email']}")
-                        
-                        # 10. Foto do Advogado
-                        foto_det = re.search(r'<img[^>]*src=["\']([^"\']+(?:\.png|\.jpg|\.jpeg|\.gif))["\'][^>]*>', html_detail, re.IGNORECASE)
-                        if foto_det:
-                            foto_url = foto_det.group(1).strip()
-                            if not foto_url.startswith('http'):
-                                foto_url = 'https://cna.oab.org.br' + foto_url.lstrip('/')
-                            dados["foto"] = foto_url
-                            print(f"📸 Foto: {foto_url[:60]}...")
-                        
-                        print(f"✅ Extração de detalhes concluída!")
-                    else:
-                        print(f"⚠️ Status {response_detail.status_code} ao acessar detalhes")
-                        
-                except Exception as detail_err:
-                    print(f"⚠️ Erro ao acessar detalhes: {str(detail_err)}")
-            else:
-                print(f"⚠️ hdLink não encontrado")
-        else:
-            print(f"⚠️ divResult não encontrado - HTML mal formatado ou estrutura diferente")
+        except Exception as e:
+            print(f"❌ Erro ao extrair com OCR: {e}")
+            # Fallback para API
+            return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
-        return dados
-        
-    except requests.Timeout:
-        print(f"⚠️ Timeout ao consultar OAB")
-        return {
-            "encontrado": False,
-            "erro": "Timeout ao consultar servidor da OAB",
-            "fonte": "OAB - Cadastro Nacional de Advogados"
-        }
     except Exception as e:
         print(f"⚠️ Erro ao buscar OAB: {str(e)}")
         import traceback
@@ -1785,6 +1602,86 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             "erro": str(e),
             "fonte": "OAB - Cadastro Nacional de Advogados"
         }
+
+
+async def buscar_oab_api_simples(numero: str, estado: str, tipo_inscricao: str = "A") -> dict:
+    """
+    Fallback: Busca OAB usando apenas API (sem OCR)
+    Extrai: nome, inscrição, seccional (5 campos)
+    """
+    try:
+        url_base = "https://cna.oab.org.br"
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "pt-BR,pt;q=0.9",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+        }
+        
+        print(f"🔍 Buscando OAB (modo simples): {numero}/{estado}")
+        
+        session = requests.Session()
+        resp_get = session.get(url_base + "/", headers=headers, timeout=15)
+        
+        import re
+        csrf_match = re.search(r'name="__RequestVerificationToken"[^>]*value="([^"]+)"', resp_get.text)
+        if not csrf_match:
+            return {"encontrado": False, "erro": "Token CSRF não obtido"}
+        
+        csrf_token = csrf_match.group(1)
+        print(f"✅ Token obtido")
+        
+        # Buscar
+        tipo_map = {"A": "1", "E": "2", "S": "3"}
+        tipo_num = tipo_map.get(tipo_inscricao.upper(), "1")
+        
+        payload = {
+            "NomeAdvo": "",
+            "Insc": numero,
+            "Uf": estado.upper(),
+            "TipoInsc": tipo_num,
+            "__RequestVerificationToken": csrf_token,
+            "IsMobile": ""
+        }
+        
+        resp_search = session.post(url_base + "/Home/Search", data=payload, headers=headers, timeout=15)
+        
+        if resp_search.status_code != 200:
+            return {"encontrado": False, "erro": f"HTTP {resp_search.status_code}"}
+        
+        try:
+            search_data = resp_search.json()
+        except:
+            return {"encontrado": False, "erro": "Resposta inválida"}
+        
+        if not search_data.get("Success"):
+            return {
+                "encontrado": False,
+                "mensagem": search_data.get('ResultMessage', 'Não encontrado')
+            }
+        
+        data_list = search_data.get('Data', [])
+        if not data_list:
+            return {"encontrado": False, "mensagem": f"OAB {numero}/{estado} não encontrada"}
+        
+        resultado = data_list[0]
+        
+        return {
+            "encontrado": True,
+            "numero_inscricao": f"{resultado.get('Inscricao')}/{estado}",
+            "numero_normalizado": numero,
+            "estado": estado,
+            "tipo_inscricao": "Advogado" if tipo_inscricao.upper() == "A" else ("Estagiário" if tipo_inscricao.upper() == "E" else "Suplementar"),
+            "fonte": "OAB - API",
+            "nome": resultado.get('Nome', ''),
+            "inscricao": resultado.get('Inscricao', ''),
+            "seccional": resultado.get('UF', '')
+        }
+        
+    except Exception as e:
+        return {"encontrado": False, "erro": str(e)}
 
 def calcular_risk_score_juridico(dados: dict, tipo: str) -> dict:
     """
