@@ -1382,24 +1382,6 @@
                                     </div>
                                 </div>
                             {% endif %}
-
-                            <!-- Sócios e Administradores -->
-                            {% if dados.socios and dados.socios|length > 0 %}
-                                <div style="background: rgba(34, 197, 94, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                                    <h3 style="color: #22c55e; margin-bottom: 15px;">Quadro de Sócios e Administradores</h3>
-                                    {% for socio in dados.socios %}
-                                        <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 4px;">
-                                            <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.nome }}</div>
-                                            {% if socio.qualificacao %}
-                                                <div><strong>QUALIFICAÇÃO:</strong> {{ socio.qualificacao }}</div>
-                                            {% endif %}
-                                            {% if socio.cpf %}
-                                                <div style="color: #a0a0a0; font-size: 0.9rem; margin-top: 6px;">CPF: {{ socio.cpf }}</div>
-                                            {% endif %}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
                         </div>
                     {% else %}
                         <!-- Mostrar dados de CPF (padrão) -->
@@ -1881,16 +1863,17 @@
                         {% endif %}
                         
                         <!-- Gravatar (Perfil de Email) -->
-                        {% if apis_data.info_publica.gravatar %}
+                        {% if apis_data.info_publica.gravatar and apis_data.info_publica.gravatar.email %}
                             <div class="api-card" style="border-left: 4px solid #ec4899; margin-bottom: 16px; background: linear-gradient(135deg, rgba(236,72,153,0.05) 0%, rgba(236,72,153,0.02) 100%);">
                                 <h4 style="color: #ec4899; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                                     Gravatar - Perfil de Email
                                 </h4>
                                 <div class="api-content">
+                                    <p style="margin: 8px 0;"><strong>Email:</strong> {{ apis_data.info_publica.gravatar.email }}</p>
                                     {% if apis_data.info_publica.gravatar.avatar_url %}
-                                        <div style="margin-bottom: 12px;">
-                                            <img src="{{ apis_data.info_publica.gravatar.avatar_url }}" alt="Avatar" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid #ec4899;">
+                                        <div style="margin: 12px 0;">
+                                            <img src="{{ apis_data.info_publica.gravatar.avatar_url }}" alt="Avatar" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #ec4899;">
                                         </div>
                                     {% endif %}
                                     {% if apis_data.info_publica.gravatar.nome %}
@@ -1902,7 +1885,7 @@
                                     {% if apis_data.info_publica.gravatar.biografia %}
                                         <p style="margin: 8px 0;"><strong>Bio:</strong> {{ apis_data.info_publica.gravatar.biografia }}</p>
                                     {% endif %}
-                                    {% if apis_data.info_publica.gravatar.redes_sociais %}
+                                    {% if apis_data.info_publica.gravatar.redes_sociais and apis_data.info_publica.gravatar.redes_sociais|length > 0 %}
                                         <p style="margin: 12px 0 8px 0;"><strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>Redes Sociais:</strong></p>
                                         <div>
                                             {% for rede in apis_data.info_publica.gravatar.redes_sociais %}
@@ -1912,6 +1895,7 @@
                                             {% endfor %}
                                         </div>
                                     {% endif %}
+                                    <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #a0a0a0;">Fonte: Gravatar API</p>
                                 </div>
                             </div>
                         {% endif %}
