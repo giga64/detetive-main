@@ -2711,5 +2711,18 @@
           canvas.height = window.innerHeight;
         });
     </script>
+    <script>
+        // Debug para verificar elementos ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DEBUG TABS ===');
+            console.log('Tab personal:', document.getElementById('personal'));
+            console.log('Tab addresses:', document.getElementById('addresses'));
+            console.log('Tab contacts:', document.getElementById('contacts'));
+            console.log('Tab companies:', document.getElementById('companies'));
+            console.log('Tab public-info:', document.getElementById('public-info'));
+            console.log('Tab raw:', document.getElementById('raw'));
+            console.log('Botões de tab:', document.querySelectorAll('.tab-btn'));
+        });
+    </script>
 </body>
 </html>
