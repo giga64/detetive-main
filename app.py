@@ -1667,10 +1667,19 @@ def parse_cnpj_resultado(resultado_texto: str) -> dict:
     if socios_match:
         socios_text = socios_match.group(1)
         if "SEM INFORMAÇÃO" not in socios_text.upper():
-            blocos = re.findall(r'NOME:\s*(.+?)\nCPF:\s*([\d./-]+)', socios_text, re.IGNORECASE)
-            for nome, cpf in blocos:
-                if nome.strip() and '****' not in cpf:
-                    data["socios"].append({"nome": nome.strip(), "cpf": cpf.strip()})
+            # Procurar por NOME e QUALIFICAÇÃO (o CPF pode não estar presente)
+            blocos = re.findall(r'NOME:\s*(.+?)\nQUALIFICAÇÃO:\s*(.+?)(?=\nNOME:|$)', socios_text, re.IGNORECASE | re.DOTALL)
+            for nome, qualificacao in blocos:
+                if nome.strip():
+                    socio_data = {
+                        "nome": nome.strip(),
+                        "qualificacao": qualificacao.strip()
+                    }
+                    # Tentar extrair cpf se houver
+                    cpf_match = re.search(r'CPF:\s*([\d./-]+)', qualificacao)
+                    if cpf_match:
+                        socio_data["cpf"] = cpf_match.group(1).strip()
+                    data["socios"].append(socio_data)
     
     data["usuario"] = get_value("USUÁRIO")
     
