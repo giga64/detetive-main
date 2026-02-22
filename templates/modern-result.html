@@ -1547,16 +1547,19 @@
                         {% if dados.endereco %}
                             <div class="data-grid">
                                 <div class="data-item" style="grid-column: 1 / -1;">
-                                    <span class="data-label">Endereço da Empresa</span>
-                                    <span class="data-value">{{ dados.endereco }}</span>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
+                                        <div style="flex: 1;">
+                                            <span class="data-label">Endereço da Empresa</span>
+                                            <span class="data-value">{{ dados.endereco }}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 10px; flex-shrink: 0; min-width: 260px; justify-content: flex-end;">
+                                            <button class="action-btn" style="min-width: 85px;" onclick="openStreetView('{{ dados.endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
+                                            <button class="action-btn" style="min-width: 165px;" onclick="validarEnderecoCNPJ('{{ dados.endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                                <button class="action-btn" style="min-width: 85px;" onclick="openStreetView('{{ dados.endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
-                                <button class="action-btn" style="min-width: 165px;" onclick="validarEnderecoCNPJ('{{ dados.endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
-                            </div>
                             <div id="cnpj-endereco-resultado" style="display: none; position: relative; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden; margin-top: 20px;"></div>
-                            </div>
                         {% else %}
                             <div class="empty-state">
                                 <p>Nenhum endereço encontrado</p>
@@ -1628,35 +1631,37 @@
                         </div>
                     {% elif dados.tipo_consulta == 'cnpj' %}
                         <!-- Mostrar contatos da EMPRESA (CNPJ) -->
-                        <h3 style="margin-bottom: 20px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>E-mails</h3>
-                        {% if dados.emails and dados.emails|length > 0 %}
-                            <ul class="data-list">
-                                {% for email in dados.emails %}
-                                    <li class="data-list-item">
-                                        <span>{{ email }}</span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <div class="empty-state">
-                                <p>Nenhum e-mail encontrado</p>
-                            </div>
-                        {% endif %}
+                        <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
+                            <h3 style="margin-bottom: 20px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>E-mails</h3>
+                            {% if dados.emails and dados.emails|length > 0 %}
+                                <ul class="data-list">
+                                    {% for email in dados.emails %}
+                                        <li class="data-list-item">
+                                            <span>{{ email }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="empty-state">
+                                    <p>Nenhum e-mail encontrado</p>
+                                </div>
+                            {% endif %}
 
-                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>Telefones</h3>
-                        {% if dados.telefones and dados.telefones|length > 0 %}
-                            <ul class="data-list">
-                                {% for telefone in dados.telefones %}
-                                    <li class="data-list-item">
-                                        <span>{{ telefone }}</span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <div class="empty-state">
-                                <p>Nenhum telefone encontrado</p>
-                            </div>
-                        {% endif %}
+                            <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>Telefones</h3>
+                            {% if dados.telefones and dados.telefones|length > 0 %}
+                                <ul class="data-list">
+                                    {% for telefone in dados.telefones %}
+                                        <li class="data-list-item">
+                                            <span>{{ telefone }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div class="empty-state">
+                                    <p>Nenhum telefone encontrado</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     {% else %}
                         <!-- Mostrar contatos de CPF (padrão) -->
                         <h3 style="margin-bottom: 20px; color: #e0e0e0; display: flex; align-items: center; gap: 8px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path></svg>E-mails</h3>
@@ -1730,28 +1735,29 @@
 
                 <!-- TAB: Empresas -->
                 <div id="companies" class="tab-content">
-                    <h3 style="margin-bottom: 20px; color: #e0e0e0;">Participação Societária</h3>
-                    {% if dados.empresas and dados.empresas|length > 0 %}
-                        <div class="relationship-grid">
-                            {% for empresa in dados.empresas %}
-                                <div class="relationship-card">
-                                    <div class="relationship-type">Empresa</div>
-                                    <div class="relationship-name">{{ empresa.nome if empresa.get('nome') else 'N/A' }}</div>
-                                    <div class="relationship-cpf">CNPJ: {{ empresa.cnpj }}</div>
-                                    {% if empresa.get('cargo') and empresa.cargo != 'SEM INFORMAÇÃO' %}
-                                        <div style="font-size: 12px; color: #a0a0a0; margin-top: 8px;">Cargo: {{ empresa.cargo }}</div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>Nenhuma participação societária encontrada</p>
-                        </div>
-                    {% endif %}
+                    <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
+                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">Participação Societária</h3>
+                        {% if dados.empresas and dados.empresas|length > 0 %}
+                            <div class="relationship-grid">
+                                {% for empresa in dados.empresas %}
+                                    <div class="relationship-card">
+                                        <div class="relationship-type">Empresa</div>
+                                        <div class="relationship-name">{{ empresa.nome if empresa.get('nome') else 'N/A' }}</div>
+                                        <div class="relationship-cpf">CNPJ: {{ empresa.cnpj }}</div>
+                                        {% if empresa.get('cargo') and empresa.cargo != 'SEM INFORMAÇÃO' %}
+                                            <div style="font-size: 12px; color: #a0a0a0; margin-top: 8px;">Cargo: {{ empresa.cargo }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-state">
+                                <p>Nenhuma participação societária encontrada</p>
+                            </div>
+                        {% endif %}
 
-                    <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Vínculos Empregatícios</h3>
-                    {% if dados.vinculos and dados.vinculos|length > 0 %}
+                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Vínculos Empregatícios</h3>
+                        {% if dados.vinculos and dados.vinculos|length > 0 %}
                         <ul class="data-list">
                             {% for vinculo in dados.vinculos %}
                                 <li class="data-list-item" style="flex-direction: column; align-items: flex-start;">
@@ -1764,6 +1770,7 @@
                             <p>Nenhum vínculo empregatício encontrado</p>
                         </div>
                     {% endif %}
+                    </div>
                 </div>
 
                 <!-- TAB: Proprietário (PLACA) - AGORA VAZIO (conteúdo movido para ADDRESSES) -->
@@ -1772,8 +1779,7 @@
 
                 <!-- TAB: Informações Públicas -->
                 <div id="public-info" class="tab-content">
-                {% if apis_data and apis_data.info_publica %}
-                    <div style="margin-top: 30px; margin-bottom: 30px;">
+                <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
                         <h3 style="margin-bottom: 20px; color: #f59e0b; display: flex; align-items: center; gap: 10px;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                             Informações Públicas
@@ -1873,6 +1879,7 @@
                             <p>Nenhuma informação pública disponível</p>
                         </div>
                     {% endif %}
+                    </div>
                 </div>
 
                 <!-- TAB: Dados Brutos -->
