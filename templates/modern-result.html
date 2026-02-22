@@ -1918,7 +1918,22 @@
                                         <p style="margin: 8px 0;"><strong>Natureza Jurídica:</strong> {{ apis_data.info_publica.receitaws.natureza_juridica }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.receitaws.atividade_principal %}
-                                        <p style="margin: 8px 0;"><strong>Atividade Principal:</strong> {{ apis_data.info_publica.receitaws.atividade_principal }}</p>
+                                        <p style="margin: 8px 0;"><strong>Atividade Principal:</strong> 
+                                            {% if apis_data.info_publica.receitaws.atividade_principal is mapping %}
+                                                {{ apis_data.info_publica.receitaws.atividade_principal.get('text', '') }} 
+                                                {% if apis_data.info_publica.receitaws.atividade_principal.get('code') %}
+                                                    <span style="color: #666; font-size: 0.85rem;">({{ apis_data.info_publica.receitaws.atividade_principal.get('code') }})</span>
+                                                {% endif %}
+                                            {% elif apis_data.info_publica.receitaws.atividade_principal is iterable and apis_data.info_publica.receitaws.atividade_principal is not string %}
+                                                {% set ativ = apis_data.info_publica.receitaws.atividade_principal[0] if apis_data.info_publica.receitaws.atividade_principal else {} %}
+                                                {{ ativ.get('text', '') or ativ.get('descricao', '') }}
+                                                {% if ativ.get('code') or ativ.get('codigo') %}
+                                                    <span style="color: #666; font-size: 0.85rem;">({{ ativ.get('code', ativ.get('codigo', '')) }})</span>
+                                                {% endif %}
+                                            {% else %}
+                                                {{ apis_data.info_publica.receitaws.atividade_principal }}
+                                            {% endif %}
+                                        </p>
                                     {% endif %}
                                     {% if apis_data.info_publica.receitaws.capital_social %}
                                         <p style="margin: 8px 0;"><strong>Capital Social:</strong> R$ {{ apis_data.info_publica.receitaws.capital_social }}</p>
@@ -1926,14 +1941,26 @@
                                     {% if apis_data.info_publica.receitaws.municipio %}
                                         <p style="margin: 8px 0;"><strong>Município:</strong> {{ apis_data.info_publica.receitaws.municipio }} - {{ apis_data.info_publica.receitaws.uf }}</p>
                                     {% endif %}
-                                    {% if apis_data.info_publica.receitaws.socios %}
+                                    {% if apis_data.info_publica.receitaws.telefone %}
+                                        <p style="margin: 8px 0;"><strong>Telefone:</strong> {{ apis_data.info_publica.receitaws.telefone }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.receitaws.email %}
+                                        <p style="margin: 8px 0;"><strong>Email:</strong> {{ apis_data.info_publica.receitaws.email }}</p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.receitaws.socios and apis_data.info_publica.receitaws.socios|length > 0 %}
                                         <p style="margin: 12px 0 8px 0; font-weight: bold;">Sócios:</p>
                                         <ul style="margin: 0; padding-left: 20px;">
-                                        {% for socio in apis_data.info_publica.receitaws.socios[:3] %}
-                                            <li style="margin: 4px 0; font-size: 0.9rem;">
-                                                {{ socio.nome_socio if socio.nome_socio else 'N/A' }} 
-                                                ({{ socio.qualificacao_socio if socio.qualificacao_socio else 'N/A' }})
-                                            </li>
+                                        {% for socio in apis_data.info_publica.receitaws.socios[:5] %}
+                                            {% if socio is mapping %}
+                                                <li style="margin: 4px 0; font-size: 0.9rem;">
+                                                    {{ socio.get('nome_socio', socio.get('nome', 'N/A')) }}
+                                                    {% if socio.get('qualificacao_socio') or socio.get('qualificacao') %}
+                                                        <span style="color: #666;"> - {{ socio.get('qualificacao_socio', socio.get('qualificacao', '')) }}</span>
+                                                    {% endif %}
+                                                </li>
+                                            {% else %}
+                                                <li style="margin: 4px 0; font-size: 0.9rem;">{{ socio }}</li>
+                                            {% endif %}
                                         {% endfor %}
                                         </ul>
                                     {% endif %}
@@ -1956,7 +1983,29 @@
                                         <p style="margin: 8px 0;"><strong>Nome Fantasia:</strong> {{ apis_data.info_publica.brasilapi.nome_fantasia }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.situacao_cadastral %}
-                                        <p style="margin: 8px 0;"><strong>Situação Cadastral:</strong> {{ apis_data.info_publica.brasilapi.situacao_cadastral }}</p>
+                                        {% set situacao_map = {
+                                            '1': {'texto': 'NULA', 'cor': '#6b7280'},
+                                            '2': {'texto': 'ATIVA', 'cor': '#10b981'},
+                                            '3': {'texto': 'SUSPENSA', 'cor': '#f59e0b'},
+                                            '4': {'texto': 'INAPTA', 'cor': '#ef4444'},
+                                            '5': {'texto': 'BAIXADA', 'cor': '#dc2626'},
+                                            '8': {'texto': 'BAIXADA DE OFÍCIO', 'cor': '#dc2626'},
+                                            1: {'texto': 'NULA', 'cor': '#6b7280'},
+                                            2: {'texto': 'ATIVA', 'cor': '#10b981'},
+                                            3: {'texto': 'SUSPENSA', 'cor': '#f59e0b'},
+                                            4: {'texto': 'INAPTA', 'cor': '#ef4444'},
+                                            5: {'texto': 'BAIXADA', 'cor': '#dc2626'},
+                                            8: {'texto': 'BAIXADA DE OFÍCIO', 'cor': '#dc2626'}
+                                        } %}
+                                        {% set sit_info = situacao_map.get(apis_data.info_publica.brasilapi.situacao_cadastral|string, {'texto': 'Código ' ~ apis_data.info_publica.brasilapi.situacao_cadastral, 'cor': '#6b7280'}) %}
+                                        <p style="margin: 8px 0;"><strong>Situação Cadastral:</strong> 
+                                            <span style="background: {{ sit_info.cor }}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">
+                                                {{ sit_info.texto }}
+                                            </span>
+                                        </p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.brasilapi.data_inicio_atividade %}
+                                        <p style="margin: 8px 0;"><strong>Data Início Atividade:</strong> {{ apis_data.info_publica.brasilapi.data_inicio_atividade }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.regime_tributario %}
                                         <p style="margin: 8px 0;"><strong>Regime Tributário:</strong> {{ apis_data.info_publica.brasilapi.regime_tributario }}</p>
@@ -1964,14 +2013,51 @@
                                     {% if apis_data.info_publica.brasilapi.capital_social %}
                                         <p style="margin: 8px 0;"><strong>Capital Social:</strong> R$ {{ "{:,.2f}".format(apis_data.info_publica.brasilapi.capital_social) if apis_data.info_publica.brasilapi.capital_social else 'N/A' }}</p>
                                     {% endif %}
+                                    {% if apis_data.info_publica.brasilapi.porte %}
+                                        <p style="margin: 8px 0;"><strong>Porte:</strong> {{ apis_data.info_publica.brasilapi.porte }}</p>
+                                    {% endif %}
                                     {% if apis_data.info_publica.brasilapi.cnae_fiscal_descricao %}
-                                        <p style="margin: 8px 0;"><strong>CNAE Principal:</strong> {{ apis_data.info_publica.brasilapi.cnae_fiscal_descricao }}</p>
+                                        <p style="margin: 8px 0;"><strong>CNAE Principal:</strong> {{ apis_data.info_publica.brasilapi.cnae_fiscal_descricao }}
+                                            {% if apis_data.info_publica.brasilapi.cnae_fiscal %}
+                                                <span style="color: #666; font-size: 0.85rem;">({{ apis_data.info_publica.brasilapi.cnae_fiscal }})</span>
+                                            {% endif %}
+                                        </p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.cnaes_secundarios %}
-                                        <p style="margin: 12px 0 8px 0; font-weight: bold;">CNAEs Secundárias:</p>
-                                        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
-                                        {% for cnae in apis_data.info_publica.brasilapi.cnaes_secundarios[:3] %}
-                                            <li>{{ cnae.descricao if cnae.descricao else cnae }}</li>
+                                        {% set cnaes_validos = [] %}
+                                        {% for cnae in apis_data.info_publica.brasilapi.cnaes_secundarios %}
+                                            {% if cnae is mapping and (cnae.get('descricao') or cnae.get('codigo')) and cnae.get('codigo', 0) != 0 %}
+                                                {% set _ = cnaes_validos.append(cnae) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if cnaes_validos|length > 0 %}
+                                            <p style="margin: 12px 0 8px 0; font-weight: bold;">CNAEs Secundárias:</p>
+                                            <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+                                            {% for cnae in cnaes_validos[:5] %}
+                                                <li style="margin: 4px 0;">
+                                                    {{ cnae.descricao or cnae.get('descricao', '') }}
+                                                    {% if cnae.codigo or cnae.get('codigo') %}
+                                                        <span style="color: #666; font-size: 0.85rem;">({{ cnae.codigo or cnae.get('codigo', '') }})</span>
+                                                    {% endif %}
+                                                </li>
+                                            {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if apis_data.info_publica.brasilapi.socios and apis_data.info_publica.brasilapi.socios|length > 0 %}
+                                        <p style="margin: 12px 0 8px 0; font-weight: bold;">Sócios:</p>
+                                        <ul style="margin: 0; padding-left: 20px;">
+                                        {% for socio in apis_data.info_publica.brasilapi.socios[:5] %}
+                                            {% if socio is mapping %}
+                                                <li style="margin: 4px 0; font-size: 0.9rem;">
+                                                    {{ socio.get('nome_socio', socio.get('nome', 'N/A')) }}
+                                                    {% if socio.get('qualificacao_socio') or socio.get('qualificacao') %}
+                                                        <span style="color: #666;"> - {{ socio.get('qualificacao_socio', socio.get('qualificacao', '')) }}</span>
+                                                    {% endif %}
+                                                </li>
+                                            {% else %}
+                                                <li style="margin: 4px 0; font-size: 0.9rem;">{{ socio }}</li>
+                                            {% endif %}
                                         {% endfor %}
                                         </ul>
                                     {% endif %}
