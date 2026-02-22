@@ -1053,8 +1053,8 @@
         const mainInput = document.getElementById('identificador');
         if (value === 'oab') {
           oabFields.style.display = 'block';
-          mainInput.placeholder = 'Digite o número da inscrição OAB (ex: 123456)';
-          mainInput.setAttribute('pattern', '[0-9]+');
+          mainInput.placeholder = 'Ex: 5.553 | 128.353A | 699-A | 4.4762-A';
+          mainInput.removeAttribute('pattern');  // Aceita múltiplos formatos
           document.getElementById('oab_estado').required = true;
         } else {
           oabFields.style.display = 'none';

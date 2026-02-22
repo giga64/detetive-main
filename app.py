@@ -1446,6 +1446,52 @@ def validar_cnpj(cnpj: str) -> bool:
         return False
     return True
 
+def normalizar_numero_oab(numero: str, estado: str) -> tuple[str, bool]:
+    """
+    Normaliza número OAB conforme o estado
+    Aceita diversos formatos: 5.553, 5553, 128.353A, 128353A, 699-A, etc
+    
+    Returns:
+        (numero_normalizado, valido)
+    """
+    numero = str(numero).strip()
+    estado = estado.upper()
+    
+    # Mapeia estados com suas validações
+    estado_patterns = {
+        # Estados que usam ponto como separador
+        'RN': (r'^(\d{1,2})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'AC': (r'^(\d{1,2})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'BA': (r'^(\d{1,2})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'SP': (r'^(\d{1,3})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'PE': (r'^(\d{1,2})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'MG': (r'^(\d{1,3})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        
+        # Estados que aceitam letra no final com ou sem hífen
+        'CE': (r'^(\d{1,2})\.?(\d{4})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+        'MA': (r'^(\d{1,2})\.?(\d{3})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+        'PB': (r'^(\d{1,2})\.?(\d{3})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+        'AP': (r'^(\d{1,2})\.?(\d{3})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+        'PA': (r'^(\d{1,2})\.?(\d{3})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+        'RR': (r'^(\d{1,3})-?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2)}"),
+        'RS': (r'^(\d{1,3})\.?(\d{3})?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2) or ''}{m.group(3)}"),
+        'SE': (r'^(\d{1,3})\.?(\d{3})?([A-Z])$', lambda m: f"{m.group(1)}{m.group(2) or ''}{m.group(3)}"),
+        'AM': (r'^([A-Z])(\d{1,2})\.?(\d{3})$', lambda m: f"{m.group(1)}{m.group(2)}{m.group(3)}"),
+    }
+    
+    if estado in estado_patterns:
+        pattern, normalizer = estado_patterns[estado]
+        match = re.match(pattern, numero, re.IGNORECASE)
+        if match:
+            normalizado = normalizer(match)
+            return normalizado, True
+    else:
+        # Para estados não listados, tenta aceitar como está (remove pontos/hífens)
+        normalizado = re.sub(r'[\.\-\s]', '', numero).upper()
+        return normalizado, True
+    
+    return numero, False
+
 async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
     """
     Busca processos judiciais via TJs de TODO Brasil
@@ -1468,20 +1514,30 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
     """
     Busca informações de advogado/estagiário no site da OAB
     Args:
-        numero: Número da inscrição OAB
+        numero: Número da inscrição OAB (aceita múltiplos formatos)
         estado: Sigla do estado (UF)
         tipo_inscricao: A=Advogado, E=Estagiário, S=Suplementar
     Returns:
         dict com dados do advogado ou None se não encontrado
     """
     try:
+        # Normaliza o número OAB conforme o estado
+        numero_normalizado, valido = normalizar_numero_oab(numero, estado)
+        
+        if not valido:
+            return {
+                "encontrado": False,
+                "erro": f"Formato de OAB inválido para o estado {estado}",
+                "fonte": "OAB - Cadastro Nacional de Advogados"
+            }
+        
         # URL do site da OAB
         url = "https://cna.oab.org.br/"
         
         # Prepara os dados do formulário
         payload = {
             "nome": "",  # Pode deixar vazio se tiver número
-            "numero": str(numero).strip(),
+            "numero": numero_normalizado,
             "uf": estado.upper(),
             "tipoInscricao": tipo_inscricao.upper()
         }
@@ -1521,6 +1577,7 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
         dados = {
             "encontrado": True,
             "numero_inscricao": f"{numero}/{estado}",
+            "numero_normalizado": numero_normalizado,
             "estado": estado,
             "tipo_inscricao": "Advogado" if tipo_inscricao == "A" else ("Estagiário" if tipo_inscricao == "E" else "Suplementar"),
             "fonte": "OAB - Cadastro Nacional de Advogados"
@@ -2779,6 +2836,15 @@ async def do_consulta(request: Request):
             return templates.TemplateResponse("modern-form.html", {
                 "request": request, 
                 "erro": "Selecione o estado (seccional) da OAB",
+                "csrf_token": get_or_create_csrf_token(request)
+            })
+        
+        # Validar formato do número OAB
+        numero_normalizado, formato_valido = normalizar_numero_oab(identificador, oab_estado)
+        if not formato_valido:
+            return templates.TemplateResponse("modern-form.html", {
+                "request": request, 
+                "erro": f"Formato de número OAB inválido para {oab_estado}. Exemplos válidos: 5.553, 128.353A, 699-A, 4.4762-A",
                 "csrf_token": get_or_create_csrf_token(request)
             })
         
