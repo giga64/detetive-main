@@ -1464,6 +1464,111 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
         print(f"⚠️ Erro ao buscar processos judiciais: {str(e)}")
         return None
 
+async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dict:
+    """
+    Busca informações de advogado/estagiário no site da OAB
+    Args:
+        numero: Número da inscrição OAB
+        estado: Sigla do estado (UF)
+        tipo_inscricao: A=Advogado, E=Estagiário, S=Suplementar
+    Returns:
+        dict com dados do advogado ou None se não encontrado
+    """
+    try:
+        # URL do site da OAB
+        url = "https://cna.oab.org.br/"
+        
+        # Prepara os dados do formulário
+        payload = {
+            "nome": "",  # Pode deixar vazio se tiver número
+            "numero": str(numero).strip(),
+            "uf": estado.upper(),
+            "tipoInscricao": tipo_inscricao.upper()
+        }
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Referer": "https://cna.oab.org.br/",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        
+        # Faz a requisição
+        response = requests.post(url, data=payload, headers=headers, timeout=15, allow_redirects=True)
+        
+        if response.status_code != 200:
+            print(f"⚠️ OAB retornou status {response.status_code}")
+            return {
+                "encontrado": False,
+                "erro": f"Servidor OAB retornou status {response.status_code}",
+                "fonte": "OAB - Cadastro Nacional de Advogados"
+            }
+        
+        html = response.text
+        
+        # Verifica se encontrou resultado
+        if "Nenhum resultado encontrado" in html or "não foi encontrado" in html.lower():
+            return {
+                "encontrado": False,
+                "mensagem": f"OAB {numero}/{estado} não encontrada",
+                "fonte": "OAB - Cadastro Nacional de Advogados"
+            }
+        
+        # Parse básico do HTML (sem BeautifulSoup)
+        import re
+        
+        dados = {
+            "encontrado": True,
+            "numero_inscricao": f"{numero}/{estado}",
+            "estado": estado,
+            "tipo_inscricao": "Advogado" if tipo_inscricao == "A" else ("Estagiário" if tipo_inscricao == "E" else "Suplementar"),
+            "fonte": "OAB - Cadastro Nacional de Advogados"
+        }
+        
+        # Extrair nome (geralmente em <strong> ou <b>)
+        nome_match = re.search(r'<strong>Nome:[^<]*</strong>\s*([^<]+)', html, re.IGNORECASE)
+        if not nome_match:
+            nome_match = re.search(r'Nome:\s*</[^>]+>\s*([^<]+)', html, re.IGNORECASE)
+        if nome_match:
+            dados["nome"] = nome_match.group(1).strip()
+        
+        # Extrair situação
+        situacao_match = re.search(r'Situação:[^<]*</[^>]+>\s*([^<]+)', html, re.IGNORECASE)
+        if situacao_match:
+            dados["situacao"] = situacao_match.group(1).strip()
+        
+        # Extrair data de inscrição
+        data_match = re.search(r'Data de Inscrição:[^<]*</[^>]+>\s*(\d{2}/\d{2}/\d{4})', html, re.IGNORECASE)
+        if data_match:
+            dados["data_inscricao"] = data_match.group(1).strip()
+        
+        # Se não conseguiu extrair nome, tenta outro padrão
+        if "nome" not in dados:
+            # Pattern alternativo
+            nome_alt = re.search(r'<td[^>]*>\s*([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)\s*</td>', html)
+            if nome_alt and len(nome_alt.group(1).strip()) > 5:
+                dados["nome"] = nome_alt.group(1).strip().title()
+        
+        return dados
+        
+    except requests.Timeout:
+        print(f"⚠️ Timeout ao consultar OAB")
+        return {
+            "encontrado": False,
+            "erro": "Timeout ao consultar servidor da OAB",
+            "fonte": "OAB - Cadastro Nacional de Advogados"
+        }
+    except Exception as e:
+        print(f"⚠️ Erro ao buscar OAB: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "encontrado": False,
+            "erro": str(e),
+            "fonte": "OAB - Cadastro Nacional de Advogados"
+        }
+
 def calcular_risk_score_juridico(dados: dict, tipo: str) -> dict:
     """
     Calcula score de risco jurídico baseado em critérios legais
@@ -2634,6 +2739,8 @@ async def do_consulta(request: Request):
     csrf_token = str(form_data.get("csrf_token", "")).strip()
     identificador = str(form_data.get("identificador", "")).strip()
     tipo_manual = str(form_data.get("tipo", "")).strip().lower()
+    oab_estado = str(form_data.get("oab_estado", "")).strip().upper()
+    oab_tipo = str(form_data.get("oab_tipo", "A")).strip().upper()
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
     
@@ -2666,6 +2773,80 @@ async def do_consulta(request: Request):
     
     tipo = tipo_manual if (tipo_manual and tipo_manual != "auto") else detect_tipo(identificador)
     
+    # Processar consulta OAB separadamente (não usa Telegram)
+    if tipo == 'oab':
+        if not oab_estado:
+            return templates.TemplateResponse("modern-form.html", {
+                "request": request, 
+                "erro": "Selecione o estado (seccional) da OAB",
+                "csrf_token": get_or_create_csrf_token(request)
+            })
+        
+        try:
+            # Buscar dados OAB
+            dados_oab = await buscar_oab(identificador, oab_estado, oab_tipo)
+            
+            # Formatar resultado como string para compatibilidade com histórico
+            if dados_oab and dados_oab.get("encontrado"):
+                resultado = f"""⚖️ CONSULTA OAB - {identificador}/{oab_estado}
+
+👤 Nome: {dados_oab.get('nome', 'N/D')}
+📋 Inscrição: {dados_oab.get('numero_inscricao', 'N/D')}
+📍 Estado: {oab_estado}
+📝 Tipo: {dados_oab.get('tipo_inscricao', 'N/D')}
+✅ Situação: {dados_oab.get('situacao', 'N/D')}
+📅 Data Inscrição: {dados_oab.get('data_inscricao', 'N/D')}
+
+📊 Fonte: {dados_oab.get('fonte', 'OAB')}
+"""
+            else:
+                resultado = f"❌ OAB {identificador}/{oab_estado} não encontrada ou inválida"
+            
+            # Salvar no histórico
+            try:
+                cursor.execute(
+                    "INSERT INTO searches (identifier, response, username) VALUES (?, ?, ?)", 
+                    (f"{identificador}/{oab_estado}", resultado, username)
+                )
+                conn.commit()
+            except Exception as save_err:
+                print(f"⚠️ Erro ao salvar no histórico: {str(save_err)}")
+            
+            # Preparar dados estruturados
+            dados_estruturados = {
+                "tipo_consulta": "oab",
+                "dados_pessoais": {
+                    "nome": dados_oab.get('nome', ''),
+                    "oab": dados_oab.get('numero_inscricao', f"{identificador}/{oab_estado}"),
+                    "estado": oab_estado,
+                    "tipo_inscricao": dados_oab.get('tipo_inscricao', ''),
+                    "situacao": dados_oab.get('situacao', ''),
+                    "data_inscricao": dados_oab.get('data_inscricao', '')
+                }
+            }
+            
+            # Retornar resultado
+            return templates.TemplateResponse("modern-result.html", {
+                "request": request, 
+                "mensagem": f"{identificador}/{oab_estado}", 
+                "resultado": resultado,
+                "dados": dados_estruturados if dados_oab.get("encontrado") else None,
+                "apis_data": {},
+                "identifier": f"{identificador}/{oab_estado}",
+                "csrf_token": get_or_create_csrf_token(request)
+            })
+            
+        except Exception as e:
+            print(f"🔴 ERRO NA CONSULTA OAB: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return templates.TemplateResponse("modern-form.html", {
+                "request": request, 
+                "erro": f"Erro ao consultar OAB: {str(e)}",
+                "csrf_token": get_or_create_csrf_token(request)
+            })
+    
+    # Para outros tipos, continua usando Telegram
     if tipo == 'cpf': 
         cmd = f"/cpf3 {normalize(identificador)}"
     elif tipo == 'cnpj': 
@@ -2677,7 +2858,8 @@ async def do_consulta(request: Request):
     else: 
         return templates.TemplateResponse("modern-form.html", {
             "request": request, 
-            "erro": "Tipo de identificador não reconhecido"
+            "erro": "Tipo de identificador não reconhecido",
+            "csrf_token": get_or_create_csrf_token(request)
         })
     
     try:
