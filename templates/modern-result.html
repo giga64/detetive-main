@@ -1918,6 +1918,7 @@
         }
         function switchTab(event, tabName) {
             event.preventDefault();
+            console.log('switchTab chamada para:', tabName);
             
             // Pegar o botão correto (pode ser clicado no SVG ou texto dentro dele)
             const button = event.target.closest('.tab-btn');
@@ -1935,7 +1936,10 @@
             // Mostrar tab selecionado
             const tabElement = document.getElementById(tabName);
             if (tabElement) {
+                console.log('Ativando aba:', tabName);
                 tabElement.classList.add('active');
+            } else {
+                console.error('Elemento não encontrado:', tabName);
             }
             
             if (button) {
