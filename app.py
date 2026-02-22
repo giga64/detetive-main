@@ -1534,14 +1534,6 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
         
         # Importar função OCR
         try:
-            import pytesseract
-            # Verificar se tesseract está realmente disponível
-            pytesseract.pytesseract.tesseract_cmd
-        except (ImportError, AttributeError):
-            print("⚠️ Tesseract não disponível, usando fallback API")
-            return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
-        
-        try:
             from oab_ocr import buscar_dados_completos_oab_com_ocr
         except ImportError:
             print("⚠️ Módulo oab_ocr não encontrado, usando fallback API")

@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
     """
-    Extrai dados da ficha OAB usando OCR via Tesseract.
+    Extrai dados da ficha OAB usando OCR via PaddleOCR.
     
     Args:
         imagem_bytes: Bytes da imagem JPEG da ficha
@@ -17,34 +17,33 @@ def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
         Dict com campos: nome, inscrição, seccional, subseccao, endereco, telefone, tipo
     """
     try:
-        import pytesseract
+        from paddleocr import PaddleOCR
         from PIL import Image
     except ImportError:
-        raise ImportError("Instale pytesseract e pillow com: pip install pytesseract pillow")
+        raise ImportError("Instale paddleocr e pillow com: pip install paddleocr pillow")
     
-    # Configurar caminho do Tesseract para Railway/Linux
-    import sys
-    import os
-    if sys.platform != "win32":
-        # No Railway (Linux), o tesseract fica em /usr/bin
-        if os.path.exists("/usr/bin/tesseract"):
-            pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-        # Configurar caminho de dados de idioma
-        if not os.environ.get('TESSDATA_PREFIX'):
-            if os.path.exists("/usr/share/tesseract-ocr/"):
-                os.environ['TESSDATA_PREFIX'] = "/usr/share/tesseract-ocr/"
-            elif os.path.exists("/usr/share/tessdata/"):
-                os.environ['TESSDATA_PREFIX'] = "/usr/share/tessdata/"
-    else:
-        # No Windows, procurar em Program Files
-        if os.path.exists(r"C:\Program Files\Tesseract-OCR\tesseract.exe"):
-            pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    # Inicializar PaddleOCR com português
+    ocr = PaddleOCR(use_angle_cls=True, lang='pt')
     
     # Converter bytes para imagem PIL
     img = Image.open(io.BytesIO(imagem_bytes))
     
-    # Fazer OCR com Tesseract (português)
-    texto_completo = pytesseract.image_to_string(img, lang='por')
+    # Salvar temporariamente para processar com PaddleOCR
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+        img.save(tmp.name)
+        tmp_path = tmp.name
+    
+    try:
+        # Fazer OCR com PaddleOCR
+        resultado = ocr.ocr(tmp_path, cls=True)
+        
+        # Extrair texto de todas as linhas
+        texto_completo = "\n".join([line[0][1] for linha in resultado for line in linha]) if resultado else ""
+    finally:
+        import os
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
     
     # Inicializar dados
     dados = {

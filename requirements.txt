@@ -16,8 +16,9 @@ pyasn1==0.6.2
 pyyaml==6.0.3
 psutil==7.2.2
 tenacity==9.1.4
-# OCR - Tesseract (sistema instalado via Procfile, Python packages apenas)
-pytesseract==0.3.10
+# OCR - PaddleOCR (100% Python, sem dependências de sistema)
+paddleocr==2.7.0.3
+paddlepaddle==2.6.1
 pillow==12.1.1
 opencv-python-headless==4.13.0.92
 charset-normalizer==3.4.4
