@@ -22,6 +22,24 @@ def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
     except ImportError:
         raise ImportError("Instale pytesseract e pillow com: pip install pytesseract pillow")
     
+    # Configurar caminho do Tesseract para Railway/Linux
+    import sys
+    import os
+    if sys.platform != "win32":
+        # No Railway (Linux), o tesseract fica em /usr/bin
+        if os.path.exists("/usr/bin/tesseract"):
+            pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+        # Configurar caminho de dados de idioma
+        if not os.environ.get('TESSDATA_PREFIX'):
+            if os.path.exists("/usr/share/tesseract-ocr/"):
+                os.environ['TESSDATA_PREFIX'] = "/usr/share/tesseract-ocr/"
+            elif os.path.exists("/usr/share/tessdata/"):
+                os.environ['TESSDATA_PREFIX'] = "/usr/share/tessdata/"
+    else:
+        # No Windows, procurar em Program Files
+        if os.path.exists(r"C:\Program Files\Tesseract-OCR\tesseract.exe"):
+            pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    
     # Converter bytes para imagem PIL
     img = Image.open(io.BytesIO(imagem_bytes))
     
