@@ -1080,19 +1080,30 @@
                                     {% endif %}
                                     {% if dados.dados_pessoais.oab %}
                                         <div class="data-item">
-                                            <span class="data-label">Número OAB</span>
+                                            <span class="data-label">Inscrição</span>
                                             <span class="data-value" style="font-size: 20px; font-weight: 900; color: #06b6d4; letter-spacing: 1px;">{{ dados.dados_pessoais.oab }}</span>
                                         </div>
                                     {% endif %}
-                                    {% if dados.dados_pessoais.estado %}
+                                    {% if dados.dados_pessoais.seccional %}
+                                        <div class="data-item">
+                                            <span class="data-label">Seccional</span>
+                                            <span class="data-value">{{ dados.dados_pessoais.seccional }}</span>
+                                        </div>
+                                    {% elif dados.dados_pessoais.estado %}
                                         <div class="data-item">
                                             <span class="data-label">Seccional</span>
                                             <span class="data-value">{{ dados.dados_pessoais.estado }}</span>
                                         </div>
                                     {% endif %}
+                                    {% if dados.dados_pessoais.subseccao %}
+                                        <div class="data-item" style="grid-column: 1 / -1;">
+                                            <span class="data-label">Subseção</span>
+                                            <span class="data-value">{{ dados.dados_pessoais.subseccao }}</span>
+                                        </div>
+                                    {% endif %}
                                     {% if dados.dados_pessoais.tipo_inscricao %}
                                         <div class="data-item">
-                                            <span class="data-label">Tipo de Inscrição</span>
+                                            <span class="data-label">Tipo</span>
                                             <span class="data-value">{{ dados.dados_pessoais.tipo_inscricao }}</span>
                                         </div>
                                     {% endif %}
@@ -1113,6 +1124,42 @@
                                         </div>
                                     {% endif %}
                                 </div>
+
+                                <!-- Endereço Profissional -->
+                                {% if dados.dados_pessoais.endereco %}
+                                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                    <h4 style="color: #e0e7ff; margin: 0 0 8px 0; font-size: 14px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                                            <path d="M20 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+                                        </svg>Endereço Profissional
+                                    </h4>
+                                    <p style="margin: 0; color: #a0a0a0; font-size: 13px;">{{ dados.dados_pessoais.endereco }}</p>
+                                </div>
+                                {% endif %}
+
+                                <!-- Telefone Profissional -->
+                                {% if dados.dados_pessoais.telefone %}
+                                <div style="margin-top: 12px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                    <h4 style="color: #e0e7ff; margin: 0 0 8px 0; font-size: 14px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>Telefone Profissional
+                                    </h4>
+                                    <p style="margin: 0; color: #06b6d4; font-weight: 600; font-size: 13px;">{{ dados.dados_pessoais.telefone }}</p>
+                                </div>
+                                {% endif %}
+
+                                <!-- Email Profissional -->
+                                {% if dados.dados_pessoais.email %}
+                                <div style="margin-top: 12px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                    <h4 style="color: #e0e7ff; margin: 0 0 8px 0; font-size: 14px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                                            <rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 5L2 7"></path>
+                                        </svg>Email Profissional
+                                    </h4>
+                                    <p style="margin: 0; color: #a0a0a0; font-size: 13px;">{{ dados.dados_pessoais.email }}</p>
+                                </div>
+                                {% endif %}
                             </div>
 
                             <!-- Informações Adicionais -->

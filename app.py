@@ -1512,13 +1512,15 @@ async def buscar_processos_judiciais(cpf_cnpj: str, tipo: str) -> dict:
 
 async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dict:
     """
-    Busca informações de advogado/estagiário no site da OAB
+    Busca informações completas de advogado/estagiário no site da OAB
+    Extrai: nome, endereço, telefone, seccional, situação, data, foto
+    
     Args:
         numero: Número da inscrição OAB (aceita múltiplos formatos)
         estado: Sigla do estado (UF)
         tipo_inscricao: A=Advogado, E=Estagiário, S=Suplementar
     Returns:
-        dict com dados do advogado ou None se não encontrado
+        dict com dados completos do advogado ou erro se não encontrado
     """
     try:
         # Normaliza o número OAB conforme o estado
@@ -1571,7 +1573,7 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
                 "fonte": "OAB - Cadastro Nacional de Advogados"
             }
         
-        # Parse básico do HTML (sem BeautifulSoup)
+        # Parse do HTML com regex
         import re
         
         dados = {
@@ -1583,31 +1585,113 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             "fonte": "OAB - Cadastro Nacional de Advogados"
         }
         
-        # Extrair nome (geralmente em <strong> ou <b>)
-        nome_match = re.search(r'<strong>Nome:[^<]*</strong>\s*([^<]+)', html, re.IGNORECASE)
-        if not nome_match:
-            nome_match = re.search(r'Nome:\s*</[^>]+>\s*([^<]+)', html, re.IGNORECASE)
-        if nome_match:
-            dados["nome"] = nome_match.group(1).strip()
+        # ===== EXTRAÇÃO DE DADOS =====
         
-        # Extrair situação
-        situacao_match = re.search(r'Situação:[^<]*</[^>]+>\s*([^<]+)', html, re.IGNORECASE)
+        # 1. Nome completo
+        nome_patterns = [
+            r'<strong[^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</strong>',  # Em <strong>
+            r'<h[23][^>]*>([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)</h[23]>',   # Em títulos
+            r'Nome:[^<]*</[^>]+>\s*([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)',  # Após label
+        ]
+        
+        for pattern in nome_patterns:
+            nome_match = re.search(pattern, html, re.IGNORECASE)
+            if nome_match:
+                nome = nome_match.group(1).strip()
+                if len(nome) > 5:  # Garante que é um nome válido
+                    dados["nome"] = nome
+                    break
+        
+        # 2. Inscrição (número OAB)
+        inscricao_match = re.search(r'Inscrição[:\s]*([0-9\.]+)', html, re.IGNORECASE)
+        if inscricao_match:
+            dados["inscricao"] = inscricao_match.group(1).strip()
+        
+        # 3. Seccional/UF
+        seccional_match = re.search(r'Seccional[:\s]*([A-Z]{2})', html, re.IGNORECASE)
+        if seccional_match:
+            dados["seccional"] = seccional_match.group(1).strip()
+        
+        # 4. Subseção
+        subseccao_match = re.search(r'Subseção[:\s]*([^\n<]+)', html, re.IGNORECASE)
+        if subseccao_match:
+            dados["subseccao"] = subseccao_match.group(1).strip()
+        
+        # 5. Situação (status)
+        situacao_match = re.search(r'Situação[:\s]*([^\n<]+)', html, re.IGNORECASE)
         if situacao_match:
-            dados["situacao"] = situacao_match.group(1).strip()
+            situacao = situacao_match.group(1).strip()
+            # Limpar HTML tags
+            situacao = re.sub(r'<[^>]+>', '', situacao).strip()
+            dados["situacao"] = situacao
         
-        # Extrair data de inscrição
-        data_match = re.search(r'Data de Inscrição:[^<]*</[^>]+>\s*(\d{2}/\d{2}/\d{4})', html, re.IGNORECASE)
+        # 6. Data de Inscrição
+        data_match = re.search(r'Data de Inscrição[:\s]*(\d{1,2}/\d{1,2}/\d{4})', html, re.IGNORECASE)
         if data_match:
             dados["data_inscricao"] = data_match.group(1).strip()
         
-        # Se não conseguiu extrair nome, tenta outro padrão
-        if "nome" not in dados:
-            # Pattern alternativo
-            nome_alt = re.search(r'<td[^>]*>\s*([A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ\s]+)\s*</td>', html)
-            if nome_alt and len(nome_alt.group(1).strip()) > 5:
-                dados["nome"] = nome_alt.group(1).strip().title()
+        # 7. Endereço Profissional (completo)
+        endereco_patterns = [
+            r'Endereço[^:]*:\s*([^\n<]+)',
+            r'RUA\s+([^\n<]+)',
+            r'AVENIDA\s+([^\n<]+)',
+        ]
+        
+        endereco_completo = []
+        
+        # Tenta capturar rua
+        rua_match = re.search(r'(?:RUA|AV|AVENIDA|ALAMEDA)[^:]*[:\s]+([^\n<]+)', html, re.IGNORECASE)
+        if rua_match:
+            endereco_completo.append(rua_match.group(1).strip())
+        
+        # Tenta capturar bairro
+        bairro_match = re.search(r'Bairro[:\s]*([^\n<]+)', html, re.IGNORECASE)
+        if bairro_match:
+            endereco_completo.append(bairro_match.group(1).strip())
+        
+        # Tenta capturar cidade
+        cidade_match = re.search(r'Cidade[:\s]*([^\n<]+)', html, re.IGNORECASE)
+        if cidade_match:
+            endereco_completo.append(cidade_match.group(1).strip())
+        
+        # Tenta capturar CEP
+        cep_match = re.search(r'(?:CEP|Cep)[:\s]*(\d{5}-?\d{3})', html, re.IGNORECASE)
+        if cep_match:
+            endereco_completo.append(cep_match.group(1).strip())
+        
+        if endereco_completo:
+            dados["endereco"] = " - ".join(endereco_completo)
+        
+        # 8. Telefone Profissional
+        telefone_match = re.search(r'Telefone[^:]*:\s*(\(?[\d\s\-\.]+\)?)', html, re.IGNORECASE)
+        if telefone_match:
+            dados["telefone"] = telefone_match.group(1).strip()
+        
+        # 9. Email Profissional (se houver)
+        email_match = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', html)
+        if email_match:
+            dados["email"] = email_match.group(1).strip()
+        
+        # 10. Foto/Avatar (URL da imagem)
+        foto_match = re.search(r'<img[^>]*src=["\']([^"\']*(?:\.png|\.jpg|\.jpeg))["\'][^>]*>', html, re.IGNORECASE)
+        if foto_match:
+            foto_url = foto_match.group(1).strip()
+            # Se for URL relativa, converte para absoluta
+            if not foto_url.startswith('http'):
+                foto_url = 'https://cna.oab.org.br/' + foto_url.lstrip('/')
+            dados["foto"] = foto_url
         
         return dados
+        
+    except requests.Timeout:
+        print(f"⚠️ Timeout ao consultar OAB")
+        return {
+            "encontrado": False,
+            "erro": "Timeout ao consultar servidor da OAB",
+            "fonte": "OAB - Cadastro Nacional de Advogados"
+        }
+    except Exception as e:
+        print(f"⚠️ Erro ao buscar OAB: {str(e)}")
         
     except requests.Timeout:
         print(f"⚠️ Timeout ao consultar OAB")
@@ -2885,9 +2969,15 @@ async def do_consulta(request: Request):
                     "nome": dados_oab.get('nome', ''),
                     "oab": dados_oab.get('numero_inscricao', f"{identificador}/{oab_estado}"),
                     "estado": oab_estado,
+                    "seccional": dados_oab.get('seccional', oab_estado),
+                    "subseccao": dados_oab.get('subseccao', ''),
                     "tipo_inscricao": dados_oab.get('tipo_inscricao', ''),
                     "situacao": dados_oab.get('situacao', ''),
-                    "data_inscricao": dados_oab.get('data_inscricao', '')
+                    "data_inscricao": dados_oab.get('data_inscricao', ''),
+                    "endereco": dados_oab.get('endereco', ''),
+                    "telefone": dados_oab.get('telefone', ''),
+                    "email": dados_oab.get('email', ''),
+                    "foto": dados_oab.get('foto', '')
                 }
             }
             
