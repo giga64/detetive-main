@@ -958,6 +958,15 @@
                             </svg>
                             Contatos
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'companies')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Empresas
+                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'public-info')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -1568,44 +1577,46 @@
                     {% else %}
                         <!-- Mostrar endereços de CPF (padrão) -->
                         {% if dados.enderecos and dados.enderecos|length > 0 %}
-                            <!-- Cabeçalho com filtros e botão de copiar -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px;">
-                                <!-- Filtros de endereço: Urbano vs Rural -->
-                                <div class="address-filter-container" style="margin-bottom: 0; flex: 1;">
-                                    <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
-                                    <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
-                                    <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
+                            <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
+                                <!-- Cabeçalho com filtros e botão de copiar -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px;">
+                                    <!-- Filtros de endereço: Urbano vs Rural -->
+                                    <div class="address-filter-container" style="margin-bottom: 0; flex: 1;">
+                                        <button class="address-filter-btn active" onclick="filterAddresses('all')">TODOS ({{ dados.enderecos|length }})</button>
+                                        <button class="address-filter-btn" onclick="filterAddresses('urban')">URBANO</button>
+                                        <button class="address-filter-btn" onclick="filterAddresses('rural')">RURAL</button>
+                                    </div>
+                                    
+                                    <!-- Botão de copiar todos os endereços -->
+                                    <button class="action-btn" onclick="copiarTodosEnderecos()" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(10, 165, 164, 0.15)); border: 1px solid rgba(6, 182, 212, 0.3); white-space: nowrap; min-width: 180px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px;">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                        Copiar Todos
+                                    </button>
                                 </div>
-                                
-                                <!-- Botão de copiar todos os endereços -->
-                                <button class="action-btn" onclick="copiarTodosEnderecos()" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(10, 165, 164, 0.15)); border: 1px solid rgba(6, 182, 212, 0.3); white-space: nowrap; min-width: 180px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 6px;">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                    </svg>
-                                    Copiar Todos
-                                </button>
-                            </div>
 
-                            <ul class="data-list">
-                                {% for endereco in dados.enderecos %}
-                                    <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" data-index="{{ loop.index0 }}" style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                                            <div style="display: flex; align-items: flex-start; gap: 10px;">
-                                                <div style="flex: 1; min-width: 0;">
-                                                    <span style="display: block; word-break: break-word;">{{ endereco }}</span>
-                                                    <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                <ul class="data-list">
+                                    {% for endereco in dados.enderecos %}
+                                        <li class="data-list-item address-item" data-address="{{ endereco }}" data-type="auto" data-index="{{ loop.index0 }}" style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                                    <div style="flex: 1; min-width: 0;">
+                                                        <span style="display: block; word-break: break-word;">{{ endereco }}</span>
+                                                        <span style="display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px;" class="address-type-label"></span>
+                                                    </div>
+                                                    <div style="display: flex; gap: 10px; flex-shrink: 0; min-width: 260px; justify-content: flex-end;">
+                                                        <button class="action-btn" style="min-width: 85px;" onclick="openStreetView('{{ endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
+                                                        <button class="action-btn" style="min-width: 165px;" onclick="validarEnderecoByElement(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
+                                                    </div>
                                                 </div>
-                                                <div style="display: flex; gap: 10px; flex-shrink: 0; min-width: 260px; justify-content: flex-end;">
-                                                    <button class="action-btn" style="min-width: 85px;" onclick="openStreetView('{{ endereco }}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>Mapa</button>
-                                                    <button class="action-btn" style="min-width: 165px;" onclick="validarEnderecoByElement(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Validar & Analisar</button>
-                                                </div>
+                                                <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; position: relative; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;"></div>
                                             </div>
-                                            <div id="endereco-resultado-{{ loop.index0 }}" style="display: none; position: relative; padding: 15px; background: rgba(10, 165, 164, 0.05); border-radius: 8px; border-left: 3px solid #0aa5a4; transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;"></div>
-                                        </div>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         {% else %}
                             <div class="empty-state">
                                 <div class="empty-state-icon"></div>
@@ -1736,40 +1747,63 @@
                 <!-- TAB: Empresas -->
                 <div id="companies" class="tab-content">
                     <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
-                        <h3 style="margin-bottom: 20px; color: #e0e0e0;">Participação Societária</h3>
-                        {% if dados.empresas and dados.empresas|length > 0 %}
-                            <div class="relationship-grid">
-                                {% for empresa in dados.empresas %}
-                                    <div class="relationship-card">
-                                        <div class="relationship-type">Empresa</div>
-                                        <div class="relationship-name">{{ empresa.nome if empresa.get('nome') else 'N/A' }}</div>
-                                        <div class="relationship-cpf">CNPJ: {{ empresa.cnpj }}</div>
-                                        {% if empresa.get('cargo') and empresa.cargo != 'SEM INFORMAÇÃO' %}
-                                            <div style="font-size: 12px; color: #a0a0a0; margin-top: 8px;">Cargo: {{ empresa.cargo }}</div>
+                        {% if dados.tipo_consulta == 'cnpj' %}
+                            <!-- Para CNPJ: Mostrar Sócios e Administradores -->
+                            <h3 style="margin-bottom: 20px; color: #22c55e;">Quadro de Sócios e Administradores</h3>
+                            {% if dados.socios and dados.socios|length > 0 %}
+                                {% for socio in dados.socios %}
+                                    <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 4px;">
+                                        <div style="margin-bottom: 6px;"><strong>NOME:</strong> {{ socio.nome }}</div>
+                                        {% if socio.qualificacao %}
+                                            <div><strong>QUALIFICAÇÃO:</strong> {{ socio.qualificacao }}</div>
+                                        {% endif %}
+                                        {% if socio.cpf %}
+                                            <div style="color: #a0a0a0; font-size: 0.9rem; margin-top: 6px;">CPF: {{ socio.cpf }}</div>
                                         {% endif %}
                                     </div>
                                 {% endfor %}
-                            </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <p>Nenhum sócio ou administrador encontrado</p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <!-- Para CPF: Mostrar Participação Societária e Vínculos -->
+                            <h3 style="margin-bottom: 20px; color: #e0e0e0;">Participação Societária</h3>
+                            {% if dados.empresas and dados.empresas|length > 0 %}
+                                <div class="relationship-grid">
+                                    {% for empresa in dados.empresas %}
+                                        <div class="relationship-card">
+                                            <div class="relationship-type">Empresa</div>
+                                            <div class="relationship-name">{{ empresa.nome if empresa.get('nome') else 'N/A' }}</div>
+                                            <div class="relationship-cpf">CNPJ: {{ empresa.cnpj }}</div>
+                                            {% if empresa.get('cargo') and empresa.cargo != 'SEM INFORMAÇÃO' %}
+                                                <div style="font-size: 12px; color: #a0a0a0; margin-top: 8px;">Cargo: {{ empresa.cargo }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <p>Nenhuma participação societária encontrada</p>
+                                </div>
+                            {% endif %}
+
+                            <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Vínculos Empregatícios</h3>
+                            {% if dados.vinculos and dados.vinculos|length > 0 %}
+                            <ul class="data-list">
+                                {% for vinculo in dados.vinculos %}
+                                    <li class="data-list-item" style="flex-direction: column; align-items: flex-start;">
+                                        <span>{{ vinculo }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
                         {% else %}
                             <div class="empty-state">
-                                <p>Nenhuma participação societária encontrada</p>
+                                <p>Nenhum vínculo empregatício encontrado</p>
                             </div>
                         {% endif %}
-
-                        <h3 style="margin-bottom: 20px; margin-top: 30px; color: #e0e0e0;">Vínculos Empregatícios</h3>
-                        {% if dados.vinculos and dados.vinculos|length > 0 %}
-                        <ul class="data-list">
-                            {% for vinculo in dados.vinculos %}
-                                <li class="data-list-item" style="flex-direction: column; align-items: flex-start;">
-                                    <span>{{ vinculo }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>Nenhum vínculo empregatício encontrado</p>
-                        </div>
-                    {% endif %}
+                        {% endif %}
                     </div>
                 </div>
 
