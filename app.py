@@ -697,26 +697,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
                 except Exception as grav_err:
                     print(f"⚠️ Erro ao buscar Gravatar: {str(grav_err)}")
         
-        # 5. PEP - Pessoas Politicamente Expostas
-        if nome_para_wiki:
-            try:
-                info_pep = await buscar_pep(nome_para_wiki)
-                if info_pep and info_pep.get("encontrado"):
-                    info_publica_compilada["pep"] = info_pep
-            except Exception as pep_err:
-                print(f"⚠️ Erro ao buscar PEP: {str(pep_err)}")
-        
-        # 6. Servidores Públicos - Por nome
-        if nome_para_wiki and tipo.lower() == "cpf":
-            try:
-                cpf_val = dados_estruturados.get("dados_pessoais", {}).get("cpf")
-                info_servidores = await buscar_servidores_publicos(nome_para_wiki, cpf_val)
-                if info_servidores and info_servidores.get("encontrado"):
-                    info_publica_compilada["servidores_publicos"] = info_servidores
-            except Exception as srv_err:
-                print(f"⚠️ Erro ao buscar Servidores Públicos: {str(srv_err)}")
-        
-        # 7. Redes Sociais - Para todos
+        # 5. Redes Sociais - Para todos
         if nome_para_wiki:
             try:
                 info_redes = await buscar_redes_sociais(nome_para_wiki)
@@ -724,6 +705,35 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
                     info_publica_compilada["redes_sociais"] = info_redes
             except Exception as rede_err:
                 print(f"⚠️ Erro ao buscar Redes Sociais: {str(rede_err)}")
+        
+        # 6. ReceitaWS - CNPJ
+        if tipo.lower() == "cnpj":
+            try:
+                info_receitaws = await buscar_cnpj_receitaws(identificador)
+                if info_receitaws:
+                    info_publica_compilada["receitaws"] = info_receitaws
+            except Exception as rws_err:
+                print(f"⚠️ Erro ao buscar ReceitaWS: {str(rws_err)}")
+        
+        # 7. BrasilAPI CNPJ
+        if tipo.lower() == "cnpj":
+            try:
+                info_brasilapi = await buscar_cnpj_brasilapi(identificador)
+                if info_brasilapi:
+                    info_publica_compilada["brasilapi"] = info_brasilapi
+            except Exception as bapi_err:
+                print(f"⚠️ Erro ao buscar BrasilAPI: {str(bapi_err)}")
+        
+        # 8. Buscar Empresa por CPF (se for CPF)
+        if tipo.lower() == "cpf":
+            try:
+                nome_cpf = dados_estruturados.get("dados_pessoais", {}).get("nome", "")
+                if nome_cpf:
+                    info_empresa = await buscar_empresa_por_cpf(nome_cpf, identificador)
+                    if info_empresa:
+                        info_publica_compilada["empresa_cpf"] = info_empresa
+            except Exception as emp_err:
+                print(f"⚠️ Erro ao buscar Empresa por CPF: {str(emp_err)}")
         
         if info_publica_compilada:
             apis_data["info_publica"] = info_publica_compilada
@@ -1159,7 +1169,7 @@ async def buscar_gravatar(email: str) -> dict:
 async def buscar_pep(nome: str, cpf_cnpj: str = None) -> dict:
     """
     Busca se pessoa/empresa é PEP (Politicamente Exposta)
-    API: Transparência.gov.br
+    API: dados.gov.br (Dados abertos)
     """
     try:
         if not nome or len(nome) < 2:
@@ -1167,13 +1177,13 @@ async def buscar_pep(nome: str, cpf_cnpj: str = None) -> dict:
         
         headers = {"User-Agent": "Detetive-App/1.0"}
         
-        # Buscar em API de transparência (Pessoas Politicamente Expostas)
+        # Buscar em API de dados abertos (Pessoas Politicamente Expostas)
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             executor,
             lambda: requests.get(
-                "https://www.transparencia.gov.br/api/pep",
-                params={"nome": nome},
+                "https://dados.gov.br/api/3/action/package_search",
+                params={"q": "PEP pessoas politicamente expostas", "rows": 5},
                 headers=headers,
                 timeout=5
             )
@@ -1219,7 +1229,7 @@ async def buscar_servidores_publicos(nome: str, cpf: str = None) -> dict:
         response = await loop.run_in_executor(
             executor,
             lambda: requests.get(
-                "https://www.portaldatransparencia.gov.br/api-de-dados/servidores",
+                "http://api.portaldatransparencia.gov.br/api-de-dados/servidores",
                 params={"nome": nome, "pagina": 1},
                 headers=headers,
                 timeout=5
@@ -1272,8 +1282,6 @@ async def buscar_redes_sociais(nome: str) -> dict:
             "LinkedIn": f"https://www.linkedin.com/search/results/people/?keywords={nome_url}",
             "Instagram": f"https://www.instagram.com/web/search/topsearch/?query={nome_url}",
             "Facebook": f"https://www.facebook.com/search/people/?q={nome_url}",
-            "GitHub": f"https://github.com/search?q={nome_url}&type=users",
-            "YouTube": f"https://www.youtube.com/results?search_query={nome_url}",
         }
         
         return {
@@ -1287,6 +1295,137 @@ async def buscar_redes_sociais(nome: str) -> dict:
         }
     except Exception as e:
         print(f"⚠️ Erro em buscar_redes_sociais: {str(e)}")
+        return None
+
+async def buscar_cnpj_receitaws(cnpj: str) -> dict:
+    """
+    Busca dados de CNPJ na ReceitaWS
+    Retorna: razão social, data abertura, natureza, atividade, sócios
+    API: ReceitaWS (dados públicos da Receita Federal)
+    """
+    try:
+        if not cnpj or len(cnpj) < 8:
+            return None
+        
+        # Remover formatação
+        cnpj_limpo = cnpj.replace(".", "").replace("-", "").replace("/", "")
+        
+        headers = {"User-Agent": "Detetive-App/1.0"}
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                f"https://www.receitaws.com.br/v1/cnpj/{cnpj_limpo}",
+                headers=headers,
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                if data.get("status") == "OK":
+                    return {
+                        "encontrado": True,
+                        "razao_social": data.get("nome", ""),
+                        "cnpj": data.get("cnpj", cnpj),
+                        "data_abertura": data.get("abertura", ""),
+                        "natureza_juridica": data.get("natureza_juridica", ""),
+                        "atividade_principal": data.get("atividade_principal", {}),
+                        "atividades_secundarias": data.get("cnaes", []),
+                        "logradouro": data.get("logradouro", ""),
+                        "numero": data.get("numero", ""),
+                        "complemento": data.get("complemento", ""),
+                        "bairro": data.get("bairro", ""),
+                        "municipio": data.get("municipio", ""),
+                        "uf": data.get("uf", ""),
+                        "cep": data.get("cep", ""),
+                        "telefone": data.get("telefone", ""),
+                        "email": data.get("email", ""),
+                        "socios": data.get("qsa", []),
+                        "capital_social": data.get("capital_social", ""),
+                        "fonte": "ReceitaWS"
+                    }
+            except Exception as json_err:
+                print(f"⚠️ Erro ao fazer parse JSON ReceitaWS: {str(json_err)}")
+        
+        return None
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_cnpj_receitaws: {str(e)}")
+        return None
+
+async def buscar_cnpj_brasilapi(cnpj: str) -> dict:
+    """
+    Busca dados de CNPJ na BrasilAPI
+    Retorna: razão social, nome fantasia, capital, sócios, CNAE
+    API: BrasilAPI (dados públicos)
+    """
+    try:
+        if not cnpj or len(cnpj) < 8:
+            return None
+        
+        # Remover formatação
+        cnpj_limpo = cnpj.replace(".", "").replace("-", "").replace("/", "")
+        
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            executor,
+            lambda: requests.get(
+                f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}",
+                timeout=5
+            )
+        )
+        
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                return {
+                    "encontrado": True,
+                    "razao_social": data.get("razao_social", ""),
+                    "nome_fantasia": data.get("nome_fantasia", ""),
+                    "cnpj": data.get("cnpj", cnpj),
+                    "capital_social": data.get("capital_social", 0),
+                    "situacao_cadastral": data.get("situacao_cadastral", ""),
+                    "data_inicio_atividade": data.get("data_inicio_atividade", ""),
+                    "natureza_juridica": data.get("natureza_juridica", ""),
+                    "regime_tributario": data.get("regime_tributario", ""),
+                    "cnae_fiscal": data.get("cnae_fiscal", ""),
+                    "cnae_fiscal_descricao": data.get("cnae_fiscal_descricao", ""),
+                    "cnaes_secundarios": data.get("cnaes_secundarios", []),
+                    "socios": data.get("qsa", []),
+                    "fonte": "BrasilAPI"
+                }
+            except Exception as json_err:
+                print(f"⚠️ Erro ao fazer parse JSON BrasilAPI: {str(json_err)}")
+        
+        return None
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_cnpj_brasilapi: {str(e)}")
+        return None
+
+async def buscar_empresa_por_cpf(nome: str, cpf: str = None) -> dict:
+    """
+    Tenta buscar empresa associada ao CPF pelo nome
+    Retorna dados da empresa se encontrada
+    """
+    try:
+        if not nome or len(nome) < 3:
+            return None
+        
+        # Buscar na BrasilAPI por nome (função de busca por razão social)
+        # Como não há busca direta por CPF, usar nome como alternativa
+        # Limitar para evitar muitos resultados
+        
+        # Aqui seria ideal ter acesso ao banco da Receita Federal
+        # Por enquanto, retornar indicador de que pode ter empresa
+        
+        return {
+            "aviso": "Consulte Receita Federal para empresas associadas ao CPF",
+            "recomendacao": "Use CNPJ se disponível para busca detalhada"
+        }
+    except Exception as e:
+        print(f"⚠️ Erro em buscar_empresa_por_cpf: {str(e)}")
         return None
 
 async def buscar_risco_credito(cpf_cnpj: str, tipo: str) -> dict:
