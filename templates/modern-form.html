@@ -420,7 +420,7 @@
       border-radius: 0.6rem;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      z-index: 10000;
+      z-index: 99999;
       display: none;
       overflow: hidden;
     }
@@ -574,6 +574,8 @@
       margin-left: auto;
       margin-right: auto;
       animation: fadeInUp 0.8s ease-out 0.4s backwards;
+      position: relative;
+      z-index: 1;
     }
 
     .btn-historico {
@@ -771,7 +773,7 @@
               id="identificador" 
               name="identificador" 
               class="form-input"
-              placeholder="CPF, CNPJ, Placa ou Nome..."
+              placeholder="CPF, CNPJ, OAB, Placa ou Nome..."
               value="{{ reuse_value or '' }}"
               required
             >
@@ -1053,7 +1055,7 @@
         const mainInput = document.getElementById('identificador');
         if (value === 'oab') {
           oabFields.style.display = 'block';
-          mainInput.placeholder = 'Ex: 5.553 | 128.353A | 699-A | 4.4762-A';
+          mainInput.placeholder = 'Ex: 1.234 | 123.456A | 123-A | 1.2345-A';
           mainInput.removeAttribute('pattern');  // Aceita múltiplos formatos
           document.getElementById('oab_estado').required = true;
         } else {

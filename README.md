@@ -64,11 +64,35 @@ Altere após primeiro login!
 
 ## 📋 Funcionalidades
 
-✅ Busca por CPF, CNPJ, Placa Veicular e Nome  
-✅ Histórico de buscas  
+✅ Busca por CPF, CNPJ, Placa Veicular, Nome e **OAB**  
+✅ **Visualização de ficha OAB completa** (imagem direta do site oficial)  
+✅ Histórico de buscas com filtros e tags  
 ✅ Gerenciamento de usuários/agentes  
-✅ Integração com Telegram  
-✅ Interface cyberpunk/detetive  
+✅ Integração com Telegram (consultas assíncronas)  
+✅ Interface cyberpunk/detetive moderna  
+✅ Sistema otimizado (sem dependências pesadas de OCR)
+
+---
+
+## ⚡ Notas Importantes
+
+### Busca OAB - Solução Otimizada
+- **Sem OCR**: Sistema busca diretamente a imagem da ficha OAB do site oficial (https://cna.oab.org.br)
+- **Performance**: Consultas rápidas (~3-5s) sem downloads pesados
+- **Timeout**: 20 segundos por busca OAB
+- **Exibição**: Imagem centralizada e clicável para abrir em tamanho original
+
+### Segurança
+- Senhas criptografadas com bcrypt
+- Proteção CSRF em todos os formulários
+- Logs de auditoria completos
+- Controle de acesso por nível (admin/agente)
+
+### Banco de Dados
+- SQLite com 8 tabelas principais
+- Historico completo de pesquisas
+- Sistema de favoritos e anotações
+- Logs de auditoria detalhados
 
 ---
 
