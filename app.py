@@ -2493,9 +2493,10 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
         record_audit_log("LOGIN_BLOCKED", username, client_ip, "Excedidas tentativas de login")
         
         # Calcular tempo restante
-        if client_ip in login_attempts:
+        if client_ip in login_attempts and login_attempts[client_ip]:
             attempts = login_attempts[client_ip]
-            time_passed = datetime.now() - attempts['first_attempt']
+            first_attempt = datetime.fromtimestamp(attempts[0])
+            time_passed = datetime.now() - first_attempt
             time_remaining = max(0, LOGIN_ATTEMPT_WINDOW - int(time_passed.total_seconds()))
             minutes = time_remaining // 60
             seconds = time_remaining % 60
