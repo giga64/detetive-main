@@ -1603,6 +1603,8 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             print(f"✅ Busca concluída com sucesso!")
             print(f"   Nome: {dados['nome']}")
             print(f"   Imagem: {'SIM' if dados['possui_imagem'] else 'NÃO'}")
+            if dados['possui_imagem']:
+                print(f"   URL: {dados['imagem_url'][:80]}...")  # Primeiros 80 chars
             
             return dados
         
@@ -2973,9 +2975,16 @@ async def do_consulta(request: Request):
                     "endereco": dados_oab.get('endereco', ''),
                     "telefone": dados_oab.get('telefone', ''),
                     "email": dados_oab.get('email', ''),
-                    "foto": dados_oab.get('foto', '')
+                    "foto": dados_oab.get('foto', ''),
+                    # Campos da imagem da ficha OAB
+                    "imagem_url": dados_oab.get('imagem_url', ''),
+                    "possui_imagem": dados_oab.get('possui_imagem', False)
                 }
             }
+            
+            # Debug: verificar se imagem está sendo passada
+            if dados_oab.get('possui_imagem'):
+                print(f"📸 Template receberá imagem URL: {dados_oab.get('imagem_url', '')[:60]}...")
             
             # Retornar resultado
             return templates.TemplateResponse("modern-result.html", {

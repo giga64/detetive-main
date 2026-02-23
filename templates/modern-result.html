@@ -1072,6 +1072,10 @@
                                     Informações Profissionais - OAB
                                 </h3>
                                 
+                                <!-- DEBUG: Verificar se imagem está chegando -->
+                                <!-- possui_imagem: {{ dados.dados_pessoais.possui_imagem }} -->
+                                <!-- imagem_url: {{ dados.dados_pessoais.imagem_url[:50] if dados.dados_pessoais.imagem_url else 'VAZIO' }} -->
+                                
                                 <!-- Imagem da Ficha OAB -->
                                 {% if dados.dados_pessoais.possui_imagem and dados.dados_pessoais.imagem_url %}
                                 <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px dashed rgba(168,85,247,0.3);">
