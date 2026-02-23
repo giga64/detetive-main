@@ -23,6 +23,7 @@ No painel Railway → Variables, adicione:
 | `TELEGRAM_API_HASH` | `seu_hash` | Hash da API Telegram |
 | `TELEGRAM_GROUP_ID` | `id_grupo` | ID do grupo Telegram para onde enviar comandos |
 | `STRING_SESSION` | *(veja passo 3)* | Sessão Telegram (STRING) |
+| `ENABLE_OAB_OCR` | `false` | **RECOMENDADO:** `false` para evitar travamentos. Use `true` para extrair mais dados (endereço, telefone) mas requer mais RAM |
 
 ### Passo 3: Gerar STRING_SESSION (IMPORTANTE)
 

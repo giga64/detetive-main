@@ -6,6 +6,32 @@ import re
 import io
 from typing import Dict, Optional
 
+# ========== CACHE GLOBAL DO MODELO ==========
+_OCR_READER = None
+_OCR_INIT_FAILED = False
+
+def get_ocr_reader():
+    """
+    Retorna instância cached do EasyOCR reader.
+    Evita recarregar modelo a cada chamada.
+    """
+    global _OCR_READER, _OCR_INIT_FAILED
+    
+    if _OCR_INIT_FAILED:
+        raise RuntimeError("OCR já falhou anteriormente")
+    
+    if _OCR_READER is None:
+        try:
+            import easyocr
+            print("🔄 Inicializando EasyOCR (primeira vez)...")
+            _OCR_READER = easyocr.Reader(['pt'], gpu=False, download_enabled=True)
+            print("✅ EasyOCR inicializado com sucesso!")
+        except Exception as e:
+            _OCR_INIT_FAILED = True
+            raise RuntimeError(f"Falha ao inicializar EasyOCR: {e}")
+    
+    return _OCR_READER
+
 def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
     """
     Extrai dados da ficha OAB usando OCR na imagem.
@@ -17,13 +43,12 @@ def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
         Dict com campos: nome, inscrição, seccional, subseccao, endereco, telefone, tipo
     """
     try:
-        import easyocr
         from PIL import Image
     except ImportError:
-        raise ImportError("Instale easyocr e pillow com: pip install easyocr pillow")
+        raise ImportError("Instale pillow com: pip install pillow")
     
-    # Inicializar OCR (cache de modelo)
-    reader = easyocr.Reader(['pt'], gpu=False)
+    # Usar reader cached (evita reload)
+    reader = get_ocr_reader()
     
     # Converter bytes para imagem PIL
     img = Image.open(io.BytesIO(imagem_bytes))

@@ -207,10 +207,14 @@ API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
+# Configuração OCR para OAB (pode desabilitar se causar problemas)
+ENABLE_OAB_OCR = os.environ.get("ENABLE_OAB_OCR", "true").lower() in ("true", "1", "yes")
+
 print(f"Configuração Telegram:")
 print(f"   Telethon: {TELETHON_VERSION}")
 print(f"   API_ID: {API_ID}")
 print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
+print(f"   OCR OAB: {'ATIVADO' if ENABLE_OAB_OCR else 'DESATIVADO'}")
 
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
@@ -1532,6 +1536,11 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
                 "fonte": "OAB - Cadastro Nacional de Advogados"
             }
         
+        # Verificar se OCR está habilitado
+        if not ENABLE_OAB_OCR:
+            print("⚠️ OCR desabilitado via ENABLE_OAB_OCR - usando API simples")
+            return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
+        
         # Importar função OCR
         try:
             from oab_ocr import buscar_dados_completos_oab_com_ocr
@@ -1554,16 +1563,28 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
         session = requests.Session()
         session.headers.update(headers)
         
-        # Usar nova função com OCR
+        # Usar nova função com OCR - EXECUTAR EM THREAD SEPARADA
         try:
-            resultado = buscar_dados_completos_oab_com_ocr(numero_normalizado, estado, session, url_base)
+            # Executar em thread pool para não bloquear (OCR é pesado)
+            loop = asyncio.get_event_loop()
+            
+            # Timeout de 60 segundos (download de modelo pode demorar na primeira vez)
+            resultado = await asyncio.wait_for(
+                loop.run_in_executor(
+                    executor,  # Thread pool já configurado no topo do arquivo
+                    buscar_dados_completos_oab_com_ocr,
+                    numero_normalizado,
+                    estado,
+                    session,
+                    url_base
+                ),
+                timeout=60.0  # 60 segundos de timeout
+            )
             
             if not resultado.get('encontrado'):
-                return {
-                    "encontrado": False,
-                    "mensagem": resultado.get('erro', 'Não encontrado'),
-                    "fonte": "OAB - OCR"
-                }
+                print(f"⚠️ OCR não encontrou dados: {resultado.get('erro')}")
+                # Fallback para API simples
+                return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
             
             # Estruturar resposta
             dados = {
@@ -1587,6 +1608,11 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             print(f"   Telefone: {dados.get('telefone', 'N/A')}")
             
             return dados
+        
+        except asyncio.TimeoutError:
+            print(f"⏱️ Timeout na busca com OCR (60s) - usando fallback")
+            # Fallback para API simples
+            return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
             
         except Exception as e:
             print(f"❌ Erro ao extrair com OCR: {e}")
