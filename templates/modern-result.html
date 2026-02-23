@@ -884,12 +884,6 @@
                             </svg>
                             Resultados
                         </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                            Informações Públicas
-                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -927,12 +921,6 @@
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
                             Proprietário
-                        </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                            Informações Públicas
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -1965,6 +1953,7 @@
                 <div id="proprietario" class="tab-content" style="display: none;">
                 </div>
 
+                {% if dados.tipo_consulta != 'placa' and dados.tipo_consulta != 'nome' %}
                 <!-- TAB: Informações Públicas -->
                 <div id="public-info" class="tab-content">
                 <div style="background: rgba(6, 182, 212, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2);">
@@ -2243,6 +2232,7 @@
                     {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- TAB: Dados Brutos -->
                 <div id="raw" class="tab-content">
