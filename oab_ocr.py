@@ -178,16 +178,15 @@ def extrair_dados_ficha_ocr(imagem_bytes: bytes) -> Dict[str, str]:
     return dados
 
 
-def buscar_dados_completos_oab_com_ocr(
+def buscar_dados_completos_oab_com_imagem(
     numero: str,
     estado: str,
     session,
     url_base: str = "https://cna.oab.org.br"
 ):
     """
-    Busca dados completos de um advogado OAB incluindo OCR da ficha.
-    
-    Retorna dict com todos os 7+ campos principais
+    Busca dados de OAB e retorna a URL da imagem da ficha.
+    MUITO MAIS LEVE - não usa OCR, apenas pega a imagem!
     """
     import re
     import requests
@@ -222,9 +221,15 @@ def buscar_dados_completos_oab_com_ocr(
         return {"encontrado": False, "erro": "Não encontrado"}
     
     resultado = search_data['Data'][0]
+    
+    # Extrair dados básicos da primeira resposta
+    nome = resultado.get('Nome', '')
+    inscricao = resultado.get('Inscricao', '')
+    uf = resultado.get('UF', '')
+    
     detail_url = resultado.get('DetailUrl', '')
     
-    # Step 3: Get detail
+    # Step 3: Get detail URL para imagem
     detail_url_full = url_base + detail_url
     resp_detail = session.get(detail_url_full, timeout=15)
     
@@ -235,29 +240,24 @@ def buscar_dados_completos_oab_com_ocr(
     
     render_url = detail_data['Data'].get('DetailUrl', '')
     
-    # Step 4: Get ficha image
-    render_full = url_base + render_url
-    resp_render = session.get(render_full, timeout=15)
+    # Step 4: URL completa da imagem
+    imagem_url = url_base + render_url
     
-    if resp_render.status_code != 200:
-        return {"encontrado": False, "erro": "Não conseguiu obter imagem"}
-    
-    # Step 5: OCR na imagem
-    try:
-        dados_ocr = extrair_dados_ficha_ocr(resp_render.content)
-    except Exception as e:
-        return {"encontrado": False, "erro": f"Erro no OCR: {str(e)}"}
-    
-    # Mesclar dados
-    resultado_final = {
+    # Retornar dados básicos + URL da imagem (SEM OCR!)
+    return {
         "encontrado": True,
-        "numero_inscricao": numero,
+        "numero_inscricao": f"{inscricao}/{uf}",
         "estado": estado.upper(),
         "tipo_inscricao": "Advogado",
-        "fonte": "OAB-OCR",
+        "fonte": "OAB - Ficha Completa",
+        "nome": nome,
+        "inscricao": inscricao,
+        "seccional": uf,
+        "imagem_url": imagem_url,  # URL da imagem da ficha!
+        "possui_imagem": True
     }
-    
-    resultado_final.update(dados_ocr)
-    
-    return resultado_final
+
+
+# Manter compatibilidade com nome antigo
+buscar_dados_completos_oab_com_ocr = buscar_dados_completos_oab_com_imagem
 

@@ -1071,6 +1071,36 @@
                                     </svg>
                                     Informações Profissionais - OAB
                                 </h3>
+                                
+                                <!-- Imagem da Ficha OAB -->
+                                {% if dados.dados_pessoais.possui_imagem and dados.dados_pessoais.imagem_url %}
+                                <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px dashed rgba(168,85,247,0.3);">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #a855f7;">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        <h4 style="color: #e0e7ff; margin: 0; font-size: 15px; font-weight: 600;">Ficha Completa OAB</h4>
+                                    </div>
+                                    <a href="{{ dados.dados_pessoais.imagem_url }}" target="_blank" style="display: block; text-decoration: none;">
+                                        <img src="{{ dados.dados_pessoais.imagem_url }}" 
+                                             alt="Ficha OAB - {{ dados.dados_pessoais.nome }}" 
+                                             style="width: 100%; max-width: 800px; height: auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.3s ease;"
+                                             onmouseover="this.style.transform='scale(1.02)'"
+                                             onmouseout="this.style.transform='scale(1)'">
+                                    </a>
+                                    <p style="margin: 10px 0 0 0; text-align: center; color: #9ca3af; font-size: 12px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                        Clique na imagem para abrir em tamanho original
+                                    </p>
+                                </div>
+                                {% endif %}
+                                
                                 <div class="data-grid">
                                     {% if dados.dados_pessoais.nome %}
                                         <div class="data-item" style="grid-column: 1 / -1;">

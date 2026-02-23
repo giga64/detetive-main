@@ -2,13 +2,10 @@ fastapi
 uvicorn
 telethon==1.42.0
 jinja2
-playwright  # Remova se não for usar automação de navegador 
 python-multipart
 psutil
 tenacity
 requests
-# Dependências para OCR da Ficha OAB
-easyocr
 pillow
-torch
-torchvision
+# OCR removido - agora apenas exibe a imagem da ficha OAB (muito mais leve!)
+# playwright  # Removido - não usado

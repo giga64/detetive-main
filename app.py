@@ -207,14 +207,14 @@ API_ID = int(os.environ.get("TELEGRAM_API_ID", "17993467"))
 API_HASH = os.environ.get("TELEGRAM_API_HASH", "684fdc620ac8ace6bc1ee15c219744a3")
 GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 
-# Configuração OCR para OAB (pode desabilitar se causar problemas)
+# Configuração para buscar imagem OAB (LEVE - não usa OCR!)
 ENABLE_OAB_OCR = os.environ.get("ENABLE_OAB_OCR", "true").lower() in ("true", "1", "yes")
 
 print(f"Configuração Telegram:")
 print(f"   Telethon: {TELETHON_VERSION}")
 print(f"   API_ID: {API_ID}")
 print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
-print(f"   OCR OAB: {'ATIVADO' if ENABLE_OAB_OCR else 'DESATIVADO'}")
+print(f"   Busca Imagem OAB: {'ATIVADO' if ENABLE_OAB_OCR else 'DESATIVADO (usa API simples)'}")
 
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
@@ -1536,16 +1536,16 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
                 "fonte": "OAB - Cadastro Nacional de Advogados"
             }
         
-        # Verificar se OCR está habilitado
+        # Verificar se busca de imagem está habilitada
         if not ENABLE_OAB_OCR:
-            print("⚠️ OCR desabilitado via ENABLE_OAB_OCR - usando API simples")
+            print("⚠️ Busca de imagem OAB desabilitada via ENABLE_OAB_OCR - usando API simples")
             return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
-        # Importar função OCR
+        # Importar função
         try:
             from oab_ocr import buscar_dados_completos_oab_com_ocr
         except ImportError:
-            print("⚠️ Módulo oab_ocr não encontrado, usando método anterior")
+            print("⚠️ Módulo oab_ocr não encontrado, usando API simples")
             # Fallback para método anterior
             return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
@@ -1558,64 +1558,61 @@ async def buscar_oab(numero: str, estado: str, tipo_inscricao: str = "A") -> dic
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
         }
         
-        print(f"🔍 Buscando OAB completa com OCR: {numero_normalizado}/{estado}")
+        print(f"🔍 Buscando OAB com imagem da ficha: {numero_normalizado}/{estado}")
         
         session = requests.Session()
         session.headers.update(headers)
         
-        # Usar nova função com OCR - EXECUTAR EM THREAD SEPARADA
+        # Executar em thread separada (mesmo sendo simples, é I/O)
         try:
-            # Executar em thread pool para não bloquear (OCR é pesado)
             loop = asyncio.get_event_loop()
             
-            # Timeout de 60 segundos (download de modelo pode demorar na primeira vez)
+            # Timeout de 20 segundos (só busca imagem, sem OCR pesado)
             resultado = await asyncio.wait_for(
                 loop.run_in_executor(
-                    executor,  # Thread pool já configurado no topo do arquivo
+                    executor,
                     buscar_dados_completos_oab_com_ocr,
                     numero_normalizado,
                     estado,
                     session,
                     url_base
                 ),
-                timeout=60.0  # 60 segundos de timeout
+                timeout=20.0  # Muito mais rápido agora!
             )
             
             if not resultado.get('encontrado'):
-                print(f"⚠️ OCR não encontrou dados: {resultado.get('erro')}")
+                print(f"⚠️ Busca com imagem falhou: {resultado.get('erro')}")
                 # Fallback para API simples
                 return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
             
-            # Estruturar resposta
+            # Estruturar resposta com imagem
             dados = {
                 "encontrado": True,
                 "numero_inscricao": f"{resultado.get('inscricao', numero)}/{estado}",
                 "numero_normalizado": numero_normalizado,
                 "estado": estado,
-                "tipo_inscricao": resultado.get('tipo', 'Advogado'),
-                "fonte": "OAB - OCR da Ficha",
+                "tipo_inscricao": resultado.get('tipo_inscricao', 'Advogado'),
+                "fonte": resultado.get('fonte', 'OAB - Ficha Completa'),
                 "nome": resultado.get('nome', ''),
                 "inscricao": resultado.get('inscricao', ''),
                 "seccional": resultado.get('seccional', ''),
-                "subseccao": resultado.get('subseccao', ''),
-                "endereco": resultado.get('endereco', ''),
-                "telefone": resultado.get('telefone', ''),
-                "cep": resultado.get('cep', '')
+                "imagem_url": resultado.get('imagem_url', ''),  # URL da imagem!
+                "possui_imagem": resultado.get('possui_imagem', False)
             }
             
             print(f"✅ Busca concluída com sucesso!")
             print(f"   Nome: {dados['nome']}")
-            print(f"   Telefone: {dados.get('telefone', 'N/A')}")
+            print(f"   Imagem: {'SIM' if dados['possui_imagem'] else 'NÃO'}")
             
             return dados
         
         except asyncio.TimeoutError:
-            print(f"⏱️ Timeout na busca com OCR (60s) - usando fallback")
+            print(f"⏱️ Timeout ao buscar imagem OAB (20s) - usando fallback API simples")
             # Fallback para API simples
             return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
             
         except Exception as e:
-            print(f"❌ Erro ao extrair com OCR: {e}")
+            print(f"❌ Erro ao buscar imagem OAB: {e}")
             # Fallback para API
             return await buscar_oab_api_simples(numero_normalizado, estado, tipo_inscricao)
         
