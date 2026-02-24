@@ -884,7 +884,6 @@
                             </svg>
                             Resultados
                         </button>
-                        {% if analise_ia %}
                         <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -893,7 +892,6 @@
                             </svg>
                             Análise IA
                         </button>
-                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -909,7 +907,6 @@
                             </svg>
                             Dados OAB
                         </button>
-                        {% if analise_ia %}
                         <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -918,7 +915,6 @@
                             </svg>
                             Análise IA
                         </button>
-                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -987,7 +983,6 @@
                             </svg>
                             Informações Públicas
                         </button>
-                        {% if analise_ia %}
                         <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -996,7 +991,6 @@
                             </svg>
                             Análise IA
                         </button>
-                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1042,7 +1036,6 @@
                             </svg>
                             Empresas
                         </button>
-                        {% if analise_ia %}
                         <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <circle cx="12" cy="12" r="1"></circle>
@@ -1051,7 +1044,6 @@
                             </svg>
                             Análise IA
                         </button>
-                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -2276,7 +2268,6 @@
                 {% endif %}
 
                 <!-- TAB: Análise com IA -->
-                {% if analise_ia %}
                 <div id="ia-analysis" class="tab-content">
                     <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); padding: 20px; border-radius: 12px; border: 2px solid rgba(139, 92, 246, 0.3);">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
@@ -2289,9 +2280,15 @@
                             <h3 style="color: #8b5cf6; margin: 0; font-size: 18px; font-weight: 700;">Análise com IA (Gemini)</h3>
                         </div>
                         
+                        {% if analise_ia %}
                         <div style="background: rgba(139, 92, 246, 0.05); padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6; line-height: 1.7; color: #e0e0e0; white-space: pre-wrap; word-break: break-word; max-height: 500px; overflow-y: auto;">
                             {{ analise_ia }}
                         </div>
+                        {% else %}
+                        <div style="background: rgba(139, 92, 246, 0.05); padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6; line-height: 1.7; color: #999; text-align: center;">
+                            <p>Análise IA não disponível no momento. Tente novamente ou verifique a conexão com a API.</p>
+                        </div>
+                        {% endif %}
                         
                         <p style="margin: 15px 0 0 0; font-size: 12px; color: #888; display: flex; align-items: center; gap: 6px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2302,7 +2299,6 @@
                         </p>
                     </div>
                 </div>
-                {% endif %}
 
                 <!-- TAB: Dados Brutos -->
                 <div id="raw" class="tab-content">
