@@ -631,80 +631,132 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
     
     return result
 
-async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -> str:
+async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) -> str:
     """
     Analisa resultado da consulta usando Google Gemini IA
-    Retorna análise estruturada e insights
+    Retorna análise profunda com foco em endereços e indivíduos
     """
     if not GEMINI_AVAILABLE or not GEMINI_API_KEY:
-        print("⚠️ Gemini IA não disponível - GEMINI_AVAILABLE:", GEMINI_AVAILABLE, "GEMINI_API_KEY:", bool(GEMINI_API_KEY))
-        return None
+        return "⚠️ Gemini IA não configurada"
     
     try:
-        # Preparar dados para a IA (sem informações sensíveis em excesso)
-        dados_limpos = {}
+        dados_estruturados = dados_completo.get("dados_estruturados", {})
+        apis_data = dados_completo.get("apis", {})
+        resultado_bruto = dados_completo.get("resultado_bruto", "")
         
-        # Se houver resultado_bruto, usar isso
-        if "resultado_bruto" in dados_resultado:
-            dados_limpos = {"dados": dados_resultado["resultado_bruto"][:1000]}
-        elif tipo_consulta == "cpf":
-            dados_limpos = {
-                "nome": dados_resultado.get("dados_pessoais", {}).get("nome"),
-                "cpf": dados_resultado.get("dados_pessoais", {}).get("cpf"),
-                "enderecos": dados_resultado.get("dados_pessoais", {}).get("enderecos", [])[:2],
-                "telefones": dados_resultado.get("dados_pessoais", {}).get("telefones", [])[:2],
+        # Extrair informações relevantes para análise
+        analise_data = {}
+        
+        if tipo_consulta == "cpf":
+            pf = dados_estruturados.get("dados_pessoais", {})
+            analise_data = {
+                "tipo": "CPF",
+                "Nome": pf.get("nome"),
+                "CPF": pf.get("cpf"),
+                "Data Nascimento": pf.get("data_nascimento"),
+                "Idade": pf.get("idade"),
+                "Sexo": pf.get("sexo"),
+                "Nacionalidade": pf.get("nacionalidade"),
+                "Profissão": pf.get("profissao"),
+                "Renda Presumida": pf.get("renda_presumida"),
+                "Endereços Identificados": pf.get("enderecos", [])[:5],
+                "Contatos": pf.get("telefones", [])[:3],
+                "Dados de APIs": {
+                    "Localização": apis_data.get("localizacao"),
+                    "Endereços Validados": apis_data.get("endereco_validado"),
+                }
             }
         elif tipo_consulta == "cnpj":
-            dados_limpos = {
-                "razao_social": dados_resultado.get("dados_empresa", {}).get("razao_social"),
-                "cnpj": dados_resultado.get("dados_empresa", {}).get("cnpj"),
-                "natureza_juridica": dados_resultado.get("dados_empresa", {}).get("natureza_juridica"),
-                "atividade_principal": dados_resultado.get("dados_empresa", {}).get("atividade_principal"),
-                "status": dados_resultado.get("dados_empresa", {}).get("status"),
+            emp = dados_estruturados.get("dados_empresa", {})
+            analise_data = {
+                "tipo": "CNPJ",
+                "Razão Social": emp.get("razao_social"),
+                "CNPJ": emp.get("cnpj"),
+                "Natureza Jurídica": emp.get("natureza_juridica"),
+                "Atividade Principal": emp.get("atividade_principal"),
+                "Status": emp.get("status"),
+                "Sócios": emp.get("socios", [])[:3],
+                "Endereço": emp.get("endereco"),
+                "Contatos": emp.get("telefones", [])[:3],
+                "Dados de APIs": {
+                    "Localização": apis_data.get("localizacao"),
+                }
             }
         elif tipo_consulta == "oab":
-            dados_limpos = {
-                "nome": dados_resultado.get("dados_pessoais", {}).get("nome"),
-                "inscricao": dados_resultado.get("dados_pessoais", {}).get("oab"),
-                "seccional": dados_resultado.get("dados_pessoais", {}).get("seccional"),
-                "tipo": dados_resultado.get("dados_pessoais", {}).get("tipo"),
+            adv = dados_estruturados.get("dados_pessoais", {})
+            analise_data = {
+                "tipo": "OAB",
+                "Nome": adv.get("nome"),
+                "Inscrição OAB": adv.get("oab"),
+                "Seccional": adv.get("seccional"),
+                "Tipo": adv.get("tipo"),
+                "Especialidade": adv.get("especialidade"),
+                "Endereços": adv.get("enderecos", [])[:3],
+                "Contatos": adv.get("telefones", [])[:3],
             }
         elif tipo_consulta == "nome":
-            dados_limpos = {
-                "resultados": dados_resultado.get("resultados", [])[:3]
+            res = dados_estruturados.get("resultados", [])[:3]
+            analise_data = {
+                "tipo": "BUSCA POR NOME",
+                "Resultados": res,
+                "Total de Matches": len(res),
             }
         elif tipo_consulta == "placa":
-            dados_limpos = {
-                "placa": dados_resultado.get("dados_veiculo", {}).get("placa"),
-                "marca": dados_resultado.get("dados_veiculo", {}).get("marca"),
-                "modelo": dados_resultado.get("dados_veiculo", {}).get("modelo"),
-                "ano": dados_resultado.get("dados_veiculo", {}).get("ano"),
+            vei = dados_estruturados.get("dados_veiculo", {})
+            prop = dados_estruturados.get("proprietario", {})
+            analise_data = {
+                "tipo": "PLACA",
+                "Placa": vei.get("placa"),
+                "Marca": vei.get("marca"),
+                "Modelo": vei.get("modelo"),
+                "Ano": vei.get("ano"),
+                "Proprietário": prop.get("nome"),
+                "Endereço Proprietário": prop.get("endereco"),
+                "CPF/CNPJ": prop.get("cpf") or prop.get("cnpj"),
             }
         else:
-            dados_limpos = dados_resultado
+            analise_data = {"dados_brutos": resultado_bruto[:500]}
         
-        prompt = f"""Você é um especialista em investigação digital e análise de dados.
+        prompt = f"""Você é um especialista em investigação digital, análise forense de dados e compliance.
 
-Analise os seguintes dados de uma consulta de {tipo_consulta.upper()}:
+DADOS DISPONÍVEIS:
+{json.dumps(analise_data, ensure_ascii=False, indent=2)}
 
-{json.dumps(dados_limpos, ensure_ascii=False, indent=2)}
+Forneça uma análise PROFUNDA e DETALHADA (mínimo 4-5 parágrafos) incluindo:
 
-Forneça uma análise concisa (máximo 3 parágrafos) incluindo:
-1. **Consistência dos Dados**: São coerentes? Há inconsistências?
-2. **Possível Risco/Fraude**: Há padrões suspeitos?
-3. **Recomendações**: O que investigar mais?
+1. **Perfil do Indivíduo/Entidade**: Quem é? Características principais? Risco potencial?
 
-Seja profissional e direto, como em um relatório de investigação."""
+2. **Análise Geográfica e Endereços**: 
+   - Quais endereços foram identificados?
+   - Padrão de deslocamento?
+   - Associações entre endereços?
+   - Consistência das informações de localização?
 
-        print(f"🤖 Chamando Gemini IA para análise de {tipo_consulta}...")
+3. **Histórico e Consistência dos Dados**:
+   - Os dados fazem sentido juntos?
+   - Há inconsistências suspeitas?
+   - Dados faltando ou contraditórios?
+
+4. **Avaliação de Risco**: 
+   - Sinais de alerta?
+   - Padrões suspeitos?
+   - Recomendações de investigação adicional?
+
+5. **Próximos Passos**: O que investigar? Quais APIs ou cruzamentos seriam úteis?
+
+Seja analítico, profissional e baseado em dados. Identifique padrões e anomalias."""
+
+        print(f"🤖 Gemini analisando {tipo_consulta.upper()}...")
         model = genai.GenerativeModel('gemini-2.5-flash')
         
-        # Chamar a API de forma síncrona em thread separada
         def gerar_conteudo():
             return model.generate_content(prompt)
         
         response = await asyncio.to_thread(gerar_conteudo)
         resultado = response.text
+        
+        if not resultado or resultado.strip() == "":
+            return "⚠️ Análise IA retornou vazio. Tente novamente."
         
         print(f"✅ Análise IA gerada com sucesso ({len(resultado)} caracteres)")
         return resultado
@@ -713,7 +765,7 @@ Seja profissional e direto, como em um relatório de investigação."""
         print(f"❌ Erro ao analisar com IA: {str(e)}")
         import traceback
         traceback.print_exc()
-        return None
+        return f"⚠️ Erro na análise: {str(e)[:100]}"
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
@@ -3182,17 +3234,21 @@ async def do_consulta(request: Request):
         
         # Análise com IA
         analise_ia = None
-        # Gerar análise seja com dados estruturados ou com o resultado bruto
-        if tipo.lower() not in ['placa']:  # Placa não tem análise
-            try:
-                # Tentar com dados estruturados, mas se não houver, tentar com resultado bruto
-                dados_para_analise = dados_estruturados if dados_estruturados else {"resultado_bruto": resultado[:500]}
-                analise_ia = await analisar_resultado_com_ia(tipo, dados_para_analise)
-            except Exception as ia_error:
-                print(f"⚠️ Erro ao analisar com IA: {str(ia_error)}")
-                import traceback
-                traceback.print_exc()
-                pass  # Se falhar, continua sem análise IA
+        # Gerar análise com todos os dados disponíveis (estruturados + APIs)
+        try:
+            # Combinar dados estruturados com dados das APIs para análise completa
+            dados_completos = {
+                "dados_estruturados": dados_estruturados,
+                "apis": apis_data,
+                "resultado_bruto": resultado[:1000] if resultado else ""
+            }
+            analise_ia = await analisar_resultado_com_ia(tipo, dados_completos)
+            print(f"✅ Análise IA gerada com {len(analise_ia) if analise_ia else 0} caracteres")
+        except Exception as ia_error:
+            print(f"⚠️ Erro ao analisar com IA: {str(ia_error)}")
+            import traceback
+            traceback.print_exc()
+            pass  # Se falhar, continua sem análise IA
         
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
