@@ -39,13 +39,13 @@ try:
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
         GEMINI_AVAILABLE = True
-        print(f"✅ Google Gemini IA disponível - Chave: {GEMINI_API_KEY[:20]}...")
+        print(f"[OK] Google Gemini IA disponivel - Chave: {GEMINI_API_KEY[:20]}...")
     else:
         GEMINI_AVAILABLE = False
-        print("⚠️ GEMINI_API_KEY não encontrada no .env")
+        print("[WARN] GEMINI_API_KEY nao encontrada no .env")
 except ImportError as e:
     GEMINI_AVAILABLE = False
-    print(f"❌ Erro ao importar google.generativeai: {e}")
+    print(f"[ERROR] Erro ao importar google.generativeai: {e}")
 
 # ----------------------
 # Executor para chamadas síncronas
@@ -636,8 +636,23 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) ->
     Analisa resultado da consulta usando Google Gemini IA
     Retorna análise profunda com foco em endereços e indivíduos
     """
-    if not GEMINI_AVAILABLE or not GEMINI_API_KEY:
-        return "⚠️ Gemini IA não configurada"
+    # Verificar configuração do Gemini
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("[ERROR] GEMINI_API_KEY nao carregada do ambiente")
+        return "[AVISO] Chave Gemini nao configurada no .env"
+    
+    try:
+        # Tentar reconfigurar a API (pode ter expirado)
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+    except Exception as e:
+        print(f"[ERROR] Erro ao configurar Gemini: {e}")
+        return f"[AVISO] Erro na configuracao: {str(e)[:50]}"
+    
+    if not GEMINI_AVAILABLE:
+        print(f"[WARN] GEMINI_AVAILABLE={GEMINI_AVAILABLE}, mas API_KEY={bool(api_key)}")
+        return "[AVISO] Gemini IA nao disponivel (modulo nao carregou)"
     
     try:
         dados_estruturados = dados_completo.get("dados_estruturados", {})
@@ -746,7 +761,7 @@ Forneça uma análise PROFUNDA e DETALHADA (mínimo 4-5 parágrafos) incluindo:
 
 Seja analítico, profissional e baseado em dados. Identifique padrões e anomalias."""
 
-        print(f"🤖 Gemini analisando {tipo_consulta.upper()}...")
+        print(f"[INFO] Gemini analisando {tipo_consulta.upper()}...")
         model = genai.GenerativeModel('gemini-2.5-flash')
         
         def gerar_conteudo():
@@ -756,16 +771,16 @@ Seja analítico, profissional e baseado em dados. Identifique padrões e anomali
         resultado = response.text
         
         if not resultado or resultado.strip() == "":
-            return "⚠️ Análise IA retornou vazio. Tente novamente."
+            return "[AVISO] Analise IA retornou vazio. Tente novamente."
         
-        print(f"✅ Análise IA gerada com sucesso ({len(resultado)} caracteres)")
+        print(f"[OK] Analise IA gerada com sucesso ({len(resultado)} caracteres)")
         return resultado
     
     except Exception as e:
-        print(f"❌ Erro ao analisar com IA: {str(e)}")
+        print(f"[ERROR] Erro ao analisar com IA: {str(e)}")
         import traceback
         traceback.print_exc()
-        return f"⚠️ Erro na análise: {str(e)[:100]}"
+        return f"[AVISO] Erro na analise: {str(e)[:100]}"
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
@@ -3243,9 +3258,9 @@ async def do_consulta(request: Request):
                 "resultado_bruto": resultado[:1000] if resultado else ""
             }
             analise_ia = await analisar_resultado_com_ia(tipo, dados_completos)
-            print(f"✅ Análise IA gerada com {len(analise_ia) if analise_ia else 0} caracteres")
+            print(f"[OK] Analise IA gerada com {len(analise_ia) if analise_ia else 0} caracteres")
         except Exception as ia_error:
-            print(f"⚠️ Erro ao analisar com IA: {str(ia_error)}")
+            print(f"[WARN] Erro ao analisar com IA: {str(ia_error)}")
             import traceback
             traceback.print_exc()
             pass  # Se falhar, continua sem análise IA
