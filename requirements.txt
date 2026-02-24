@@ -7,5 +7,6 @@ psutil
 tenacity
 requests
 pillow
+google-generativeai
 # OCR removido - agora apenas exibe a imagem da ficha OAB (muito mais leve!)
 # playwright  # Removido - não usado

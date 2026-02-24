@@ -884,6 +884,16 @@
                             </svg>
                             Resultados
                         </button>
+                        {% if analise_ia %}
+                        <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6"></path>
+                            </svg>
+                            Análise IA
+                        </button>
+                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -899,6 +909,16 @@
                             </svg>
                             Dados OAB
                         </button>
+                        {% if analise_ia %}
+                        <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6"></path>
+                            </svg>
+                            Análise IA
+                        </button>
+                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -922,7 +942,8 @@
                             </svg>
                             Proprietário
                         </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'raw')">
+                        <button class="tab-btn" onclick="switchTab(event, 'raw')"
+>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -966,6 +987,16 @@
                             </svg>
                             Informações Públicas
                         </button>
+                        {% if analise_ia %}
+                        <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6"></path>
+                            </svg>
+                            Análise IA
+                        </button>
+                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1011,6 +1042,16 @@
                             </svg>
                             Empresas
                         </button>
+                        {% if analise_ia %}
+                        <button class="tab-btn" onclick="switchTab(event, 'ia-analysis')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6"></path>
+                            </svg>
+                            Análise IA
+                        </button>
+                        {% endif %}
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -2230,6 +2271,35 @@
                             <p>Nenhuma informação pública disponível</p>
                         </div>
                     {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- TAB: Análise com IA -->
+                {% if analise_ia %}
+                <div id="ia-analysis" class="tab-content">
+                    <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); padding: 20px; border-radius: 12px; border: 2px solid rgba(139, 92, 246, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #8b5cf6;">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <path d="M12 1v6m0 6v6"></path>
+                                <path d="M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6"></path>
+                                <path d="M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"></path>
+                            </svg>
+                            <h3 style="color: #8b5cf6; margin: 0; font-size: 18px; font-weight: 700;">Análise com IA (Gemini)</h3>
+                        </div>
+                        
+                        <div style="background: rgba(139, 92, 246, 0.05); padding: 15px; border-radius: 8px; border-left: 4px solid #8b5cf6; line-height: 1.7; color: #e0e0e0; white-space: pre-wrap; word-break: break-word; max-height: 500px; overflow-y: auto;">
+                            {{ analise_ia }}
+                        </div>
+                        
+                        <p style="margin: 15px 0 0 0; font-size: 12px; color: #888; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Análise automatizada gerada pelo Google Gemini IA
+                        </p>
                     </div>
                 </div>
                 {% endif %}

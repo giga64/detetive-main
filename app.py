@@ -24,6 +24,18 @@ from telethon import TelegramClient, events
 from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
 
+# Google Gemini IA
+try:
+    import google.generativeai as genai
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        GEMINI_AVAILABLE = True
+    else:
+        GEMINI_AVAILABLE = False
+except ImportError:
+    GEMINI_AVAILABLE = False
+
 # ----------------------
 # Executor para chamadas síncronas
 # ----------------------
@@ -607,6 +619,70 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
         print(f"⚠️ Erro em enriquecher_endereco_selecionado: {str(e)}")
     
     return result
+
+async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -> str:
+    """
+    Analisa resultado da consulta usando Google Gemini IA
+    Retorna análise estruturada e insights
+    """
+    if not GEMINI_AVAILABLE or not GEMINI_API_KEY:
+        return None
+    
+    try:
+        # Preparar dados para a IA (sem informações sensíveis em excesso)
+        dados_limpos = {}
+        
+        if tipo_consulta == "cpf":
+            dados_limpos = {
+                "nome": dados_resultado.get("dados_pessoais", {}).get("nome"),
+                "cpf": dados_resultado.get("dados_pessoais", {}).get("cpf"),
+                "enderecos": dados_resultado.get("dados_pessoais", {}).get("enderecos", [])[:2],
+                "telefones": dados_resultado.get("dados_pessoais", {}).get("telefones", [])[:2],
+            }
+        elif tipo_consulta == "cnpj":
+            dados_limpos = {
+                "razao_social": dados_resultado.get("dados_empresa", {}).get("razao_social"),
+                "cnpj": dados_resultado.get("dados_empresa", {}).get("cnpj"),
+                "natureza_juridica": dados_resultado.get("dados_empresa", {}).get("natureza_juridica"),
+                "atividade_principal": dados_resultado.get("dados_empresa", {}).get("atividade_principal"),
+                "status": dados_resultado.get("dados_empresa", {}).get("status"),
+            }
+        elif tipo_consulta == "oab":
+            dados_limpos = {
+                "nome": dados_resultado.get("dados_pessoais", {}).get("nome"),
+                "inscricao": dados_resultado.get("dados_pessoais", {}).get("oab"),
+                "seccional": dados_resultado.get("dados_pessoais", {}).get("seccional"),
+                "tipo": dados_resultado.get("dados_pessoais", {}).get("tipo"),
+            }
+        elif tipo_consulta == "placa":
+            dados_limpos = {
+                "placa": dados_resultado.get("dados_veiculo", {}).get("placa"),
+                "marca": dados_resultado.get("dados_veiculo", {}).get("marca"),
+                "modelo": dados_resultado.get("dados_veiculo", {}).get("modelo"),
+                "ano": dados_resultado.get("dados_veiculo", {}).get("ano"),
+            }
+        
+        prompt = f"""Você é um especialista em investigação digital e análise de dados.
+
+Analise os seguintes dados de uma consulta de {tipo_consulta.upper()}:
+
+{json.dumps(dados_limpos, ensure_ascii=False, indent=2)}
+
+Forneça uma análise concisa (máximo 3 parágrafos) incluindo:
+1. **Consistência dos Dados**: São coerentes? Há inconsistências?
+2. **Possível Risco/Fraude**: Há padrões suspeitos?
+3. **Recomendações**: O que investigar mais?
+
+Seja profissional e direto, como em um relatório de investigação."""
+
+        model = genai.GenerativeModel('gemini-pro')
+        response = await asyncio.to_thread(model.generate_content, prompt)
+        
+        return response.text
+    
+    except Exception as e:
+        print(f"⚠️ Erro ao analisar com IA: {str(e)}")
+        return None
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
@@ -3073,12 +3149,22 @@ async def do_consulta(request: Request):
                 traceback.print_exc()
                 pass  # Se falhar, continua sem enriquecimento
         
+        # Análise com IA
+        analise_ia = None
+        if dados_estruturados and tipo.lower() not in ['placa']:  # Placa não tem análise
+            try:
+                analise_ia = await analisar_resultado_com_ia(tipo, dados_estruturados)
+            except Exception as ia_error:
+                print(f"⚠️ Erro ao analisar com IA: {str(ia_error)}")
+                pass  # Se falhar, continua sem análise IA
+        
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
             "mensagem": identificador, 
             "resultado": resultado,  # Jinja2 escapará automaticamente
             "dados": dados_estruturados,
             "apis_data": apis_data,
+            "analise_ia": analise_ia,
             "identifier": identificador,
             "csrf_token": get_or_create_csrf_token(request)
         })
