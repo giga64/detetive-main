@@ -633,81 +633,78 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
 
 async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) -> str:
     """
-    Analisa resultado da consulta usando Seek IA
-    Retorna análise inteligente, clara e carismática focada em endereços e risco
+    Seek IA - Analise rapida e objetiva otimizada para baixo custo
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("[ERROR] GEMINI_API_KEY nao carregada do ambiente")
-        return "Seek IA ainda nao esta configurada. Tente novamente em breve!"
+        return "Seek IA nao configurada."
     
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
     except Exception as e:
-        print(f"[ERROR] Erro ao configurar Seek IA: {e}")
-        return f"Ops! Seek IA teve um problema. Tente novamente: {str(e)[:50]}"
+        return f"Erro Seek IA: {str(e)[:50]}"
     
     if not GEMINI_AVAILABLE:
-        print(f"[WARN] GEMINI_AVAILABLE={GEMINI_AVAILABLE}, mas API_KEY={bool(api_key)}")
-        return "Seek IA nao disponivel no momento."
+        return "Seek IA indisponivel."
     
     try:
-        dados_estruturados = dados_completo.get("dados_estruturados", {})
-        apis_data = dados_completo.get("apis", {})
-        resultado_bruto = dados_completo.get("resultado_bruto", "")
+        dados_est = dados_completo.get("dados_estruturados", {})
+        apis = dados_completo.get("apis", {})
         
-        # Coletar TODOS os dados disponíveis
-        analise_data = {
-            "tipo": tipo_consulta.upper(),
-            "dados_estruturados": dados_estruturados,
-            "apis_enriquecimento": apis_data,
-            "resumo_raw": resultado_bruto[:800]
-        }
+        # Extrair so o essencial para economizar tokens
+        resumo = {"tipo": tipo_consulta.upper()}
         
-        prompt = f"""Voce eh Seek IA, um especialista em investigacao civil digital com carisma e clareza.
+        if tipo_consulta == "cpf":
+            pf = dados_est.get("dados_pessoais", {})
+            resumo.update({
+                "nome": pf.get("nome"),
+                "idade": pf.get("idade"),
+                "enderecos": pf.get("enderecos", [])[:3],
+                "telefones": pf.get("telefones", [])[:2]
+            })
+        elif tipo_consulta == "cnpj":
+            emp = dados_est.get("dados_empresa", {})
+            resumo.update({
+                "empresa": emp.get("razao_social"),
+                "atividade": emp.get("atividade_principal"),
+                "endereco": emp.get("endereco"),
+                "socios": [s.get("nome") if isinstance(s, dict) else s for s in emp.get("socios", [])[:2]]
+            })
+        elif tipo_consulta == "placa":
+            vei = dados_est.get("dados_veiculo", {})
+            prop = dados_est.get("proprietario", {})
+            resumo.update({
+                "veiculo": f"{vei.get('marca')} {vei.get('modelo')}",
+                "proprietario": prop.get("nome"),
+                "endereco": prop.get("endereco")
+            })
+        else:
+            resumo["dados"] = str(dados_est)[:300]
+        
+        prompt = f"""Analise objetiva para investigacao:
+DADOS: {json.dumps(resumo, ensure_ascii=False)}
 
-INFORMACOES PARA ANALISE:
-{json.dumps(analise_data, ensure_ascii=False, indent=2)}
+Retorne em 2 paragrafos curtos (maximo 5 linhas cada):
+1. PERFIL: Quem eh? Enderecos encontrados? Idade/Atividade?
+2. GAPS E PROXIMOS PASSOS: O que FALTA? Onde buscar (ex: Serasa, Receita Federal, redes sociais especificas como LinkedIn/Instagram/Facebook)?
 
-Gere uma analise CONCISA, CLARA E CARISMÁTICA em 2-3 paragrafos focando em:
-1. Quem eh essa pessoa/empresa? Qual eh o perfil?
-2. Onde ela esta? Quais sao os ENDERECOS identificados e o que isso revela?
-3. Qual eh o nivel de risco/alerta e proximos passos?
+Sem asteriscos, seja direto e pratico."""
 
-IMPORTANTE:
-- Nao use asteriscos, hashtags ou markdown (sem **, ###, etc)
-- Seja direto, util e inteligente
-- Foque SEMPRE em ENDERECOS como principal insight
-- Tenha personalidade, nao seja robótico
-- Se dados faltam, mencione isso como oportunidade de investigacao
-- Mantenha tom profissional mas amigável
-- Máximo 3 paragrafos, cada um com 4-5 linhas
-- Comece mencionando o tipo de consulta (CPF, CNPJ, OAB, PLACA, etc)"""
-
-        print(f"[INFO] Seek IA analisando {tipo_consulta.upper()}...")
+        print(f"[Seek IA] Analisando {tipo_consulta}...")
         model = genai.GenerativeModel('gemini-2.5-flash')
+        response = await asyncio.to_thread(lambda: model.generate_content(prompt))
+        resultado = response.text.replace("**", "").replace("##", "").replace("#", "").strip()
         
-        def gerar_conteudo():
-            return model.generate_content(prompt)
+        if not resultado:
+            return "Seek IA: Analise vazia."
         
-        response = await asyncio.to_thread(gerar_conteudo)
-        resultado = response.text
-        
-        # Limpar formatação markdown se ainda houver
-        resultado = resultado.replace("**", "").replace("##", "").replace("#", "")
-        
-        if not resultado or resultado.strip() == "":
-            return "Seek IA nao conseguiu gerar analise. Tente novamente!"
-        
-        print(f"[OK] Seek IA gerou analise com {len(resultado)} caracteres")
+        print(f"[Seek IA] OK ({len(resultado)} chars)")
         return resultado
     
     except Exception as e:
-        print(f"[ERROR] Erro na Seek IA: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return f"Seek IA encontrou um problema: {str(e)[:80]}"
+        print(f"[Seek IA ERROR] {str(e)}")
+        return f"Erro: {str(e)[:60]}"
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
