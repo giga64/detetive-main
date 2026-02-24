@@ -644,7 +644,10 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -
         # Preparar dados para a IA (sem informações sensíveis em excesso)
         dados_limpos = {}
         
-        if tipo_consulta == "cpf":
+        # Se houver resultado_bruto, usar isso
+        if "resultado_bruto" in dados_resultado:
+            dados_limpos = {"dados": dados_resultado["resultado_bruto"][:1000]}
+        elif tipo_consulta == "cpf":
             dados_limpos = {
                 "nome": dados_resultado.get("dados_pessoais", {}).get("nome"),
                 "cpf": dados_resultado.get("dados_pessoais", {}).get("cpf"),
@@ -666,6 +669,10 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -
                 "seccional": dados_resultado.get("dados_pessoais", {}).get("seccional"),
                 "tipo": dados_resultado.get("dados_pessoais", {}).get("tipo"),
             }
+        elif tipo_consulta == "nome":
+            dados_limpos = {
+                "resultados": dados_resultado.get("resultados", [])[:3]
+            }
         elif tipo_consulta == "placa":
             dados_limpos = {
                 "placa": dados_resultado.get("dados_veiculo", {}).get("placa"),
@@ -673,6 +680,8 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -
                 "modelo": dados_resultado.get("dados_veiculo", {}).get("modelo"),
                 "ano": dados_resultado.get("dados_veiculo", {}).get("ano"),
             }
+        else:
+            dados_limpos = dados_resultado
         
         prompt = f"""Você é um especialista em investigação digital e análise de dados.
 
@@ -3173,11 +3182,16 @@ async def do_consulta(request: Request):
         
         # Análise com IA
         analise_ia = None
-        if dados_estruturados and tipo.lower() not in ['placa']:  # Placa não tem análise
+        # Gerar análise seja com dados estruturados ou com o resultado bruto
+        if tipo.lower() not in ['placa']:  # Placa não tem análise
             try:
-                analise_ia = await analisar_resultado_com_ia(tipo, dados_estruturados)
+                # Tentar com dados estruturados, mas se não houver, tentar com resultado bruto
+                dados_para_analise = dados_estruturados if dados_estruturados else {"resultado_bruto": resultado[:500]}
+                analise_ia = await analisar_resultado_com_ia(tipo, dados_para_analise)
             except Exception as ia_error:
                 print(f"⚠️ Erro ao analisar com IA: {str(ia_error)}")
+                import traceback
+                traceback.print_exc()
                 pass  # Se falhar, continua sem análise IA
         
         return templates.TemplateResponse("modern-result.html", {
