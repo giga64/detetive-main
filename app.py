@@ -16,6 +16,14 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+
+# Carregar variáveis de ambiente do .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("⚠️ python-dotenv não instalado - ignorando .env")
+
 from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,10 +39,13 @@ try:
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
         GEMINI_AVAILABLE = True
+        print(f"✅ Google Gemini IA disponível - Chave: {GEMINI_API_KEY[:20]}...")
     else:
         GEMINI_AVAILABLE = False
-except ImportError:
+        print("⚠️ GEMINI_API_KEY não encontrada no .env")
+except ImportError as e:
     GEMINI_AVAILABLE = False
+    print(f"❌ Erro ao importar google.generativeai: {e}")
 
 # ----------------------
 # Executor para chamadas síncronas
@@ -626,6 +637,7 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_resultado: dict) -
     Retorna análise estruturada e insights
     """
     if not GEMINI_AVAILABLE or not GEMINI_API_KEY:
+        print("⚠️ Gemini IA não disponível - GEMINI_AVAILABLE:", GEMINI_AVAILABLE, "GEMINI_API_KEY:", bool(GEMINI_API_KEY))
         return None
     
     try:
@@ -675,13 +687,23 @@ Forneça uma análise concisa (máximo 3 parágrafos) incluindo:
 
 Seja profissional e direto, como em um relatório de investigação."""
 
-        model = genai.GenerativeModel('gemini-pro')
-        response = await asyncio.to_thread(model.generate_content, prompt)
+        print(f"🤖 Chamando Gemini IA para análise de {tipo_consulta}...")
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
-        return response.text
+        # Chamar a API de forma síncrona em thread separada
+        def gerar_conteudo():
+            return model.generate_content(prompt)
+        
+        response = await asyncio.to_thread(gerar_conteudo)
+        resultado = response.text
+        
+        print(f"✅ Análise IA gerada com sucesso ({len(resultado)} caracteres)")
+        return resultado
     
     except Exception as e:
-        print(f"⚠️ Erro ao analisar com IA: {str(e)}")
+        print(f"❌ Erro ao analisar com IA: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
