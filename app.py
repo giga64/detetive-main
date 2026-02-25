@@ -686,7 +686,7 @@ Paragrafo 3 - PRÓXIMOS PASSOS:
 Seja profissional, analitico e util. De insights que ajudem na investigacao."""
 
         print(f"[Seek IA] Analisando...")
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
         response = await asyncio.to_thread(lambda: model.generate_content(prompt))
         resultado = response.text.replace("**", "").replace("##", "").replace("#", "").replace("*", "").strip()
         
