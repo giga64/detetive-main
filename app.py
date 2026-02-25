@@ -633,7 +633,7 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
 
 async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) -> str:
     """
-    Seek IA - Analise rapida e objetiva otimizada para baixo custo
+    Seek IA - Analise inteligente e pratica
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -652,59 +652,53 @@ async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) ->
         dados_est = dados_completo.get("dados_estruturados", {})
         apis = dados_completo.get("apis", {})
         
-        # Extrair so o essencial para economizar tokens
-        resumo = {"tipo": tipo_consulta.upper()}
-        
-        if tipo_consulta == "cpf":
-            pf = dados_est.get("dados_pessoais", {})
-            resumo.update({
-                "nome": pf.get("nome"),
-                "idade": pf.get("idade"),
-                "enderecos": pf.get("enderecos", [])[:3],
-                "telefones": pf.get("telefones", [])[:2]
-            })
-        elif tipo_consulta == "cnpj":
-            emp = dados_est.get("dados_empresa", {})
-            resumo.update({
-                "empresa": emp.get("razao_social"),
-                "atividade": emp.get("atividade_principal"),
-                "endereco": emp.get("endereco"),
-                "socios": [s.get("nome") if isinstance(s, dict) else s for s in emp.get("socios", [])[:2]]
-            })
-        elif tipo_consulta == "placa":
-            vei = dados_est.get("dados_veiculo", {})
-            prop = dados_est.get("proprietario", {})
-            resumo.update({
-                "veiculo": f"{vei.get('marca')} {vei.get('modelo')}",
-                "proprietario": prop.get("nome"),
-                "endereco": prop.get("endereco")
-            })
-        else:
-            resumo["dados"] = str(dados_est)[:300]
-        
-        prompt = f"""Analise objetiva para investigacao:
-DADOS: {json.dumps(resumo, ensure_ascii=False)}
+        prompt = f"""Voce eh SEEK IA, especialista em analise de dados para investigacao.
 
-Retorne em 2 paragrafos curtos (maximo 5 linhas cada):
-1. PERFIL: Quem eh? Enderecos encontrados? Idade/Atividade?
-2. GAPS E PROXIMOS PASSOS: O que FALTA? Onde buscar (ex: Serasa, Receita Federal, redes sociais especificas como LinkedIn/Instagram/Facebook)?
+DADOS DISPONÍVEIS:
+{json.dumps(dados_est, ensure_ascii=False, indent=2)}
 
-Sem asteriscos, seja direto e pratico."""
+INSTRUCOES:
+1. Se apresente como "Seek IA" no inicio
+2. Escreva 2-3 paragrafos CURTOS (4-5 linhas cada) com insights valiosos
+3. SEM asteriscos, SEM markdown, SEM formatacao
 
-        print(f"[Seek IA] Analisando {tipo_consulta}...")
-        model = genai.GenerativeModel('gemini-2.5-flash')
+ESTRUTURA:
+
+Paragrafo 1 - PERFIL E ANÁLISE:
+- Quem eh (nome, idade, profissao se tiver)
+- Analise o perfil: idade condiz com profissao? Dados fazem sentido?
+- Insights sobre a pessoa/empresa
+
+Paragrafo 2 - ENDEREÇOS E LOCALIZAÇÃO:
+- Liste os enderecos encontrados (se tiver)
+- Analise padroes: sao da mesma cidade? Residencial vs comercial?
+- O que os enderecos revelam sobre a pessoa?
+- Se nao tiver enderecos, mencione isso como gap critico
+
+Paragrafo 3 - PRÓXIMOS PASSOS:
+- Redes sociais provaveis com handles especificos baseados no NOME REAL:
+  Instagram: @primeironome.sobrenome ou @nomecompleto
+  LinkedIn: primeiro-sobrenome
+  Facebook: Nome Sobrenome
+- Onde buscar dados faltantes: Serasa, Receita Federal, Google
+- O que investigar mais
+
+Seja profissional, analitico e util. De insights que ajudem na investigacao."""
+
+        print(f"[Seek IA] Analisando...")
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = await asyncio.to_thread(lambda: model.generate_content(prompt))
-        resultado = response.text.replace("**", "").replace("##", "").replace("#", "").strip()
+        resultado = response.text.replace("**", "").replace("##", "").replace("#", "").replace("*", "").strip()
         
         if not resultado:
-            return "Seek IA: Analise vazia."
+            return "Seek IA nao gerou analise."
         
         print(f"[Seek IA] OK ({len(resultado)} chars)")
         return resultado
     
     except Exception as e:
         print(f"[Seek IA ERROR] {str(e)}")
-        return f"Erro: {str(e)[:60]}"
+        return f"Seek IA erro: {str(e)[:60]}"
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
