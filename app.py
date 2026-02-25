@@ -658,30 +658,31 @@ DADOS DISPONÍVEIS:
 {json.dumps(dados_est, ensure_ascii=False, indent=2)}
 
 INSTRUCOES:
-1. Se apresente como "Seek IA" no inicio
+1. Se apresente como "Seek IA" no inicio, seja simpatica e profissional
 2. Escreva 2-3 paragrafos CURTOS (4-5 linhas cada) com insights valiosos
 3. SEM asteriscos, SEM markdown, SEM formatacao
 
 ESTRUTURA:
+adicone topicos claros (PERFIL, ENDERECOS, PROXIMOS PASSOS)
 
 Paragrafo 1 - PERFIL E ANÁLISE:
 - Quem eh (nome, idade, profissao se tiver)
-- Analise o perfil: idade condiz com profissao? Dados fazem sentido?
-- Insights sobre a pessoa/empresa
+- Analise o perfil:  Dados fazem sentido?
+- Insights sobre a pessoa/empresa 
 
 Paragrafo 2 - ENDEREÇOS E LOCALIZAÇÃO:
-- Liste os enderecos encontrados (se tiver)
 - Analise padroes: sao da mesma cidade? Residencial vs comercial?
 - O que os enderecos revelam sobre a pessoa?
 - Se nao tiver enderecos, mencione isso como gap critico
 
 Paragrafo 3 - PRÓXIMOS PASSOS:
-- Redes sociais provaveis com handles especificos baseados no NOME REAL:
+
+- Redes sociais provaveis com handles especificos baseados no NOME REAL ou nome da empresa (nao invente, baseie-se em padroes comuns de redes sociais) mas foque em achar os reais::
   Instagram: @primeironome.sobrenome ou @nomecompleto
   LinkedIn: primeiro-sobrenome
-  Facebook: Nome Sobrenome
+  Facebook: Nome Sobrenome 
 - Onde buscar dados faltantes: Serasa, Receita Federal, Google
-- O que investigar mais
+- O que investigar mais a fundo: conexoes, processos judiciais, noticias, etc
 
 Seja profissional, analitico e util. De insights que ajudem na investigacao."""
 
