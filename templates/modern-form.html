@@ -10,6 +10,8 @@
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
   <link rel="apple-touch-icon" href="/static/favicon.png">
+  <!-- Design System + Observabilidade -->
+  <link rel="stylesheet" href="/static/design-system.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -722,7 +724,10 @@
     <div class="main-content">
       <!-- Header -->
       <div class="detective-header">
-        <h1>ONESEEK</h1>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; width: 100%;">
+          <h1>ONESEEK</h1>
+          <button data-theme-toggle style="background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0.5rem; opacity: 0.7; transition: opacity 0.3s;" title="Alternar tema"></button>
+        </div>
         <p class="subtitle">Sistema Interno</p>
       </div>
       
@@ -1161,5 +1166,20 @@
       <div class="loading-text" id="loadingText">Processando...</div>
     </div>
   </div>
+
+  <!-- Observabilidade & Métricas -->
+  <script src="/static/theme-toggle.js"></script>
+  <script src="/static/observability.js"></script>
+  <script src="/static/metrics.js"></script>
+  <script src="/static/skeleton.js"></script>
+  
+  <!-- Registrar Service Worker (PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/service-worker.js')
+        .then(reg => console.log('✅ Service Worker registrado', reg))
+        .catch(err => console.warn('⚠️ Service Worker erro', err));
+    }
+  </script>
 </body>
 </html>
