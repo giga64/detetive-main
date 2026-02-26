@@ -234,6 +234,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/static/design-system.css">
 </head>
 <body>
   <canvas id="detective-canvas"></canvas>
@@ -440,6 +441,19 @@
         alert(getSVG('x') + ' Erro ao desbloquear IP. Tente novamente mais tarde.');
       }
     }
+  </script>
+
+  <!-- Design System & Interactive Features -->
+  <script src="/static/microinteractions.js"></script>
+  <script src="/static/cursor-interactive.js"></script>
+  <script src="/static/loading-narrative.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.InteractiveCursor) {
+        new InteractiveCursor();
+      }
+      console.log('✨ Design system loaded');
+    });
   </script>
 </body>
 </html>

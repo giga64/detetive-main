@@ -711,6 +711,7 @@
       opacity: 0.6;
     }
   </style>
+  <link rel="stylesheet" href="/static/design-system.css">
 </head>
 <body>
   <a href="/logout" class="logout-btn">Sair</a>
@@ -1161,5 +1162,19 @@
       <div class="loading-text" id="loadingText">Processando...</div>
     </div>
   </div>
+
+  <!-- Design System & Interactive Features -->
+  <script src="/static/microinteractions.js"></script>
+  <script src="/static/cursor-interactive.js"></script>
+  <script src="/static/loading-narrative.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize custom cursor (desktop only)
+      if (window.InteractiveCursor) {
+        new InteractiveCursor();
+      }
+      console.log('✨ Design system loaded');
+    });
+  </script>
 </body>
 </html>

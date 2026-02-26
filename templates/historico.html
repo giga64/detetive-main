@@ -632,6 +632,7 @@
       transform: translateY(-2px);
     }
   </style>
+  <link rel="stylesheet" href="/static/design-system.css">
 </head>
 <body>
   <a href="/logout" class="logout-btn" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000; padding: 0.6rem 1.2rem; background: rgba(239, 68, 68, 0.15); border: 1.5px solid rgba(239, 68, 68, 0.5); color: #ef4444; border-radius: 0.5rem; text-decoration: none; font-weight: 700; font-size: 0.85rem; transition: all 0.3s ease; backdrop-filter: blur(10px); text-transform: uppercase; letter-spacing: 0.5px;">Sair</a>
@@ -1103,6 +1104,19 @@
         setTimeout(() => toast.remove(), 300);
       }, 3000);
     }
+  </script>
+
+  <!-- Design System & Interactive Features -->
+  <script src="/static/microinteractions.js"></script>
+  <script src="/static/cursor-interactive.js"></script>
+  <script src="/static/loading-narrative.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.InteractiveCursor) {
+        new InteractiveCursor();
+      }
+      console.log('✨ Design system loaded');
+    });
   </script>
 </body>
 </html>

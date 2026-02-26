@@ -296,6 +296,7 @@
             color: #06b6d4;
         }
     </style>
+    <link rel="stylesheet" href="/static/design-system.css">
 </head>
 <body>
     <canvas id="detective-canvas"></canvas>
@@ -877,6 +878,19 @@
         window.addEventListener('resize', () => {
           canvas.width = window.innerWidth;
           canvas.height = window.innerHeight;
+        });
+    </script>
+
+    <!-- Design System & Interactive Features -->
+    <script src="/static/microinteractions.js"></script>
+    <script src="/static/cursor-interactive.js"></script>
+    <script src="/static/loading-narrative.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.InteractiveCursor) {
+                new InteractiveCursor();
+            }
+            console.log('✨ Design system loaded');
         });
     </script>
 </body>
