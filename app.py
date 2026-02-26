@@ -32,21 +32,6 @@ from telethon import TelegramClient, events
 from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
 
-# Google Gemini IA
-try:
-    import google.generativeai as genai
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
-        GEMINI_AVAILABLE = True
-        print(f"[OK] Google Gemini IA disponivel - Chave: {GEMINI_API_KEY[:20]}...")
-    else:
-        GEMINI_AVAILABLE = False
-        print("[WARN] GEMINI_API_KEY nao encontrada no .env")
-except ImportError as e:
-    GEMINI_AVAILABLE = False
-    print(f"[ERROR] Erro ao importar google.generativeai: {e}")
-
 # ----------------------
 # Executor para chamadas síncronas
 # ----------------------
@@ -630,76 +615,6 @@ async def enriquecher_endereco_selecionado(endereco: str) -> dict:
         print(f"⚠️ Erro em enriquecher_endereco_selecionado: {str(e)}")
     
     return result
-
-async def analisar_resultado_com_ia(tipo_consulta: str, dados_completo: dict) -> str:
-    """
-    Seek IA - Analise inteligente e pratica
-    """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return "Seek IA nao configurada."
-    
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-    except Exception as e:
-        return f"Erro Seek IA: {str(e)[:50]}"
-    
-    if not GEMINI_AVAILABLE:
-        return "Seek IA indisponivel."
-    
-    try:
-        dados_est = dados_completo.get("dados_estruturados", {})
-        apis = dados_completo.get("apis", {})
-        
-        prompt = f"""Voce eh SEEK IA, especialista em analise de dados para investigacao.
-
-DADOS DISPONÍVEIS:
-{json.dumps(dados_est, ensure_ascii=False, indent=2)}
-
-INSTRUCOES:
-1. Se apresente como "Seek IA" no inicio, seja simpatica e profissional
-2. Escreva 2-3 paragrafos CURTOS (4-5 linhas cada) com insights valiosos
-3. SEM asteriscos, SEM markdown, SEM formatacao
-
-ESTRUTURA:
-adicone topicos claros (PERFIL, ENDERECOS, PROXIMOS PASSOS)
-
-Paragrafo 1 - PERFIL E ANÁLISE:
-- Quem eh (nome, idade, profissao se tiver)
-- Analise o perfil:  Dados fazem sentido?
-- Insights sobre a pessoa/empresa 
-
-Paragrafo 2 - ENDEREÇOS E LOCALIZAÇÃO:
-- Analise padroes: sao da mesma cidade? Residencial vs comercial?
-- O que os enderecos revelam sobre a pessoa?
-- Se nao tiver enderecos, mencione isso como gap critico
-
-Paragrafo 3 - PRÓXIMOS PASSOS:
-
-- Redes sociais provaveis com handles especificos baseados no NOME REAL ou nome da empresa (nao invente, baseie-se em padroes comuns de redes sociais) mas foque em achar os reais::
-  Instagram: @primeironome.sobrenome ou @nomecompleto
-  LinkedIn: primeiro-sobrenome
-  Facebook: Nome Sobrenome 
-- Onde buscar dados faltantes: Serasa, Receita Federal, Google
-- O que investigar mais a fundo: conexoes, processos judiciais, noticias, etc
-
-Seja profissional, analitico e util. De insights que ajudem na investigacao."""
-
-        print(f"[Seek IA] Analisando...")
-        model = genai.GenerativeModel('gemini-2.5-flash-lite')
-        response = await asyncio.to_thread(lambda: model.generate_content(prompt))
-        resultado = response.text.replace("**", "").replace("##", "").replace("#", "").replace("*", "").strip()
-        
-        if not resultado:
-            return "Seek IA nao gerou analise."
-        
-        print(f"[Seek IA] OK ({len(resultado)} chars)")
-        return resultado
-    
-    except Exception as e:
-        print(f"[Seek IA ERROR] {str(e)}")
-        return f"Seek IA erro: {str(e)[:60]}"
 
 async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estruturados: dict) -> dict:
     """
@@ -3166,31 +3081,12 @@ async def do_consulta(request: Request):
                 traceback.print_exc()
                 pass  # Se falhar, continua sem enriquecimento
         
-        # Análise com IA
-        analise_ia = None
-        # Gerar análise com todos os dados disponíveis (estruturados + APIs)
-        try:
-            # Combinar dados estruturados com dados das APIs para análise completa
-            dados_completos = {
-                "dados_estruturados": dados_estruturados,
-                "apis": apis_data,
-                "resultado_bruto": resultado[:1000] if resultado else ""
-            }
-            analise_ia = await analisar_resultado_com_ia(tipo, dados_completos)
-            print(f"[OK] Analise IA gerada com {len(analise_ia) if analise_ia else 0} caracteres")
-        except Exception as ia_error:
-            print(f"[WARN] Erro ao analisar com IA: {str(ia_error)}")
-            import traceback
-            traceback.print_exc()
-            pass  # Se falhar, continua sem análise IA
-        
         return templates.TemplateResponse("modern-result.html", {
             "request": request, 
             "mensagem": identificador, 
             "resultado": resultado,  # Jinja2 escapará automaticamente
             "dados": dados_estruturados,
             "apis_data": apis_data,
-            "analise_ia": analise_ia,
             "identifier": identificador,
             "csrf_token": get_or_create_csrf_token(request)
         })
