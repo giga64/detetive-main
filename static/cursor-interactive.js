@@ -7,6 +7,13 @@
 
 class InteractiveCursor {
     constructor() {
+        // DESABILITADO - cursor customizado removido temporariamente
+        // Uncomment código abaixo para reativar
+        console.log('⚠️ Cursor customizado desabilitado');
+        return;
+        
+        // Código original comentado abaixo:
+        /*
         this.cursorDot = null;
         this.cursorRing = null;
         this.mouseX = 0;
