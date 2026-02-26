@@ -309,8 +309,6 @@
       padding: 2.5rem;
       max-width: 500px;
       width: 100%;
-      position: relative;
-      z-index: 5;
       backdrop-filter: blur(5px);
       box-shadow: 0 0 20px rgba(6,182,212,0.1), inset 0 0 30px rgba(6,182,212,0.05);
       animation: fadeInUp 0.8s ease-out 0.2s backwards;
@@ -711,8 +709,6 @@
       opacity: 0.6;
     }
   </style>
-  <link rel="stylesheet" href="/static/design-system.css">
-  <link rel="stylesheet" href="/static/design-overrides.css">
 </head>
 <body>
   <a href="/logout" class="logout-btn">Sair</a>
@@ -1163,19 +1159,5 @@
       <div class="loading-text" id="loadingText">Processando...</div>
     </div>
   </div>
-
-  <!-- Design System & Interactive Features -->
-  <script src="/static/microinteractions.js"></script>
-  <script src="/static/cursor-interactive.js"></script>
-  <script src="/static/loading-narrative.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialize custom cursor (desktop only)
-      if (window.InteractiveCursor) {
-        new InteractiveCursor();
-      }
-      console.log('✨ Design system loaded');
-    });
-  </script>
 </body>
 </html>

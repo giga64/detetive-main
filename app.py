@@ -41,11 +41,10 @@ from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
 
 # Import dos novos módulos de performance
-# TEMPORARIAMENTE DESABILITADO - Requer Redis/Celery configurados
-# from cache_manager import init_cache, cache_manager, decorator_cache
-# from circuit_breaker_manager import inicializar_circuit_breakers, circuit_breaker_manager
-# from job_queue import enfileirar_tarefa, obter_status_tarefa, obter_stats_queue
-# from sse_streaming import stream_consulta_completa, criar_sse_response
+from cache_manager import init_cache, cache_manager, decorator_cache
+from circuit_breaker_manager import inicializar_circuit_breakers, circuit_breaker_manager
+from job_queue import enfileirar_tarefa, obter_status_tarefa, obter_stats_queue
+from sse_streaming import stream_consulta_completa, criar_sse_response
 
 # ----------------------
 # Executor para chamadas síncronas
@@ -413,24 +412,23 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Inicializar Cache e Circuit Breakers na startup
-# TEMPORARIAMENTE DESABILITADO - Requer Redis/Celery configurados
-# @app.on_event("startup")
-# async def startup_event():
-#     """Inicializa recursos ao iniciar a aplicação"""
-#     try:
-#         # Inicializar Cache Redis
-#         redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-#         init_cache(redis_url)
-#         print(f"✅ Cache Redis inicializado: {redis_url}")
-#     except Exception as e:
-#         print(f"⚠️ Aviso: Cache Redis não disponível: {e}")
-#     
-#     try:
-#         # Inicializar Circuit Breakers
-#         inicializar_circuit_breakers()
-#         print("✅ Circuit Breakers inicializados")
-#     except Exception as e:
-#         print(f"⚠️ Aviso: Circuit Breakers não puderam ser inicializados: {e}")
+@app.on_event("startup")
+async def startup_event():
+    """Inicializa recursos ao iniciar a aplicação"""
+    try:
+        # Inicializar Cache Redis
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+        init_cache(redis_url)
+        print(f"✅ Cache Redis inicializado: {redis_url}")
+    except Exception as e:
+        print(f"⚠️ Aviso: Cache Redis não disponível: {e}")
+    
+    try:
+        # Inicializar Circuit Breakers
+        inicializar_circuit_breakers()
+        print("✅ Circuit Breakers inicializados")
+    except Exception as e:
+        print(f"⚠️ Aviso: Circuit Breakers não puderam ser inicializados: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
