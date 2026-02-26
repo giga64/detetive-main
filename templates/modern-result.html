@@ -143,6 +143,48 @@
             margin-bottom: 30px;
         }
 
+        .section-shell {
+            margin-bottom: 26px;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-head h3 {
+            font-family: 'Newsreader', serif;
+            font-size: 20px;
+            color: #f8fafc;
+            margin-bottom: 4px;
+        }
+
+        .section-head p {
+            font-size: 12px;
+            color: var(--slate-500);
+        }
+
+        .section-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .section-chip {
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: #7dd3fc;
+            font-size: 10px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
         .casefile-grid {
             display: grid;
             grid-template-columns: 1.1fr 1fr;
@@ -298,6 +340,7 @@
 
         .galaxy-card {
             margin-bottom: 24px;
+            padding: 14px;
         }
 
         .galaxy-header {
@@ -509,6 +552,14 @@
             scrollbar-color: rgba(6, 182, 212, 0.5) rgba(255, 255, 255, 0.05);
         }
 
+        .tabs-shell .tabs-nav {
+            background: rgba(8, 12, 24, 0.7);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 14px;
+            padding: 6px;
+            margin-bottom: 18px;
+        }
+
         /* Scrollbar customizada webkit (Chrome, Safari, Edge) */
         .tabs-nav::-webkit-scrollbar {
             height: 8px;
@@ -547,6 +598,11 @@
             white-space: nowrap;
         }
 
+        .tabs-shell .tab-btn {
+            border-bottom: none;
+            border-radius: 10px;
+        }
+
         .tab-btn:hover {
             color: #06b6d4;
             border-bottom-color: rgba(6, 182, 212, 0.3);
@@ -557,10 +613,20 @@
             border-bottom-color: #06b6d4;
         }
 
+        .tabs-shell .tab-btn.active {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            color: #e2e8f0;
+        }
+
         /* Conteúdo das Abas */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
+        }
+
+        .tabs-shell .tab-content {
+            padding-top: 6px;
         }
 
         .tab-content.active {
@@ -594,6 +660,10 @@
             transition: all 0.3s ease;
         }
 
+        .data-item strong {
+            color: #f8fafc;
+        }
+
         .data-item:hover {
             background: rgba(6, 182, 212, 0.1);
             border-color: rgba(6, 182, 212, 0.3);
@@ -614,6 +684,21 @@
             font-size: 15px;
             color: #e0e0e0;
             font-weight: 500;
+        }
+
+        @media (max-width: 1024px) {
+            .casefile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .section-chips {
+                justify-content: flex-start;
+            }
         }
 
         /* Lista para dados */
@@ -1176,103 +1261,120 @@
                 {% set display_doc = dados.dados_pessoais.cpf if dados.dados_pessoais is defined and dados.dados_pessoais.cpf else (dados.dados_empresa.cnpj if dados.dados_empresa is defined and dados.dados_empresa.cnpj else '---') %}
                 {% set display_registro = (dados.dados_pessoais.estado if dados.dados_pessoais is defined and dados.dados_pessoais.estado else '') or (dados.dados_pessoais.seccional if dados.dados_pessoais is defined and dados.dados_pessoais.seccional else '') or 'BR' %}
 
-                <div class="casefile-grid reveal">
-                    <div class="casefile-card">
-                        <div class="casefile-head">
-                            <div>
-                                <div class="casefile-title">Casefile</div>
-                                <div class="casefile-sub">Resumo operacional da consulta</div>
-                            </div>
-                            <span class="casefile-id">#{{ identifier[-6:] if identifier else '000000' }}</span>
+                <div class="section-shell reveal">
+                    <div class="section-head">
+                        <div>
+                            <h3>Contexto operacional</h3>
+                            <p>Resumo da consulta, etapas e status de enriquecimento.</p>
                         </div>
-                        <div class="casefile-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">Tipo</span>
-                                <span class="meta-value">{{ dados.tipo_consulta|upper }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Documento</span>
-                                <span class="meta-value">{{ display_doc }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Registro</span>
-                                <span class="meta-value">{{ display_registro }}</span>
-                            </div>
-                        </div>
-                        <div class="casefile-tags">
-                            <span class="tag">Telegram</span>
+                        <div class="section-chips">
+                            <span class="section-chip">Telegram</span>
                             {% if has_apis %}
-                                <span class="tag">APIs Publicas</span>
+                                <span class="section-chip">APIs Publicas</span>
+                            {% else %}
+                                <span class="section-chip">Sem enriquecimento</span>
                             {% endif %}
-                            {% if dados.tipo_consulta == 'oab' %}
-                                <span class="tag">OAB</span>
-                            {% endif %}
-                            {% if dados.tipo_consulta == 'placa' %}
-                                <span class="tag">Veiculo</span>
-                            {% endif %}
-                            {% if dados.tipo_consulta == 'cnpj' %}
-                                <span class="tag">Empresa</span>
-                            {% endif %}
+                            <span class="section-chip">{{ dados.tipo_consulta|upper }}</span>
                         </div>
                     </div>
-                    <div class="timeline-card">
-                        <div class="timeline-header">
-                            <div class="timeline-title">Linha do tempo investigativa</div>
+                    <div class="casefile-grid">
+                        <div class="casefile-card">
+                            <div class="casefile-head">
+                                <div>
+                                    <div class="casefile-title">Casefile</div>
+                                    <div class="casefile-sub">Resumo operacional da consulta</div>
+                                </div>
+                                <span class="casefile-id">#{{ identifier[-6:] if identifier else '000000' }}</span>
+                            </div>
+                            <div class="casefile-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">Tipo</span>
+                                    <span class="meta-value">{{ dados.tipo_consulta|upper }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Documento</span>
+                                    <span class="meta-value">{{ display_doc }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Registro</span>
+                                    <span class="meta-value">{{ display_registro }}</span>
+                                </div>
+                            </div>
+                            <div class="casefile-tags">
+                                <span class="tag">Telegram</span>
+                                {% if has_apis %}
+                                    <span class="tag">APIs Publicas</span>
+                                {% endif %}
+                                {% if dados.tipo_consulta == 'oab' %}
+                                    <span class="tag">OAB</span>
+                                {% endif %}
+                                {% if dados.tipo_consulta == 'placa' %}
+                                    <span class="tag">Veiculo</span>
+                                {% endif %}
+                                {% if dados.tipo_consulta == 'cnpj' %}
+                                    <span class="tag">Empresa</span>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="timeline">
-                            <div class="timeline-item done">
-                                <span class="timeline-dot"></span>
-                                <div class="timeline-content">
-                                    <h4>Consulta recebida</h4>
-                                    <p>Identificador validado e sessão ativa.</p>
-                                </div>
+                        <div class="timeline-card">
+                            <div class="timeline-header">
+                                <div class="timeline-title">Linha do tempo investigativa</div>
                             </div>
-                            <div class="timeline-item {{ 'done' if resultado else 'pending' }}">
-                                <span class="timeline-dot"></span>
-                                <div class="timeline-content">
-                                    <h4>Telegram analisado</h4>
-                                    <p>Base principal consultada.</p>
+                            <div class="timeline">
+                                <div class="timeline-item done">
+                                    <span class="timeline-dot"></span>
+                                    <div class="timeline-content">
+                                        <h4>Consulta recebida</h4>
+                                        <p>Identificador validado e sessão ativa.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="timeline-item {{ 'done' if dados else 'pending' }}">
-                                <span class="timeline-dot"></span>
-                                <div class="timeline-content">
-                                    <h4>Estruturação</h4>
-                                    <p>Normalização dos campos para as abas.</p>
+                                <div class="timeline-item {{ 'done' if resultado else 'pending' }}">
+                                    <span class="timeline-dot"></span>
+                                    <div class="timeline-content">
+                                        <h4>Telegram analisado</h4>
+                                        <p>Base principal consultada.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="timeline-item {{ 'done' if has_apis else 'pending' }}">
-                                <span class="timeline-dot"></span>
-                                <div class="timeline-content">
-                                    <h4>APIs públicas</h4>
-                                    <p>Enriquecimento e verificação cruzada.</p>
+                                <div class="timeline-item {{ 'done' if dados else 'pending' }}">
+                                    <span class="timeline-dot"></span>
+                                    <div class="timeline-content">
+                                        <h4>Estruturação</h4>
+                                        <p>Normalização dos campos para as abas.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="timeline-item {{ 'done' if has_apis or dados else 'pending' }}">
-                                <span class="timeline-dot"></span>
-                                <div class="timeline-content">
-                                    <h4>Consolidação</h4>
-                                    <p>Pronto para análise em abas.</p>
+                                <div class="timeline-item {{ 'done' if has_apis else 'pending' }}">
+                                    <span class="timeline-dot"></span>
+                                    <div class="timeline-content">
+                                        <h4>APIs públicas</h4>
+                                        <p>Enriquecimento e verificação cruzada.</p>
+                                    </div>
+                                </div>
+                                <div class="timeline-item {{ 'done' if has_apis or dados else 'pending' }}">
+                                    <span class="timeline-dot"></span>
+                                    <div class="timeline-content">
+                                        <h4>Consolidação</h4>
+                                        <p>Pronto para análise em abas.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {% if not has_apis %}
+                    <div class="ghost-panel reveal">
+                        <div class="ghost-title">Painel em apuração — carregando novas pistas</div>
+                        <div class="ghost-grid">
+                            <div class="ghost-block"></div>
+                            <div class="ghost-block"></div>
+                            <div class="ghost-block"></div>
+                            <div class="ghost-block"></div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
-                {% if not has_apis %}
-                <div class="ghost-panel reveal">
-                    <div class="ghost-title">Painel em apuração — carregando novas pistas</div>
-                    <div class="ghost-grid">
-                        <div class="ghost-block"></div>
-                        <div class="ghost-block"></div>
-                        <div class="ghost-block"></div>
-                        <div class="ghost-block"></div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="galaxy-card reveal">
-                    <div class="galaxy-header">
+                <div class="section-shell reveal">
+                    <div class="section-head">
                         <div>
                             <h3>Mapa de conexões</h3>
                             <p>Visão rápida do ecossistema investigativo</p>
@@ -1285,37 +1387,51 @@
                             <span class="legend-chip">Publico</span>
                         </div>
                     </div>
-                    <svg class="galaxy-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="nodeGlow" x1="0" x2="1" y1="0" y2="1">
-                                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.95"/>
-                                <stop offset="100%" stop-color="#0ea5a4" stop-opacity="0.95"/>
-                            </linearGradient>
-                        </defs>
-                        <line x1="360" y1="130" x2="140" y2="60" stroke="rgba(6,182,212,0.5)" stroke-width="2"/>
-                        <line x1="360" y1="130" x2="580" y2="60" stroke="rgba(6,182,212,0.5)" stroke-width="2"/>
-                        <line x1="360" y1="130" x2="120" y2="200" stroke="rgba(245,158,11,0.45)" stroke-width="2"/>
-                        <line x1="360" y1="130" x2="600" y2="200" stroke="rgba(245,158,11,0.45)" stroke-width="2"/>
-                        <circle cx="360" cy="130" r="48" fill="url(#nodeGlow)" opacity="0.9"/>
-                        <text x="360" y="128" text-anchor="middle" fill="#0b1020" font-size="12" font-weight="700">{{ display_nome }}</text>
-                        <text x="360" y="145" text-anchor="middle" fill="#0b1020" font-size="10">{{ display_doc }}</text>
+                    <div class="galaxy-card">
+                        <svg class="galaxy-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="nodeGlow" x1="0" x2="1" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.95"/>
+                                    <stop offset="100%" stop-color="#0ea5a4" stop-opacity="0.95"/>
+                                </linearGradient>
+                            </defs>
+                            <line x1="360" y1="130" x2="140" y2="60" stroke="rgba(6,182,212,0.5)" stroke-width="2"/>
+                            <line x1="360" y1="130" x2="580" y2="60" stroke="rgba(6,182,212,0.5)" stroke-width="2"/>
+                            <line x1="360" y1="130" x2="120" y2="200" stroke="rgba(245,158,11,0.45)" stroke-width="2"/>
+                            <line x1="360" y1="130" x2="600" y2="200" stroke="rgba(245,158,11,0.45)" stroke-width="2"/>
+                            <circle cx="360" cy="130" r="48" fill="url(#nodeGlow)" opacity="0.9"/>
+                            <text x="360" y="128" text-anchor="middle" fill="#0b1020" font-size="12" font-weight="700">{{ display_nome }}</text>
+                            <text x="360" y="145" text-anchor="middle" fill="#0b1020" font-size="10">{{ display_doc }}</text>
 
-                        <circle cx="140" cy="60" r="32" fill="rgba(12,18,33,0.9)" stroke="#06b6d4" stroke-width="2"/>
-                        <text x="140" y="64" text-anchor="middle" fill="#cbd5f5" font-size="11">Contatos</text>
+                            <circle cx="140" cy="60" r="32" fill="rgba(12,18,33,0.9)" stroke="#06b6d4" stroke-width="2"/>
+                            <text x="140" y="64" text-anchor="middle" fill="#cbd5f5" font-size="11">Contatos</text>
 
-                        <circle cx="580" cy="60" r="32" fill="rgba(12,18,33,0.9)" stroke="#06b6d4" stroke-width="2"/>
-                        <text x="580" y="64" text-anchor="middle" fill="#cbd5f5" font-size="11">Enderecos</text>
+                            <circle cx="580" cy="60" r="32" fill="rgba(12,18,33,0.9)" stroke="#06b6d4" stroke-width="2"/>
+                            <text x="580" y="64" text-anchor="middle" fill="#cbd5f5" font-size="11">Enderecos</text>
 
-                        <circle cx="120" cy="200" r="32" fill="rgba(12,18,33,0.9)" stroke="#f59e0b" stroke-width="2"/>
-                        <text x="120" y="204" text-anchor="middle" fill="#fcd34d" font-size="11">Empresas</text>
+                            <circle cx="120" cy="200" r="32" fill="rgba(12,18,33,0.9)" stroke="#f59e0b" stroke-width="2"/>
+                            <text x="120" y="204" text-anchor="middle" fill="#fcd34d" font-size="11">Empresas</text>
 
-                        <circle cx="600" cy="200" r="32" fill="rgba(12,18,33,0.9)" stroke="#f59e0b" stroke-width="2"/>
-                        <text x="600" y="204" text-anchor="middle" fill="#fcd34d" font-size="11">Publico</text>
-                    </svg>
+                            <circle cx="600" cy="200" r="32" fill="rgba(12,18,33,0.9)" stroke="#f59e0b" stroke-width="2"/>
+                            <text x="600" y="204" text-anchor="middle" fill="#fcd34d" font-size="11">Publico</text>
+                        </svg>
+                    </div>
                 </div>
 
-                <!-- Navegação de Abas -->
-                <div class="tabs-nav">
+                <div class="section-shell reveal tabs-shell">
+                    <div class="section-head">
+                        <div>
+                            <h3>Resultados detalhados</h3>
+                            <p>Abas organizadas por categoria com todos os dados da consulta.</p>
+                        </div>
+                        <div class="section-chips">
+                            <span class="section-chip">{{ display_doc }}</span>
+                            <span class="section-chip">{{ dados.tipo_consulta|upper }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Navegação de Abas -->
+                    <div class="tabs-nav">
                     {% if dados.tipo_consulta == 'nome' %}
                         <!-- Abas para NOME -->
                         <button class="tab-btn active" onclick="switchTab(event, 'personal')">
@@ -2679,6 +2795,8 @@
                 <!-- TAB: Dados Brutos -->
                 <div id="raw" class="tab-content">
                     <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
+                </div>
+
                 </div>
 
                 <!-- Ações -->
