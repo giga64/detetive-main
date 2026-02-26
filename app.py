@@ -134,11 +134,31 @@ add_column_if_not_exists("users", "status", "INTEGER")
 add_column_if_not_exists("users", "numero_consultas", "INTEGER")
 add_column_if_not_exists("users", "senha_temporaria", "INTEGER DEFAULT 0")
 
-# Criar admin padrão se não existir (Usuário: admin | Senha: admin6464)
-cursor.execute("INSERT OR IGNORE INTO users (username, password, is_admin) VALUES (?, ?, ?)", 
-               ("admin", "admin6464", 1))
-# Atualizar senha do admin caso já exista
-cursor.execute("UPDATE users SET password = ? WHERE username = ?", ("admin6464", "admin"))
+# Criar admin padrão a partir de variáveis de ambiente
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+cursor.execute("SELECT id FROM users WHERE username = ?", (ADMIN_USERNAME,))
+admin_row = cursor.fetchone()
+
+if admin_row is None:
+    if not ADMIN_PASSWORD:
+        ADMIN_PASSWORD = secrets.token_urlsafe(10)
+        logger.warning(
+            "ADMIN_PASSWORD nao definido. Senha temporaria gerada para %s: %s",
+            ADMIN_USERNAME,
+            ADMIN_PASSWORD
+        )
+    cursor.execute(
+        "INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
+        (ADMIN_USERNAME, ADMIN_PASSWORD, 1)
+    )
+elif ADMIN_PASSWORD:
+    cursor.execute(
+        "UPDATE users SET password = ? WHERE username = ?",
+        (ADMIN_PASSWORD, ADMIN_USERNAME)
+    )
+
 conn.commit()
 
 # Tabela de Logs de Auditoria
