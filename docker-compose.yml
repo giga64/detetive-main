@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Redis - Cache e Message Broker para Celery
+  redis:
+    image: redis:latest
+    container_name: detetive-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    environment:
+      - REDIS_PASSWORD=
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - detetive-network
+
+  # Celery Worker - Processamento de tarefas em background
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: detetive-celery-worker
+    command: celery -A job_queue worker --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    volumes:
+      - .:/app
+    networks:
+      - detetive-network
+
+  # Celery Beat - Scheduler para tarefas agendadas
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: detetive-celery-beat
+    command: celery -A job_queue beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    volumes:
+      - .:/app
+    networks:
+      - detetive-network
+
+volumes:
+  redis_data:
+
+networks:
+  detetive-network:
+    driver: bridge
+
+# ================================================================
+# INSTRUÇÕES DE USO
+# ================================================================
+# 
+# 1. Iniciar todos os serviços:
+#    docker-compose up -d
+#
+# 2. Verificar status:
+#    docker-compose ps
+#
+# 3. Ver logs:
+#    docker-compose logs -f redis
+#    docker-compose logs -f celery-worker
+#    docker-compose logs -f celery-beat
+#
+# 4. Parar tudo:
+#    docker-compose down
+#
+# 5. Limpar dados (incluindo Redis):
+#    docker-compose down -v
+#
+# ================================================================

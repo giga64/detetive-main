@@ -10,12 +10,20 @@ import threading
 import time
 import requests
 import urllib.parse
+import logging
 from urllib.parse import unquote, unquote_plus
 from io import StringIO
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Carregar variáveis de ambiente do .env
 try:
@@ -31,6 +39,12 @@ from fastapi.templating import Jinja2Templates
 from telethon import TelegramClient, events
 from telethon import __version__ as TELETHON_VERSION
 from telethon.sessions import StringSession
+
+# Import dos novos módulos de performance
+from cache_manager import init_cache, cache_manager, decorator_cache
+from circuit_breaker_manager import inicializar_circuit_breakers, circuit_breaker_manager
+from job_queue import enfileirar_tarefa, obter_status_tarefa, obter_stats_queue
+from sse_streaming import stream_consulta_completa, criar_sse_response
 
 # ----------------------
 # Executor para chamadas síncronas
@@ -376,6 +390,31 @@ def record_query_attempt(username: str):
 app = FastAPI()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Inicializar Cache e Circuit Breakers na startup
+@app.on_event("startup")
+async def startup_event():
+    """Inicializa recursos ao iniciar a aplicação"""
+    try:
+        # Inicializar Cache Redis
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+        init_cache(redis_url)
+        print(f"✅ Cache Redis inicializado: {redis_url}")
+    except Exception as e:
+        print(f"⚠️ Aviso: Cache Redis não disponível: {e}")
+    
+    try:
+        # Inicializar Circuit Breakers
+        inicializar_circuit_breakers()
+        print("✅ Circuit Breakers inicializados")
+    except Exception as e:
+        print(f"⚠️ Aviso: Circuit Breakers não puderam ser inicializados: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Limpa recursos ao desligar a aplicação"""
+    # Redis vai ser desconectado automaticamente
+    logger.info("👋 Aplicação desligando...")
 
 # ----------------------
 # Consulta Telegram
@@ -2876,7 +2915,103 @@ def admin_dashboard(request: Request):
         "stats": stats
     })
 
+# =====================================================================
+# ROTA DE STREAMING SSE - Consulta com resultados em tempo real
+# =====================================================================
+@app.post("/api/consulta-stream")
+async def consulta_stream(request: Request):
+    """
+    Endpoint de streaming SSE para consultas
+    Envia resultados parciais conforme ficam prontos
+    """
+    # Validar sessão
+    session_error = validate_user_session(request)
+    if session_error:
+        return JSONResponse({"erro": "Sessão inválida"}, status_code=401)
+    
+    form_data = await request.form()
+    identificador = str(form_data.get("identificador", "")).strip()
+    tipo_manual = str(form_data.get("tipo", "")).strip().lower()
+    username = request.cookies.get("auth_user")
+    
+    if not identificador:
+        return JSONResponse({"erro": "Identificador vazio"}, status_code=400)
+    
+    # Verificar rate limit
+    if not check_query_rate_limit(username):
+        return JSONResponse({"erro": f"Limite de {MAX_QUERIES_PER_MINUTE} consultas por minuto"}, status_code=429)
+    
+    record_query_attempt(username)
+    
+    # Tentar obter do cache primeiro
+    tipo = tipo_manual or tipo_consulta_automatico(identificador)
+    resultado_cache = await cache_manager.get(tipo, identificador)
+    
+    if resultado_cache:
+        # Se estiver em cache, retornar resultado completo imediatamente
+        evento_cache = {
+            'tipo': 'cache_hit',
+            'dados': resultado_cache,
+            'mensagem': 'Resultado do cache',
+        }
+        return JSONResponse(evento_cache)
+    
+    # Se não estiver em cache, fazer stream normal
+    async def event_generator():
+        try:
+            # Evento 1: Iniciando
+            yield f"data: {json.dumps({{'tipo': 'init', 'mensagem': 'Consultando...'}})}\n\n"
+            
+            # Consultar Telegram
+            resultado = await consulta_telegram(identificador)
+            
+            # Evento 2: Resultados Telegram
+            yield f"data: {json.dumps({{'tipo': 'telegram', 'resultado': resultado[:500]}})}\n\n"
+            
+            # Parsear dados estruturados
+            dados_estruturados = None
+            if resultado:
+                try:
+                    import ast
+                    dados_estruturados = ast.literal_eval(resultado)
+                except:
+                    pass
+            
+            # Evento 3: Enriquecimento
+            yield f"data: {json.dumps({{'tipo': 'status', 'etapa': 'enrichment'}})}\n\n"
+            
+            apis_data = {}
+            if dados_estruturados:
+                apis_data = await enriquecer_dados_com_apis(identificador, tipo, dados_estruturados)
+            
+            # Evento 4: Dados enriquecidos
+            if apis_data:
+                yield f"data: {json.dumps({{'tipo': 'apis', 'etapas': list(apis_data.keys())}})}\n\n"
+            
+            # Salvar em cache
+            if dados_estruturados:
+                await cache_manager.set(
+                    tipo, 
+                    identificador, 
+                    {
+                        'dados': dados_estruturados,
+                        'apis': apis_data,
+                        'resultado': resultado,
+                    }
+                )
+            
+            # Evento 5: Completo
+            yield f"data: {json.dumps({{'tipo': 'completo', 'mensagem': 'Consulta finalizada'}})}\n\n"
+        
+        except Exception as e:
+            logger.error(f"❌ Erro no stream: {e}")
+            yield f"data: {json.dumps({{'tipo': 'erro', 'mensagem': str(e)}})}\n\n"
+    
+    from sse_starlette.sse import EventSourceResponse
+    return EventSourceResponse(event_generator())
+
 @app.post("/consulta", response_class=HTMLResponse)
+
 async def do_consulta(request: Request):
     # Validar sessão do usuário
     session_error = validate_user_session(request)
