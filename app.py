@@ -448,7 +448,6 @@ app = FastAPI()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Adicionar filtro customizado para remover SVG e tags HTML
-@templates.environment.filters.setdefault
 def clean_html(text):
     """Remove SVG e tags HTML, mantendo apenas texto"""
     if not text:
@@ -462,7 +461,7 @@ def clean_html(text):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-templates.environment.filters['clean_html'] = clean_html
+templates.env.filters['clean_html'] = clean_html
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
