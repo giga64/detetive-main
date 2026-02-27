@@ -695,7 +695,7 @@
         <div class="archive-card" data-search-id="{{ consulta.id }}">
           <div class="archive-id">{{ consulta.id_alvo }}</div>
           <!-- Resumo do resultado (primeiras 500 caracteres) -->
-          <div class="archive-result">{{ consulta.response[:500] }}{% if consulta.response|length > 500 %}...{% endif %}</div>
+          <div class="archive-result">{{ (consulta.response[:500]|clean_html) }}{% if consulta.response|length > 500 %}...{% endif %}</div>
           
           <!-- Nota -->
           {% if consulta.note %}

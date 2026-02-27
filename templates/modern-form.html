@@ -365,7 +365,7 @@
     .tipo-selector-wrapper {
       position: relative;
       margin-bottom: 1.5rem;
-      z-index: 999999;
+      z-index: 9999999;
     }
     
     .tipo-selector-btn {
@@ -385,6 +385,8 @@
       backdrop-filter: blur(10px);
       text-transform: uppercase;
       letter-spacing: 1px;
+      position: relative;
+      z-index: 9999999;
     }
     
     .tipo-selector-btn:hover {
@@ -411,21 +413,22 @@
     }
     
     .tipo-selector-dropdown {
-      position: fixed;
-      top: auto;
-      left: 0;
-      right: 0;
-      width: 500px;
-      max-width: 90vw;
-      margin: 0.5rem auto;
+      position: absolute;
+      bottom: auto;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 500px;
+      margin-top: 0.5rem;
       background: rgba(15,23,42,0.98);
       border: 1.5px solid rgba(6,182,212,0.5);
       border-radius: 0.6rem;
       backdrop-filter: blur(20px);
       box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 30px rgba(6,182,212,0.3);
-      z-index: 999999;
+      z-index: 9999999;
       display: none;
-      overflow: hidden;
+      overflow: visible;
       animation: slideDown 0.3s ease-out;
     }
     
