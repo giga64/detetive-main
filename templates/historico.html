@@ -695,7 +695,7 @@
         <div class="archive-card" data-search-id="{{ consulta.id }}">
           <div class="archive-id">{{ consulta.id_alvo }}</div>
           <!-- Resumo do resultado (primeiras 500 caracteres) -->
-          <div class="archive-result">{{ (consulta.response[:500]|clean_html) }}{% if consulta.response|length > 500 %}...{% endif %}</div>
+          <div class="archive-result">{{ consulta.response[:500] }}{% if consulta.response|length > 500 %}...{% endif %}</div>
           
           <!-- Nota -->
           {% if consulta.note %}
@@ -907,8 +907,9 @@
     // SVG ICONS
     // ===========================
     const SVG_ICONS = {
-        checkCircle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><circle cx="12" cy="12" r="10"></circle></svg>',
-        x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+      checkCircle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><circle cx="12" cy="12" r="10"></circle></svg>',
+      x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+      star: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"></polygon></svg>'
     };
     
     function getSVG(iconName) {
@@ -939,16 +940,16 @@
         });
         
         if (response.ok || response.status === 303) {
-          showToast(getSVG('checkCircle') + ' Histórico limpo com sucesso!', 'success');
+          showToast('Histórico limpo com sucesso!', 'success', 'checkCircle');
           setTimeout(() => {
             location.reload();
           }, 1000);
         } else {
-          showToast(getSVG('x') + ' Erro ao limpar histórico', 'error');
+          showToast('Erro ao limpar histórico', 'error', 'x');
         }
       } catch (error) {
         console.error('Erro:', error);
-        showToast(getSVG('x') + ' Erro ao conectar com o servidor', 'error');
+        showToast('Erro ao conectar com o servidor', 'error', 'x');
       }
     }
     
@@ -959,10 +960,10 @@
       try {
         // Abrir em nova aba
         window.open(`/view-resultado/${searchId}`, '_blank', 'width=1200,height=800');
-        showToast(getSVG('checkCircle') + ' Abrindo resultado completo...', 'success');
+        showToast('Abrindo resultado completo...', 'success', 'checkCircle');
       } catch (error) {
         console.error('Erro:', error);
-        showToast(getSVG('x') + ' Erro ao abrir resultado', 'error');
+        showToast('Erro ao abrir resultado', 'error', 'x');
       }
     }
     
@@ -982,7 +983,7 @@
         button.style.opacity = '0.5';
         button.style.transform = 'scale(1.15)';
         
-        showToast(getSVG('checkCircle') + ' Resultado copiado para a área de transferência!', 'success');
+        showToast('Resultado copiado para a área de transferência!', 'success', 'checkCircle');
         
         setTimeout(() => {
           button.style.opacity = '1';
@@ -990,7 +991,7 @@
         }, 1500);
       } catch (error) {
         console.error('Erro ao copiar:', error);
-        showToast(getSVG('x') + ' Erro ao copiar para área de transferência', 'error');
+        showToast('Erro ao copiar para área de transferência', 'error', 'x');
       }
     }
     
@@ -1007,8 +1008,8 @@
         
         if (data.success) {
           button.classList.toggle('active');
-          const message = isActive ? getSVG('star') + ' Removido dos favoritos' : getSVG('star') + ' Adicionado aos favoritos';
-          showToast(message, 'success');
+          const message = isActive ? 'Removido dos favoritos' : 'Adicionado aos favoritos';
+          showToast(message, 'success', 'star');
         } else {
           showToast(data.error || 'Erro ao processar favorito', 'error');
         }
@@ -1078,7 +1079,7 @@
     // ===========================
     // TOAST NOTIFICATIONS
     // ===========================
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'info', iconName = '') {
       const toast = document.createElement('div');
       toast.className = `toast-notification ${type}`;
       toast.style.cssText = `
@@ -1091,12 +1092,28 @@
         padding: 1rem 1.5rem;
         color: #e2e8f0;
         font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
         box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         backdrop-filter: blur(10px);
         z-index: 10000;
         animation: slideIn 0.4s ease-out;
       `;
-      toast.textContent = message;
+      if (iconName) {
+        const iconWrap = document.createElement('span');
+        iconWrap.style.display = 'inline-flex';
+        iconWrap.style.alignItems = 'center';
+        iconWrap.innerHTML = getSVG(iconName);
+
+        const textWrap = document.createElement('span');
+        textWrap.textContent = message;
+
+        toast.appendChild(iconWrap);
+        toast.appendChild(textWrap);
+      } else {
+        toast.textContent = message;
+      }
       
       document.body.appendChild(toast);
       

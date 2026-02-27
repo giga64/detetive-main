@@ -446,23 +446,6 @@ def record_query_attempt(username: str):
 # ----------------------
 app = FastAPI()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
-
-# Adicionar filtro customizado para remover SVG e tags HTML
-def clean_html(text):
-    """Remove SVG e tags HTML, mantendo apenas texto"""
-    if not text:
-        return text
-    import re
-    # Remove SVG tags e conteúdo
-    text = re.sub(r'<svg[^>]*>.*?</svg>', '', text, flags=re.DOTALL | re.IGNORECASE)
-    # Remove outras tags HTML
-    text = re.sub(r'<[^>]+>', '', text)
-    # Remove espaços múltiplos
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-templates.env.filters['clean_html'] = clean_html
-
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Inicializar Cache e Circuit Breakers na startup
