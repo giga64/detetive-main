@@ -11,6 +11,7 @@ import time
 import requests
 import urllib.parse
 import logging
+import bcrypt
 from urllib.parse import unquote, unquote_plus
 from io import StringIO
 from contextlib import asynccontextmanager
@@ -138,8 +139,15 @@ add_column_if_not_exists("users", "senha_temporaria", "INTEGER DEFAULT 0")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
-cursor.execute("SELECT id FROM users WHERE username = ?", (ADMIN_USERNAME,))
+cursor.execute("SELECT id, password FROM users WHERE username = ?", (ADMIN_USERNAME,))
 admin_row = cursor.fetchone()
+
+# Função auxiliar para verificar e fazer hash se necessário
+def _prepare_password(password: str) -> str:
+    """Faz hash da senha se não estiver já hasheada"""
+    if password and is_plaintext_password(password):
+        return hash_password(password)
+    return password
 
 if admin_row is None:
     if not ADMIN_PASSWORD:
@@ -149,14 +157,18 @@ if admin_row is None:
             ADMIN_USERNAME,
             ADMIN_PASSWORD
         )
+    # Hash a senha antes de inserir
+    hashed_password = _prepare_password(ADMIN_PASSWORD)
     cursor.execute(
         "INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
-        (ADMIN_USERNAME, ADMIN_PASSWORD, 1)
+        (ADMIN_USERNAME, hashed_password, 1)
     )
 elif ADMIN_PASSWORD:
+    # Hash a senha antes de atualizar
+    hashed_password = _prepare_password(ADMIN_PASSWORD)
     cursor.execute(
         "UPDATE users SET password = ? WHERE username = ?",
-        (ADMIN_PASSWORD, ADMIN_USERNAME)
+        (hashed_password, ADMIN_USERNAME)
     )
 
 conn.commit()
@@ -609,6 +621,38 @@ def record_audit_log(action: str, username: str, ip_address: str, details: str =
         conn.commit()
     except:
         pass  # Silenciar erros de auditoria
+
+# ──────────────────────────────────────
+# Funções de Segurança: Hash de Senhas
+# ──────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    """Criptografa uma senha com bcrypt"""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica se uma senha em texto plano corresponde ao hash bcrypt"""
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except:
+        return False
+
+def is_plaintext_password(password: str) -> bool:
+    """Detecta se uma senha está em texto plano (não é bcrypt)"""
+    # Senhas bcrypt começam com $2a$, $2b$, or $2y$
+    return not (password.startswith('$2a$') or password.startswith('$2b$') or password.startswith('$2y$'))
+
+def upgrade_password_to_bcrypt(user_id: int, plaintext_password: str) -> bool:
+    """Converte uma senha em texto plano para bcrypt no banco"""
+    try:
+        hashed = hash_password(plaintext_password)
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed, user_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao fazer upgrade de senha para bcrypt: {e}")
+        return False
 
 def format_timestamp_br(timestamp_str: str) -> str:
     """Converte timestamp UTC para horário de Brasília (UTC-3) e formata para padrão brasileiro"""
@@ -2587,16 +2631,49 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
             "erro": "Credenciais inválidas"
         })
     
-    # Verificar credenciais
-    cursor.execute("SELECT id, is_admin, status, senha_temporaria FROM users WHERE username = ? AND password = ?", (username, password))
-    user = cursor.fetchone()
+    # Verificar credenciais com suporte a migração automática de bcrypt
+    cursor.execute("SELECT id, is_admin, status, senha_temporaria, password FROM users WHERE username = ?", (username,))
+    user_row = cursor.fetchone()
+    
+    if not user_row:
+        # Usuário não existe
+        record_audit_log("LOGIN_FAILED", username, client_ip, "Usuário não encontrado")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "erro": "Credenciais inválidas"
+        })
+    
+    user_id = user_row[0]
+    is_admin = user_row[1]
+    status = user_row[2]
+    senha_temporaria = user_row[3] if len(user_row) > 3 else 0
+    stored_password = user_row[4] if len(user_row) > 4 else ""
+    
+    # Verificar senha com suporte a bcrypt e texto plano
+    password_matches = False
+    is_bcrypt = not is_plaintext_password(stored_password)
+    
+    if is_bcrypt:
+        # Senha é bcrypt, verificar normalmente
+        password_matches = verify_password(password, stored_password)
+    else:
+        # Senha é texto plano, comparejar e depois fazer upgrade
+        password_matches = (password == stored_password)
+        if password_matches:
+            # Fazer upgrade para bcrypt na próxima oportunidade (background)
+            logger.info(f"Convertendo senha do usuário {username} para bcrypt após login bem-sucedido")
+    
+    if not password_matches:
+        record_audit_log("LOGIN_FAILED", username, client_ip, "Credenciais incorretas")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "erro": "Credenciais inválidas"
+        })
+    
+    # Senha está correta, proceder com o login
+    user = user_row
     
     if user:
-        user_id = user[0]
-        is_admin = user[1]
-        status = user[2]
-        senha_temporaria = user[3] if len(user) > 3 else 0
-        
         # Verificar se usuário está ativo (status = 1 ou NULL para compatibilidade)
         if status is None:
             status = 1  # Compatibilidade com bancos antigos
@@ -2608,6 +2685,11 @@ async def do_login(request: Request, username: str = Form(...), password: str = 
                 "request": request,
                 "erro": "Usuário inativo. Contate o administrador."
             })
+        
+        # Fazer upgrade de senha para bcrypt se ainda em texto plano
+        if not is_bcrypt:
+            upgrade_password_to_bcrypt(user_id, password)
+            record_audit_log("PASSWORD_UPGRADED_TO_BCRYPT", username, client_ip, "Senha migrada para bcrypt")
         
         # Atualizar último login
         try:
@@ -2728,15 +2810,16 @@ async def processar_mudanca_senha_obrigatoria(request: Request,
             "csrf_token": get_or_create_csrf_token(request)
         })
     
-    # Atualizar senha e marcar que mudou
+    # Atualizar senha e marcar que mudou (com hash bcrypt)
     try:
+        hashed_password = hash_password(nova_senha)
         cursor.execute(
             "UPDATE users SET password = ?, senha_temporaria = 0 WHERE username = ?",
-            (nova_senha, username)
+            (hashed_password, username)
         )
         conn.commit()
         
-        record_audit_log("SENHA_ALTERADA_OBRIGATORIA", username, client_ip, "Alterou senha padrão com sucesso")
+        record_audit_log("SENHA_ALTERADA_OBRIGATORIA", username, client_ip, "Alterou senha padrão com sucesso (bcrypt)")
         
         # Redirecionar para home
         response = RedirectResponse(url="/", status_code=303)
@@ -3771,9 +3854,11 @@ async def change_password(request: Request, user_id: int = Form(...), new_pass: 
         if not user:
             return JSONResponse({"success": False, "error": "Usuário não encontrado"}, status_code=404)
         
-        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pass, user_id))
+        # Hash a nova senha com bcrypt
+        hashed_password = hash_password(new_pass)
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_password, user_id))
         conn.commit()
-        record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para usuário: {user[0]} (ID: {user_id})")
+        record_audit_log("CHANGE_PASSWORD", username, client_ip, f"Senha alterada para usuário: {user[0]} (ID: {user_id}) (bcrypt)")
         return JSONResponse({"success": True, "message": "Senha alterada com sucesso"})
     except Exception as e:
         record_audit_log("CHANGE_PASSWORD_FAILED", username, client_ip, f"Falha ao alterar senha para ID: {user_id} - {str(e)}")
