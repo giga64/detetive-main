@@ -47,6 +47,38 @@ from circuit_breaker_manager import inicializar_circuit_breakers, circuit_breake
 from job_queue import enfileirar_tarefa, obter_status_tarefa, obter_stats_queue
 from sse_streaming import stream_consulta_completa, criar_sse_response
 
+# ──────────────────────────────────────
+# Funções de Segurança: Hash de Senhas
+# ──────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    """Criptografa uma senha com bcrypt"""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifica se uma senha em texto plano corresponde ao hash bcrypt"""
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except:
+        return False
+
+def is_plaintext_password(password: str) -> bool:
+    """Detecta se uma senha está em texto plano (não é bcrypt)"""
+    # Senhas bcrypt começam com $2a$, $2b$, or $2y$
+    return not (password.startswith('$2a$') or password.startswith('$2b$') or password.startswith('$2y$'))
+
+def upgrade_password_to_bcrypt(user_id: int, plaintext_password: str) -> bool:
+    """Converte uma senha em texto plano para bcrypt no banco"""
+    try:
+        hashed = hash_password(plaintext_password)
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed, user_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Erro ao fazer upgrade de senha para bcrypt: {e}")
+        return False
+
 # ----------------------
 # Executor para chamadas síncronas
 # ----------------------
@@ -142,13 +174,6 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 cursor.execute("SELECT id, password FROM users WHERE username = ?", (ADMIN_USERNAME,))
 admin_row = cursor.fetchone()
 
-# Função auxiliar para verificar e fazer hash se necessário
-def _prepare_password(password: str) -> str:
-    """Faz hash da senha se não estiver já hasheada"""
-    if password and is_plaintext_password(password):
-        return hash_password(password)
-    return password
-
 if admin_row is None:
     if not ADMIN_PASSWORD:
         ADMIN_PASSWORD = secrets.token_urlsafe(10)
@@ -158,14 +183,14 @@ if admin_row is None:
             ADMIN_PASSWORD
         )
     # Hash a senha antes de inserir
-    hashed_password = _prepare_password(ADMIN_PASSWORD)
+    hashed_password = hash_password(ADMIN_PASSWORD)
     cursor.execute(
         "INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
         (ADMIN_USERNAME, hashed_password, 1)
     )
 elif ADMIN_PASSWORD:
     # Hash a senha antes de atualizar
-    hashed_password = _prepare_password(ADMIN_PASSWORD)
+    hashed_password = hash_password(ADMIN_PASSWORD)
     cursor.execute(
         "UPDATE users SET password = ? WHERE username = ?",
         (hashed_password, ADMIN_USERNAME)
@@ -621,38 +646,6 @@ def record_audit_log(action: str, username: str, ip_address: str, details: str =
         conn.commit()
     except:
         pass  # Silenciar erros de auditoria
-
-# ──────────────────────────────────────
-# Funções de Segurança: Hash de Senhas
-# ──────────────────────────────────────
-
-def hash_password(password: str) -> str:
-    """Criptografa uma senha com bcrypt"""
-    salt = bcrypt.gensalt(rounds=12)
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica se uma senha em texto plano corresponde ao hash bcrypt"""
-    try:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except:
-        return False
-
-def is_plaintext_password(password: str) -> bool:
-    """Detecta se uma senha está em texto plano (não é bcrypt)"""
-    # Senhas bcrypt começam com $2a$, $2b$, or $2y$
-    return not (password.startswith('$2a$') or password.startswith('$2b$') or password.startswith('$2y$'))
-
-def upgrade_password_to_bcrypt(user_id: int, plaintext_password: str) -> bool:
-    """Converte uma senha em texto plano para bcrypt no banco"""
-    try:
-        hashed = hash_password(plaintext_password)
-        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed, user_id))
-        conn.commit()
-        return True
-    except Exception as e:
-        logger.error(f"Erro ao fazer upgrade de senha para bcrypt: {e}")
-        return False
 
 def format_timestamp_br(timestamp_str: str) -> str:
     """Converte timestamp UTC para horário de Brasília (UTC-3) e formata para padrão brasileiro"""
