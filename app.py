@@ -13,25 +13,11 @@ import urllib.parse
 import logging
 import bcrypt
 from urllib.parse import unquote, unquote_plus
-from io import StringIO, BytesIO
+from io import StringIO
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-
-try:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    REPORTLAB_AVAILABLE = True
-except ImportError:
-    REPORTLAB_AVAILABLE = False
-
-try:
-    from openpyxl import Workbook
-    OPENPYXL_AVAILABLE = True
-except ImportError:
-    OPENPYXL_AVAILABLE = False
 
 # Configurar logging
 logging.basicConfig(
@@ -264,70 +250,6 @@ CREATE TABLE IF NOT EXISTS tags (
 """)
 conn.commit()
 
-# Tabelas de Casos Investigativos
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS cases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    status TEXT DEFAULT 'aberto',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-""")
-conn.commit()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS case_searches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    search_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id),
-    FOREIGN KEY (search_id) REFERENCES searches(id)
-)
-""")
-conn.commit()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS case_notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    note TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-)
-""")
-conn.commit()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS case_tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    tag_name TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-)
-""")
-conn.commit()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS case_evidences (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    evidence_type TEXT DEFAULT 'texto',
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (case_id) REFERENCES cases(id)
-)
-""")
-conn.commit()
-
 # Tabela de Configurações do Usuário
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS user_settings (
@@ -339,7 +261,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
 )
 """)
 conn.commit()
-add_column_if_not_exists("user_settings", "theme", "TEXT DEFAULT 'dark'")
 
 # ----------------------
 # Sistema de Rate Limiting e Expiração
@@ -761,21 +682,6 @@ def format_timestamp_br(timestamp_str: str) -> str:
     except:
         return timestamp_str  # Retorna original se houver erro
 
-def flatten_data_for_export(prefix: str, value, rows: list):
-    """Converte estruturas dict/list em linhas chave-valor para exportação."""
-    if isinstance(value, dict):
-        for key, val in value.items():
-            next_prefix = f"{prefix}.{key}" if prefix else str(key)
-            flatten_data_for_export(next_prefix, val, rows)
-    elif isinstance(value, list):
-        if not value:
-            rows.append((prefix, ""))
-        for idx, item in enumerate(value):
-            next_prefix = f"{prefix}[{idx}]"
-            flatten_data_for_export(next_prefix, item, rows)
-    else:
-        rows.append((prefix, "" if value is None else str(value)))
-
 # ========================
 # INTEGRAÇÃO DE APIs GRÁTIS
 # ========================
@@ -944,7 +850,7 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             apis_data["info_publica"] = info_publica_compilada
     except Exception as wiki_err:
         print(f"⚠️ Erro ao buscar informações públicas: {str(wiki_err)}")
-
+    
     return apis_data
 
 async def buscar_cep_viacep(endereco: str) -> dict:
@@ -3028,7 +2934,6 @@ async def view_resultado_completo(request: Request, search_id: int):
         "identifier": search[1],
         "resultado": search[2],
         "dados": dados,
-        "search_id": search[0],
         "csrf_token": get_or_create_csrf_token(request)
     })
 
@@ -3240,7 +3145,6 @@ async def do_consulta(request: Request):
     oab_tipo = str(form_data.get("oab_tipo", "A")).strip().upper()
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
-    saved_search_id = None
     
     # Validar CSRF token
     if not validate_csrf_token(request, csrf_token):
@@ -3315,7 +3219,6 @@ async def do_consulta(request: Request):
                     "INSERT INTO searches (identifier, response, username) VALUES (?, ?, ?)", 
                     (f"{identificador}/{oab_estado}", resultado, username)
                 )
-                saved_search_id = cursor.lastrowid
                 conn.commit()
             except Exception as save_err:
                 print(f"⚠️ Erro ao salvar no histórico: {str(save_err)}")
@@ -3354,7 +3257,6 @@ async def do_consulta(request: Request):
                 "dados": dados_estruturados if dados_oab.get("encontrado") else None,
                 "apis_data": {},
                 "identifier": f"{identificador}/{oab_estado}",
-                "search_id": saved_search_id,
                 "csrf_token": get_or_create_csrf_token(request)
             })
             
@@ -3405,7 +3307,6 @@ async def do_consulta(request: Request):
                     "INSERT INTO searches (identifier, response, username) VALUES (?, ?, ?)", 
                     (identificador, resultado, username)
                 )
-                saved_search_id = cursor.lastrowid
                 conn.commit()
             except Exception as save_err:
                 print(f"⚠️ Erro ao salvar no histórico: {str(save_err)}")
@@ -3441,7 +3342,6 @@ async def do_consulta(request: Request):
             "dados": dados_estruturados,
             "apis_data": apis_data,
             "identifier": identificador,
-            "search_id": saved_search_id,
             "csrf_token": get_or_create_csrf_token(request)
         })
     except Exception as e:
@@ -3786,393 +3686,6 @@ async def export_historico_json(request: Request):
         media_type="application/json",
         headers={"Content-Disposition": f"attachment; filename=historico_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"}
     )
-
-@app.get("/historico/exportar/pdf/{search_id}")
-async def export_consulta_pdf(request: Request, search_id: int):
-    """Exporta uma consulta específica em PDF formatado."""
-    if not request.cookies.get("auth_user"):
-        return RedirectResponse(url="/login")
-
-    if is_session_expired(request):
-        return RedirectResponse(url="/login", status_code=303)
-
-    if not REPORTLAB_AVAILABLE:
-        return JSONResponse({"success": False, "error": "Dependência reportlab não instalada"}, status_code=500)
-
-    username = request.cookies.get("auth_user")
-    cursor.execute(
-        "SELECT id, identifier, response, searched_at FROM searches WHERE id = ? AND username = ?",
-        (search_id, username)
-    )
-    row = cursor.fetchone()
-
-    if not row:
-        return JSONResponse({"success": False, "error": "Consulta não encontrada"}, status_code=404)
-
-    parsed = parse_resultado_consulta(row[2])
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    story = []
-
-    story.append(Paragraph("OneSeek - Relatório de Consulta", styles["Title"]))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>ID:</b> {row[0]}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Identificador:</b> {row[1]}", styles["Normal"]))
-    story.append(Paragraph(f"<b>Data:</b> {format_timestamp_br(row[3])}", styles["Normal"]))
-    story.append(Spacer(1, 12))
-
-    flat_rows = []
-    flatten_data_for_export("dados", parsed, flat_rows)
-    for key, value in flat_rows[:250]:
-        story.append(Paragraph(f"<b>{key}</b>: {value}", styles["Normal"]))
-
-    story.append(Spacer(1, 12))
-    story.append(Paragraph("<b>Resposta bruta (resumo):</b>", styles["Heading3"]))
-    story.append(Paragraph(row[2][:3000].replace("\n", "<br/>"), styles["Normal"]))
-
-    doc.build(story)
-    buffer.seek(0)
-
-    record_audit_log("EXPORT_PDF", username, get_client_ip(request), f"Consulta {search_id} exportada em PDF")
-
-    return StreamingResponse(
-        iter([buffer.getvalue()]),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=consulta_{search_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"}
-    )
-
-@app.get("/historico/exportar/excel/{search_id}")
-async def export_consulta_excel(request: Request, search_id: int):
-    """Exporta consulta em Excel com múltiplas abas."""
-    if not request.cookies.get("auth_user"):
-        return RedirectResponse(url="/login")
-
-    if is_session_expired(request):
-        return RedirectResponse(url="/login", status_code=303)
-
-    if not OPENPYXL_AVAILABLE:
-        return JSONResponse({"success": False, "error": "Dependência openpyxl não instalada"}, status_code=500)
-
-    username = request.cookies.get("auth_user")
-    cursor.execute(
-        "SELECT id, identifier, response, searched_at FROM searches WHERE id = ? AND username = ?",
-        (search_id, username)
-    )
-    row = cursor.fetchone()
-
-    if not row:
-        return JSONResponse({"success": False, "error": "Consulta não encontrada"}, status_code=404)
-
-    parsed = parse_resultado_consulta(row[2])
-    workbook = Workbook()
-
-    ws_meta = workbook.active
-    ws_meta.title = "Meta"
-    ws_meta.append(["Campo", "Valor"])
-    ws_meta.append(["ID", row[0]])
-    ws_meta.append(["Identificador", row[1]])
-    ws_meta.append(["Data", format_timestamp_br(row[3])])
-    ws_meta.append(["Tipo", parsed.get("tipo_consulta", "N/A")])
-
-    ws_pessoal = workbook.create_sheet("Dados Pessoais")
-    ws_pessoal.append(["Campo", "Valor"])
-    for key, value in (parsed.get("dados_pessoais") or {}).items():
-        ws_pessoal.append([key, value])
-
-    ws_empresas = workbook.create_sheet("Empresas")
-    ws_empresas.append(["Indice", "Conteúdo"])
-    for idx, item in enumerate(parsed.get("empresas") or [], start=1):
-        ws_empresas.append([idx, json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else str(item)])
-
-    ws_rel = workbook.create_sheet("Relacionamentos")
-    ws_rel.append(["Tipo", "Conteúdo"])
-    for item in parsed.get("parentes") or []:
-        ws_rel.append(["Parente", json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else str(item)])
-    for item in parsed.get("vizinhos") or []:
-        ws_rel.append(["Vizinho", json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else str(item)])
-    for item in parsed.get("vinculos") or []:
-        ws_rel.append(["Vínculo", str(item)])
-
-    ws_raw = workbook.create_sheet("Resposta Bruta")
-    ws_raw.append(["Texto"])
-    for line in row[2].splitlines():
-        ws_raw.append([line])
-
-    buffer = BytesIO()
-    workbook.save(buffer)
-    buffer.seek(0)
-
-    record_audit_log("EXPORT_EXCEL", username, get_client_ip(request), f"Consulta {search_id} exportada em Excel")
-
-    return StreamingResponse(
-        iter([buffer.getvalue()]),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename=consulta_{search_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"}
-    )
-
-@app.get("/casos", response_class=HTMLResponse)
-async def list_cases(request: Request):
-    session_error = validate_user_session(request)
-    if session_error:
-        return session_error
-
-    username = request.cookies.get("auth_user")
-    cursor.execute(
-        "SELECT id, title, description, status, created_at, updated_at FROM cases WHERE username = ? ORDER BY updated_at DESC",
-        (username,)
-    )
-    cases_rows = cursor.fetchall()
-
-    case_list = []
-    for row in cases_rows:
-        cursor.execute("SELECT COUNT(*) FROM case_searches WHERE case_id = ?", (row[0],))
-        total_items = cursor.fetchone()[0]
-        case_list.append({
-            "id": row[0],
-            "title": row[1],
-            "description": row[2],
-            "status": row[3],
-            "created_at": format_timestamp_br(row[4]),
-            "updated_at": format_timestamp_br(row[5]),
-            "total_consultas": total_items
-        })
-
-    return templates.TemplateResponse("casos.html", {
-        "request": request,
-        "cases": case_list,
-        "csrf_token": get_or_create_csrf_token(request)
-    })
-
-@app.post("/casos/novo")
-async def create_case(request: Request, title: str = Form(...), description: str = Form(""), csrf_token: str = Form(...)):
-    session_error = validate_user_session(request)
-    if session_error:
-        return session_error
-
-    username = request.cookies.get("auth_user")
-    client_ip = get_client_ip(request)
-
-    if not validate_csrf_token(request, csrf_token):
-        record_audit_log("INVALID_CSRF_CASE_CREATE", username, client_ip, "Token inválido em criação de caso")
-        return RedirectResponse(url="/casos", status_code=303)
-
-    title = title.strip()
-    if not title:
-        return RedirectResponse(url="/casos", status_code=303)
-
-    cursor.execute(
-        "INSERT INTO cases (username, title, description) VALUES (?, ?, ?)",
-        (username, title, description.strip())
-    )
-    conn.commit()
-    case_id = cursor.lastrowid
-    record_audit_log("CASE_CREATE", username, client_ip, f"Caso criado #{case_id}: {title}")
-    return RedirectResponse(url="/casos", status_code=303)
-
-@app.get("/api/casos", response_class=JSONResponse)
-async def api_list_cases(request: Request):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    username = request.cookies.get("auth_user")
-    cursor.execute("SELECT id, title, status FROM cases WHERE username = ? ORDER BY updated_at DESC", (username,))
-    rows = cursor.fetchall()
-    return {"success": True, "cases": [{"id": r[0], "title": r[1], "status": r[2]} for r in rows]}
-
-@app.post("/api/casos")
-async def api_create_case(request: Request):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    payload = await request.json()
-    title = str(payload.get("title", "")).strip()
-    description = str(payload.get("description", "")).strip()
-    csrf_token = str(payload.get("csrf_token", "")).strip()
-
-    username = request.cookies.get("auth_user")
-    client_ip = get_client_ip(request)
-
-    if not validate_csrf_token(request, csrf_token):
-        record_audit_log("INVALID_CSRF_CASE_CREATE_API", username, client_ip, "Token inválido em criação de caso via API")
-        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
-
-    if not title:
-        return JSONResponse({"success": False, "error": "Título é obrigatório"}, status_code=400)
-
-    cursor.execute(
-        "INSERT INTO cases (username, title, description) VALUES (?, ?, ?)",
-        (username, title, description)
-    )
-    conn.commit()
-    case_id = cursor.lastrowid
-    record_audit_log("CASE_CREATE_API", username, client_ip, f"Caso criado via API #{case_id}: {title}")
-    return {"success": True, "case_id": case_id, "title": title}
-
-@app.post("/api/casos/{case_id}/searches")
-async def api_add_search_to_case(request: Request, case_id: int):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    payload = await request.json()
-    search_id = int(payload.get("search_id", 0))
-    csrf_token = str(payload.get("csrf_token", "")).strip()
-    username = request.cookies.get("auth_user")
-    client_ip = get_client_ip(request)
-
-    if not validate_csrf_token(request, csrf_token):
-        record_audit_log("INVALID_CSRF_CASE_LINK", username, client_ip, "Token inválido em vínculo de consulta/caso")
-        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
-
-    cursor.execute("SELECT id FROM cases WHERE id = ? AND username = ?", (case_id, username))
-    if not cursor.fetchone():
-        return JSONResponse({"success": False, "error": "Caso não encontrado"}, status_code=404)
-
-    cursor.execute("SELECT id FROM searches WHERE id = ? AND username = ?", (search_id, username))
-    if not cursor.fetchone():
-        return JSONResponse({"success": False, "error": "Consulta não encontrada"}, status_code=404)
-
-    cursor.execute(
-        "SELECT id FROM case_searches WHERE case_id = ? AND search_id = ? AND username = ?",
-        (case_id, search_id, username)
-    )
-    if cursor.fetchone():
-        return {"success": True, "message": "Consulta já vinculada"}
-
-    cursor.execute(
-        "INSERT INTO case_searches (case_id, search_id, username) VALUES (?, ?, ?)",
-        (case_id, search_id, username)
-    )
-    cursor.execute("UPDATE cases SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (case_id,))
-    conn.commit()
-
-    record_audit_log("CASE_LINK_SEARCH", username, client_ip, f"Caso #{case_id} vinculado à consulta #{search_id}")
-    return {"success": True, "message": "Consulta adicionada ao caso"}
-
-@app.post("/api/casos/{case_id}/notes")
-async def api_add_case_note(request: Request, case_id: int):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    payload = await request.json()
-    note = str(payload.get("note", "")).strip()
-    csrf_token = str(payload.get("csrf_token", "")).strip()
-    username = request.cookies.get("auth_user")
-
-    if not note:
-        return JSONResponse({"success": False, "error": "Nota vazia"}, status_code=400)
-
-    if not validate_csrf_token(request, csrf_token):
-        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
-
-    cursor.execute("SELECT id FROM cases WHERE id = ? AND username = ?", (case_id, username))
-    if not cursor.fetchone():
-        return JSONResponse({"success": False, "error": "Caso não encontrado"}, status_code=404)
-
-    cursor.execute("INSERT INTO case_notes (case_id, username, note) VALUES (?, ?, ?)", (case_id, username, note))
-    cursor.execute("UPDATE cases SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (case_id,))
-    conn.commit()
-    return {"success": True, "message": "Nota adicionada"}
-
-@app.post("/api/casos/{case_id}/tags")
-async def api_add_case_tag(request: Request, case_id: int):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    payload = await request.json()
-    tag_name = str(payload.get("tag_name", "")).strip()
-    csrf_token = str(payload.get("csrf_token", "")).strip()
-    username = request.cookies.get("auth_user")
-
-    if not tag_name:
-        return JSONResponse({"success": False, "error": "Tag vazia"}, status_code=400)
-
-    if not validate_csrf_token(request, csrf_token):
-        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
-
-    cursor.execute("SELECT id FROM cases WHERE id = ? AND username = ?", (case_id, username))
-    if not cursor.fetchone():
-        return JSONResponse({"success": False, "error": "Caso não encontrado"}, status_code=404)
-
-    cursor.execute("INSERT INTO case_tags (case_id, username, tag_name) VALUES (?, ?, ?)", (case_id, username, tag_name))
-    cursor.execute("UPDATE cases SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (case_id,))
-    conn.commit()
-    return {"success": True, "message": "Tag adicionada"}
-
-@app.post("/api/casos/{case_id}/evidences")
-async def api_add_case_evidence(request: Request, case_id: int):
-    if not request.cookies.get("auth_user"):
-        return JSONResponse({"success": False, "error": "Não autenticado"}, status_code=401)
-
-    payload = await request.json()
-    evidence_type = str(payload.get("evidence_type", "texto")).strip() or "texto"
-    content = str(payload.get("content", "")).strip()
-    csrf_token = str(payload.get("csrf_token", "")).strip()
-    username = request.cookies.get("auth_user")
-
-    if not content:
-        return JSONResponse({"success": False, "error": "Evidência vazia"}, status_code=400)
-
-    if not validate_csrf_token(request, csrf_token):
-        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
-
-    cursor.execute("SELECT id FROM cases WHERE id = ? AND username = ?", (case_id, username))
-    if not cursor.fetchone():
-        return JSONResponse({"success": False, "error": "Caso não encontrado"}, status_code=404)
-
-    cursor.execute(
-        "INSERT INTO case_evidences (case_id, username, evidence_type, content) VALUES (?, ?, ?, ?)",
-        (case_id, username, evidence_type, content)
-    )
-    cursor.execute("UPDATE cases SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (case_id,))
-    conn.commit()
-    return {"success": True, "message": "Evidência adicionada"}
-
-@app.get("/casos/{case_id}/relatorio", response_class=HTMLResponse)
-async def case_report(request: Request, case_id: int):
-    session_error = validate_user_session(request)
-    if session_error:
-        return session_error
-
-    username = request.cookies.get("auth_user")
-    cursor.execute("SELECT id, title, description, status, created_at, updated_at FROM cases WHERE id = ? AND username = ?", (case_id, username))
-    case_row = cursor.fetchone()
-    if not case_row:
-        return RedirectResponse(url="/casos", status_code=303)
-
-    cursor.execute("""
-        SELECT s.id, s.identifier, s.searched_at
-        FROM case_searches cs
-        JOIN searches s ON s.id = cs.search_id
-        WHERE cs.case_id = ? AND cs.username = ?
-        ORDER BY cs.created_at DESC
-    """, (case_id, username))
-    searches_rows = cursor.fetchall()
-
-    cursor.execute("SELECT note, created_at FROM case_notes WHERE case_id = ? AND username = ? ORDER BY created_at DESC", (case_id, username))
-    notes_rows = cursor.fetchall()
-
-    cursor.execute("SELECT tag_name, created_at FROM case_tags WHERE case_id = ? AND username = ? ORDER BY created_at DESC", (case_id, username))
-    tags_rows = cursor.fetchall()
-
-    cursor.execute("SELECT evidence_type, content, created_at FROM case_evidences WHERE case_id = ? AND username = ? ORDER BY created_at DESC", (case_id, username))
-    evidences_rows = cursor.fetchall()
-
-    return templates.TemplateResponse("case_report.html", {
-        "request": request,
-        "case": {
-            "id": case_row[0],
-            "title": case_row[1],
-            "description": case_row[2],
-            "status": case_row[3],
-            "created_at": format_timestamp_br(case_row[4]),
-            "updated_at": format_timestamp_br(case_row[5])
-        },
-        "searches": [{"id": s[0], "identifier": s[1], "searched_at": format_timestamp_br(s[2])} for s in searches_rows],
-        "notes": [{"note": n[0], "created_at": format_timestamp_br(n[1])} for n in notes_rows],
-        "tags": [{"tag_name": t[0], "created_at": format_timestamp_br(t[1])} for t in tags_rows],
-        "evidences": [{"type": e[0], "content": e[1], "created_at": format_timestamp_br(e[2])} for e in evidences_rows]
-    })
 
 @app.get("/api/historico")
 def api_historico(request: Request):

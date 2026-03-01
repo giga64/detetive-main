@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ONESEEK - Resultado da Consulta</title>
-    <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/static/favicon.png">
     <link rel="apple-touch-icon" href="/static/favicon.png">
@@ -21,26 +20,6 @@
             min-height: 100vh;
             color: #e0e0e0;
             padding: 20px;
-        }
-
-        body[data-theme='light'] {
-            background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
-            color: #0f172a;
-        }
-
-        body[data-theme='high-contrast'] {
-            background: #000;
-            color: #fff;
-        }
-
-        body[data-theme='light'] .result-card {
-            background: rgba(255,255,255,0.85);
-            border-color: rgba(2,132,199,0.35);
-        }
-
-        body[data-theme='high-contrast'] .result-card {
-            background: rgba(0,0,0,0.96);
-            border-color: rgba(0,229,255,0.75);
         }
 
         #detective-canvas {
@@ -808,14 +787,6 @@
     </style>
 </head>
 <body>
-    <div style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1000; display: flex; gap: 0.6rem; align-items: center;">
-        <label for="themeSelect" style="font-size: 0.78rem; color: #94a3b8; text-transform: uppercase;">Tema</label>
-        <select id="themeSelect" style="padding: 0.45rem 0.65rem; border-radius: 0.45rem; border: 1px solid rgba(6,182,212,0.4); background: rgba(15,23,42,0.75); color: #e2e8f0; font-weight: 600;">
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-          <option value="high-contrast">High Contrast</option>
-        </select>
-    </div>
     <canvas id="detective-canvas"></canvas>
     <!-- CSRF Token para segurança -->
     <input type="hidden" id="csrf-token" name="csrf_token" value="{{ csrf_token }}">
@@ -1049,15 +1020,6 @@
                             Dados Brutos
                         </button>
                     {% endif %}
-                    <button class="tab-btn" onclick="switchTab(event, 'graph')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                            <circle cx="5" cy="5" r="2"></circle>
-                            <circle cx="19" cy="6" r="2"></circle>
-                            <circle cx="12" cy="18" r="2"></circle>
-                            <path d="M7 6.5l9.8-.5M6.5 7.2l4.5 8M18 8l-4.5 8"></path>
-                        </svg>
-                        Mapa de Vínculos
-                    </button>
                 </div>
 
                 <!-- TAB: Dados Pessoais / Empresa / Resultados -->
@@ -2264,7 +2226,6 @@
                                 </div>
                             </div>
                         {% endif %}
-
                     {% else %}
                         <div class="empty-state">
                             <p>Nenhuma informação pública disponível</p>
@@ -2279,14 +2240,6 @@
                     <div class="raw-text" style="max-height: 600px; overflow-y: auto; overflow-x: auto; background: rgba(10, 165, 164, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(10, 165, 164, 0.2); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; word-break: break-word;">{{ resultado }}</div>
                 </div>
 
-                <!-- TAB: Mapa de Vínculos -->
-                <div id="graph" class="tab-content">
-                    <div style="margin-bottom: 12px; color: #94a3b8; font-size: 0.92rem;">
-                        Visualização interativa de conexões entre alvo, contatos, endereços, vínculos e empresas.
-                    </div>
-                    <div id="vinculosGraph" style="height: 520px; border: 1px solid rgba(6,182,212,0.25); border-radius: 10px; background: rgba(6,182,212,0.03);"></div>
-                </div>
-
                 <!-- Ações -->
                 <div class="actions-section">
                     <button class="action-btn" onclick="goToSearch()">
@@ -2296,30 +2249,6 @@
                         </svg>
                         Voltar
                     </button>
-                    {% if search_id %}
-                    <button class="action-btn" onclick="addCurrentSearchToCase({{ search_id }})">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
-                            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                        </svg>
-                        Adicionar ao Caso
-                    </button>
-                    <a class="action-btn" href="/historico/exportar/pdf/{{ search_id }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        Exportar PDF
-                    </a>
-                    <a class="action-btn" href="/historico/exportar/excel/{{ search_id }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
-                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                            <path d="M9 8l6 8M15 8l-6 8"></path>
-                        </svg>
-                        Exportar Excel
-                    </a>
-                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -2355,112 +2284,6 @@
         function getSVG(iconName) {
             return SVG_ICONS[iconName] || '';
         }
-
-        const dadosConsulta = {% if dados %}{{ dados | tojson | safe }}{% else %}{}{% endif %};
-        let vinculoGraphInitialized = false;
-
-        function initThemeSelector() {
-            const select = document.getElementById('themeSelect');
-            if (!select) return;
-            const saved = localStorage.getItem('oneseek_theme') || 'dark';
-            document.body.setAttribute('data-theme', saved);
-            select.value = saved;
-            select.addEventListener('change', () => {
-                document.body.setAttribute('data-theme', select.value);
-                localStorage.setItem('oneseek_theme', select.value);
-            });
-        }
-
-        function buildGraphData() {
-            const nodes = [];
-            const edges = [];
-            const pushNode = (id, label, group = 'default') => {
-                if (!nodes.find(n => n.id === id)) {
-                    nodes.push({ id, label, group });
-                }
-            };
-            const pushEdge = (from, to, label = '') => {
-                edges.push({ from, to, label, color: { color: 'rgba(6,182,212,0.45)' }, font: { color: '#94a3b8', size: 11 } });
-            };
-
-            const alvoNome = (dadosConsulta?.dados_pessoais?.nome || dadosConsulta?.dados_empresa?.cnpj || 'Alvo').toString();
-            const alvoId = `alvo:${alvoNome}`;
-            pushNode(alvoId, alvoNome, 'alvo');
-
-            (dadosConsulta?.telefones || []).slice(0, 12).forEach((tel, idx) => {
-                const id = `tel:${idx}:${tel}`;
-                pushNode(id, tel, 'telefone');
-                pushEdge(alvoId, id, 'telefone');
-            });
-
-            (dadosConsulta?.emails || []).slice(0, 12).forEach((mail, idx) => {
-                const id = `mail:${idx}:${mail}`;
-                pushNode(id, mail, 'email');
-                pushEdge(alvoId, id, 'email');
-            });
-
-            (dadosConsulta?.enderecos || []).slice(0, 12).forEach((endereco, idx) => {
-                const shortAddress = String(endereco).length > 60 ? String(endereco).slice(0, 57) + '...' : String(endereco);
-                const id = `end:${idx}`;
-                pushNode(id, shortAddress, 'endereco');
-                pushEdge(alvoId, id, 'endereço');
-            });
-
-            (dadosConsulta?.empresas || []).slice(0, 12).forEach((empresa, idx) => {
-                const label = typeof empresa === 'string' ? empresa : (empresa?.cnpj || empresa?.cargo || `Empresa ${idx + 1}`);
-                const id = `emp:${idx}`;
-                pushNode(id, String(label), 'empresa');
-                pushEdge(alvoId, id, 'empresa');
-            });
-
-            (dadosConsulta?.vinculos || []).slice(0, 12).forEach((vinculo, idx) => {
-                const label = typeof vinculo === 'string' ? vinculo : JSON.stringify(vinculo);
-                const shortLabel = String(label).length > 60 ? String(label).slice(0, 57) + '...' : String(label);
-                const id = `vin:${idx}`;
-                pushNode(id, shortLabel, 'vinculo');
-                pushEdge(alvoId, id, 'vínculo');
-            });
-
-            return { nodes, edges };
-        }
-
-        function renderVinculosGraph() {
-            const graphContainer = document.getElementById('vinculosGraph');
-            if (!graphContainer || vinculoGraphInitialized || typeof vis === 'undefined') return;
-
-            const graphData = buildGraphData();
-            if (!graphData.nodes.length) {
-                graphContainer.innerHTML = '<div style="padding:20px;color:#94a3b8;">Sem dados suficientes para montar o grafo.</div>';
-                vinculoGraphInitialized = true;
-                return;
-            }
-
-            const options = {
-                physics: { stabilization: false, barnesHut: { springLength: 120 } },
-                nodes: {
-                    shape: 'dot',
-                    size: 13,
-                    font: { color: '#e2e8f0', size: 12 },
-                    borderWidth: 1
-                },
-                groups: {
-                    alvo: { color: { background: '#06b6d4', border: '#0ea5a4' }, size: 18 },
-                    telefone: { color: { background: '#10b981', border: '#059669' } },
-                    email: { color: { background: '#f59e0b', border: '#d97706' } },
-                    endereco: { color: { background: '#8b5cf6', border: '#7c3aed' } },
-                    empresa: { color: { background: '#3b82f6', border: '#2563eb' } },
-                    vinculo: { color: { background: '#ef4444', border: '#dc2626' } }
-                },
-                edges: { width: 1.2, smooth: true },
-                interaction: { hover: true }
-            };
-
-            new vis.Network(graphContainer, {
-                nodes: new vis.DataSet(graphData.nodes),
-                edges: new vis.DataSet(graphData.edges)
-            }, options);
-            vinculoGraphInitialized = true;
-        }
         function switchTab(event, tabName) {
             event.preventDefault();
             console.log('switchTab chamada para:', tabName);
@@ -2483,9 +2306,6 @@
             if (tabElement) {
                 console.log('Ativando aba:', tabName);
                 tabElement.classList.add('active');
-                if (tabName === 'graph') {
-                    setTimeout(renderVinculosGraph, 80);
-                }
             } else {
                 console.error('Elemento não encontrado:', tabName);
             }
@@ -2572,57 +2392,6 @@
 
         function goToSearch() {
             window.location.href = '/';
-        }
-
-        async function addCurrentSearchToCase(searchId) {
-            try {
-                const listResponse = await fetch('/api/casos');
-                const listData = await listResponse.json();
-                if (!listData.success || !listData.cases || listData.cases.length === 0) {
-                    const newTitle = prompt('Nenhum caso encontrado. Informe o título para criar um caso:');
-                    if (!newTitle || !newTitle.trim()) return;
-                    const createResponse = await fetch('/api/casos', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            title: newTitle.trim(),
-                            description: 'Criado a partir do resultado da consulta',
-                            csrf_token: document.getElementById('csrf-token')?.value || ''
-                        })
-                    });
-                    const created = await createResponse.json();
-                    if (!created.success) throw new Error(created.error || 'Falha ao criar caso');
-                    await linkSearchToCase(created.case_id, searchId);
-                    alert('Caso criado e consulta vinculada com sucesso!');
-                    return;
-                }
-
-                const options = listData.cases.map(c => `${c.id}: ${c.title}`).join('\n');
-                const selected = prompt(`Escolha o ID do caso para vincular:\n${options}`);
-                if (!selected) return;
-                const caseId = Number(String(selected).split(':')[0].trim());
-                if (!caseId) {
-                    alert('ID de caso inválido.');
-                    return;
-                }
-                await linkSearchToCase(caseId, searchId);
-                alert('Consulta adicionada ao caso com sucesso.');
-            } catch (error) {
-                alert(`Erro ao adicionar ao caso: ${error.message}`);
-            }
-        }
-
-        async function linkSearchToCase(caseId, searchId) {
-            const response = await fetch(`/api/casos/${caseId}/searches`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    search_id: searchId,
-                    csrf_token: document.getElementById('csrf-token')?.value || ''
-                })
-            });
-            const data = await response.json();
-            if (!data.success) throw new Error(data.error || 'Falha no vínculo consulta/caso');
         }
 
         // ===========================
@@ -3351,7 +3120,6 @@
     <script>
         // Debug para verificar elementos ao carregar
         document.addEventListener('DOMContentLoaded', function() {
-            initThemeSelector();
             console.log('=== DEBUG TABS ===');
             console.log('Tab personal:', document.getElementById('personal'));
             console.log('Tab addresses:', document.getElementById('addresses'));
@@ -3359,7 +3127,6 @@
             console.log('Tab companies:', document.getElementById('companies'));
             console.log('Tab public-info:', document.getElementById('public-info'));
             console.log('Tab raw:', document.getElementById('raw'));
-            console.log('Tab graph:', document.getElementById('graph'));
             console.log('Botões de tab:', document.querySelectorAll('.tab-btn'));
         });
     </script>
