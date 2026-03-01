@@ -622,6 +622,29 @@ def validate_user_session(request: Request):
     
     return None
 
+def is_admin_username(username: str) -> bool:
+    """Valida privilégios admin no banco (não confiar em cookie)."""
+    if not username:
+        return False
+    try:
+        cursor.execute("SELECT is_admin, status FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        if not user:
+            return False
+        is_admin = user[0] == 1
+        status = user[1]
+        is_active = status is None or status == 1
+        return is_admin and is_active
+    except Exception:
+        return False
+
+def request_is_admin(request: Request) -> bool:
+    """Valida sessão e papel admin no servidor."""
+    username = request.cookies.get("auth_user")
+    if not username:
+        return False
+    return is_admin_username(username)
+
 def check_rate_limit(ip: str) -> bool:
     """Verifica se o IP excedeu o limite de tentativas de login"""
     now = datetime.now().timestamp()
@@ -2857,7 +2880,7 @@ async def get_consulta_details(request: Request, search_id: int):
     
     # Buscar consulta do usuário
     cursor.execute(
-        "SELECT id, identifier, response, data FROM searches WHERE id = ? AND username = ?",
+        "SELECT id, identifier, response, searched_at FROM searches WHERE id = ? AND username = ?",
         (search_id, username)
     )
     search = cursor.fetchone()
@@ -2926,7 +2949,7 @@ def form(request: Request):
     
     # Obter estatísticas para o dashboard
     username = request.cookies.get("auth_user")
-    is_admin = request.cookies.get("is_admin") == "1"
+    is_admin = is_admin_username(username)
     
     # Estatísticas do usuário
     stats = get_user_statistics(username, is_admin)
@@ -2945,7 +2968,7 @@ def admin_dashboard(request: Request):
         return RedirectResponse(url="/login")
     
     # Verificar se é admin
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/")
     
     # Verificar expiração de sessão
@@ -3040,7 +3063,7 @@ async def consulta_stream(request: Request):
     record_query_attempt(username)
     
     # Tentar obter do cache primeiro
-    tipo = tipo_manual or tipo_consulta_automatico(identificador)
+    tipo = tipo_manual or detect_tipo(identificador)
     resultado_cache = await cache_manager.get(tipo, identificador)
     
     if resultado_cache:
@@ -3395,14 +3418,16 @@ async def reverse_search_phone(request: Request, phone: str):
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+    is_admin = request_is_admin(request)
     
     # Limpar telefone (remover caracteres especiais)
     phone_clean = ''.join(filter(str.isdigit, phone))
     
-    # Buscar todas as consultas de TODOS os usuários
-    cursor.execute(
-        "SELECT id, identifier, response FROM searches"
-    )
+    # Buscar consultas: admin vê global, usuário comum vê apenas próprias
+    if is_admin:
+        cursor.execute("SELECT id, identifier, response FROM searches")
+    else:
+        cursor.execute("SELECT id, identifier, response FROM searches WHERE username = ?", (username,))
     searches = cursor.fetchall()
     
     resultados = []
@@ -3450,14 +3475,16 @@ async def reverse_search_email(request: Request, email: str):
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+    is_admin = request_is_admin(request)
     
     # Email em lowercase
     email_lower = email.lower()
     
-    # Buscar todas as consultas de TODOS os usuários
-    cursor.execute(
-        "SELECT id, identifier, response FROM searches"
-    )
+    # Buscar consultas: admin vê global, usuário comum vê apenas próprias
+    if is_admin:
+        cursor.execute("SELECT id, identifier, response FROM searches")
+    else:
+        cursor.execute("SELECT id, identifier, response FROM searches WHERE username = ?", (username,))
     searches = cursor.fetchall()
     
     resultados = []
@@ -3504,14 +3531,16 @@ async def reverse_search_address(request: Request, address: str):
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+    is_admin = request_is_admin(request)
     
     # Normalizar endereço para comparação (remover acentos, lowercase)
     address_norm = address.lower().strip()
     
-    # Buscar todas as consultas de TODOS os usuários
-    cursor.execute(
-        "SELECT id, identifier, response FROM searches"
-    )
+    # Buscar consultas: admin vê global, usuário comum vê apenas próprias
+    if is_admin:
+        cursor.execute("SELECT id, identifier, response FROM searches")
+    else:
+        cursor.execute("SELECT id, identifier, response FROM searches WHERE username = ?", (username,))
     searches = cursor.fetchall()
     
     resultados = []
@@ -3660,8 +3689,17 @@ async def export_historico_json(request: Request):
 
 @app.get("/api/historico")
 def api_historico(request: Request):
-    if not request.cookies.get("auth_user"): raise HTTPException(status_code=401, detail="Não autorizado")
-    cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    if not request.cookies.get("auth_user"):
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    username = request.cookies.get("auth_user")
+    if request_is_admin(request):
+        cursor.execute("SELECT id, identifier, response, searched_at FROM searches ORDER BY searched_at DESC LIMIT 100")
+    else:
+        cursor.execute(
+            "SELECT id, identifier, response, searched_at FROM searches WHERE username = ? ORDER BY searched_at DESC LIMIT 100",
+            (username,)
+        )
     searches = cursor.fetchall()
     return [{"id": s[0], "identifier": s[1], "response": s[2], "searched_at": s[3]} for s in searches]
 
@@ -3682,7 +3720,7 @@ async def admin_logs(request: Request):
         response.delete_cookie("auth_time")
         return response
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/")
     
     # Buscar logs (últimos 500)
@@ -3729,7 +3767,7 @@ async def list_users(request: Request):
         return response
     
     # Apenas admin pode gerenciar usuários
-    if request.cookies.get("is_admin") != "1": 
+    if not request_is_admin(request): 
         return RedirectResponse(url="/")
     
     try:
@@ -3761,7 +3799,7 @@ async def create_user(request: Request, new_user: str = Form(...), new_pass: str
         response.delete_cookie("auth_time")
         return response
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/", status_code=303)
     
     username = request.cookies.get("auth_user")
@@ -3779,12 +3817,13 @@ async def create_user(request: Request, new_user: str = Form(...), new_pass: str
         usar_senha_padrao = True
     
     try:
+        password_to_store = hash_password(new_pass)
         if usar_senha_padrao:
             cursor.execute("INSERT INTO users (username, password, is_admin, senha_temporaria) VALUES (?, ?, ?, 1)", 
-                         (new_user, new_pass, 1 if admin else 0))
+                         (new_user, password_to_store, 1 if admin else 0))
         else:
             cursor.execute("INSERT INTO users (username, password, is_admin, senha_temporaria) VALUES (?, ?, ?, 0)", 
-                         (new_user, new_pass, 1 if admin else 0))
+                         (new_user, password_to_store, 1 if admin else 0))
         conn.commit()
         record_audit_log("CREATE_USER", username, client_ip, f"Novo usuário: {new_user}, admin: {bool(admin)}, senha padrão: {usar_senha_padrao}")
     except: 
@@ -3805,7 +3844,7 @@ async def delete_user(request: Request, user_id: int):
         response.delete_cookie("auth_time")
         return response
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/", status_code=303)
     
     username = request.cookies.get("auth_user")
@@ -3824,7 +3863,7 @@ async def change_password(request: Request, user_id: int = Form(...), new_pass: 
     if is_session_expired(request):
         return JSONResponse({"success": False, "error": "Sessão expirada"}, status_code=401)
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return JSONResponse({"success": False, "error": "Acesso negado"}, status_code=403)
     
     username = request.cookies.get("auth_user")
@@ -3864,7 +3903,7 @@ async def change_password(request: Request, user_id: int = Form(...), new_pass: 
 @app.get("/api/usuarios/stats")
 async def get_user_stats(request: Request):
     """Retorna estatísticas de usuários em JSON"""
-    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     try:
@@ -3907,13 +3946,18 @@ async def get_user_stats(request: Request):
         return {"error": str(e)}
 
 @app.post("/usuarios/importar-csv")
-async def import_users_csv(request: Request, file: UploadFile = File(...)):
+async def import_users_csv(request: Request, file: UploadFile = File(...), csrf_token: str = Form(...)):
     """Importa múltiplos usuários de um arquivo CSV"""
-    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/login", status_code=303)
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_IMPORT_USERS", username, client_ip, "Tentativa de importar usuários com CSRF inválido")
+        return JSONResponse({"success": False, "error": "Sessão inválida. Recarregue a página."}, status_code=403)
     
     try:
         content = await file.read()
@@ -3930,8 +3974,9 @@ async def import_users_csv(request: Request, file: UploadFile = File(...)):
                 is_admin = int(row.get('is_admin', 0))
                 
                 if new_user and new_pass:
+                    hashed_password = hash_password(new_pass)
                     cursor.execute("INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)",
-                                 (new_user, new_pass, is_admin))
+                                 (new_user, hashed_password, is_admin))
                     added += 1
             except sqlite3.IntegrityError:
                 skipped += 1
@@ -3945,13 +3990,18 @@ async def import_users_csv(request: Request, file: UploadFile = File(...)):
         return {"error": str(e)}
 
 @app.post("/usuarios/mudar-permissao")
-async def toggle_user_permission(request: Request, user_id: int = Form(...)):
+async def toggle_user_permission(request: Request, user_id: int = Form(...), csrf_token: str = Form(...)):
     """Alterna permissões do usuário (Admin ↔ Operador)"""
-    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/login", status_code=303)
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_TOGGLE_PERMISSION", username, client_ip, "Tentativa de alterar permissão com CSRF inválido")
+        return JSONResponse({"success": False, "error": "Sessão inválida. Recarregue a página."}, status_code=403)
     
     try:
         cursor.execute("SELECT is_admin, username FROM users WHERE id = ?", (user_id,))
@@ -3972,13 +4022,18 @@ async def toggle_user_permission(request: Request, user_id: int = Form(...)):
         return {"error": str(e)}
 
 @app.post("/usuarios/ativar-desativar")
-async def toggle_user_status(request: Request, user_id: int = Form(...)):
+async def toggle_user_status(request: Request, user_id: int = Form(...), csrf_token: str = Form(...)):
     """Ativa ou desativa um usuário"""
-    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/login", status_code=303)
     
     username = request.cookies.get("auth_user")
     client_ip = get_client_ip(request)
+
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_TOGGLE_STATUS", username, client_ip, "Tentativa de alterar status com CSRF inválido")
+        return JSONResponse({"success": False, "error": "Sessão inválida. Recarregue a página."}, status_code=403)
     
     try:
         cursor.execute("SELECT status, username FROM users WHERE id = ?", (user_id,))
@@ -4001,7 +4056,7 @@ async def toggle_user_status(request: Request, user_id: int = Form(...)):
 @app.get("/usuarios/exportar-csv")
 async def export_users_csv(request: Request):
     """Exporta lista de usuários em CSV"""
-    if not request.cookies.get("auth_user") or request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/login", status_code=303)
     
     try:
@@ -4039,7 +4094,7 @@ async def export_users_csv(request: Request):
 @app.get("/test-telegram")
 async def test_telegram(request: Request):
     """Endpoint para testar conexão com Telegram"""
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     try:
@@ -4082,32 +4137,42 @@ async def test_telegram(request: Request):
 # ROTAS DE FAVORITOS
 # ----------------------
 @app.post("/favoritos/adicionar/{search_id}")
-async def add_favorite(request: Request, search_id: int):
+async def add_favorite(request: Request, search_id: int, csrf_token: str = Form(...)):
     """Adiciona uma consulta aos favoritos"""
     if not request.cookies.get("auth_user"):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_ADD_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     try:
         cursor.execute("INSERT INTO favorites (search_id, username) VALUES (?, ?)", (search_id, username))
         conn.commit()
-        client_ip = get_client_ip(request)
         record_audit_log("ADD_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
         return {"success": True, "message": "Adicionado aos favoritos"}
     except:
         return {"success": False, "error": "Erro ao adicionar favorito"}
 
 @app.post("/favoritos/remover/{search_id}")
-async def remove_favorite(request: Request, search_id: int):
+async def remove_favorite(request: Request, search_id: int, csrf_token: str = Form(...)):
     """Remove uma consulta dos favoritos"""
     if not request.cookies.get("auth_user"):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_REMOVE_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     try:
         cursor.execute("DELETE FROM favorites WHERE search_id = ? AND username = ?", (search_id, username))
         conn.commit()
-        client_ip = get_client_ip(request)
         record_audit_log("REMOVE_FAVORITE", username, client_ip, f"Consulta ID: {search_id}")
         return {"success": True, "message": "Removido dos favoritos"}
     except:
@@ -4165,12 +4230,18 @@ async def get_favorites(request: Request):
 # ROTAS DE NOTAS/COMENTÁRIOS
 # ----------------------
 @app.post("/notas/adicionar")
-async def add_note(request: Request, search_id: int = Form(...), note: str = Form(...)):
+async def add_note(request: Request, search_id: int = Form(...), note: str = Form(...), csrf_token: str = Form(...)):
     """Adiciona ou atualiza nota em uma consulta"""
     if not request.cookies.get("auth_user"):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_ADD_NOTE", username, client_ip, f"Consulta ID: {search_id}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     try:
         # Verificar se já existe nota
         cursor.execute("SELECT id FROM notes WHERE search_id = ? AND username = ?", (search_id, username))
@@ -4184,7 +4255,6 @@ async def add_note(request: Request, search_id: int = Form(...), note: str = For
             cursor.execute("INSERT INTO notes (search_id, username, note) VALUES (?, ?, ?)", (search_id, username, note))
         
         conn.commit()
-        client_ip = get_client_ip(request)
         record_audit_log("ADD_NOTE", username, client_ip, f"Consulta ID: {search_id}")
         return {"success": True, "message": "Nota salva com sucesso"}
     except Exception as e:
@@ -4211,9 +4281,15 @@ async def delete_note(request: Request, search_id: int):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token = request.headers.get("X-CSRF-Token") or request.query_params.get("csrf_token", "")
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_DELETE_NOTE", username, client_ip, f"Consulta ID: {search_id}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     cursor.execute("DELETE FROM notes WHERE search_id = ? AND username = ?", (search_id, username))
     conn.commit()
-    client_ip = get_client_ip(request)
     record_audit_log("DELETE_NOTE", username, client_ip, f"Consulta ID: {search_id}")
     return {"success": True, "message": "Nota deletada"}
 
@@ -4221,16 +4297,21 @@ async def delete_note(request: Request, search_id: int):
 # ROTAS DE TAGS
 # ----------------------
 @app.post("/tags/adicionar")
-async def add_tag(request: Request, search_id: int = Form(...), tag_name: str = Form(...)):
+async def add_tag(request: Request, search_id: int = Form(...), tag_name: str = Form(...), csrf_token: str = Form(...)):
     """Adiciona tag a uma consulta"""
     if not request.cookies.get("auth_user"):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_ADD_TAG", username, client_ip, f"Consulta ID: {search_id}, Tag: {tag_name}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     try:
         cursor.execute("INSERT INTO tags (search_id, tag_name, username) VALUES (?, ?, ?)", (search_id, tag_name, username))
         conn.commit()
-        client_ip = get_client_ip(request)
         record_audit_log("ADD_TAG", username, client_ip, f"Consulta ID: {search_id}, Tag: {tag_name}")
         return {"success": True, "message": "Tag adicionada"}
     except:
@@ -4243,9 +4324,15 @@ async def remove_tag(request: Request, tag_id: int):
         return {"success": False, "error": "Não autenticado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+    csrf_token = request.headers.get("X-CSRF-Token") or request.query_params.get("csrf_token", "")
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_REMOVE_TAG", username, client_ip, f"Tag ID: {tag_id}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
+
     cursor.execute("DELETE FROM tags WHERE id = ? AND username = ?", (tag_id, username))
     conn.commit()
-    client_ip = get_client_ip(request)
     record_audit_log("REMOVE_TAG", username, client_ip, f"Tag ID: {tag_id}")
     return {"success": True, "message": "Tag removida"}
 
@@ -4269,7 +4356,7 @@ async def relatorio_mensal(request: Request):
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     username = request.cookies.get("auth_user")
@@ -4320,7 +4407,7 @@ async def relatorio_usuario(request: Request, target_username: str):
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     username = request.cookies.get("auth_user")
@@ -4369,7 +4456,7 @@ async def backup_database(request: Request):
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     username = request.cookies.get("auth_user")
@@ -4393,15 +4480,21 @@ async def backup_database(request: Request):
         return {"success": False, "error": str(e)}
 
 @app.post("/admin/cleanup")
-async def cleanup_old_logs(request: Request, days: int = Form(90)):
+async def cleanup_old_logs(request: Request, days: int = Form(90), csrf_token: str = Form(...)):
     """Remove logs antigos do banco de dados"""
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"error": "Acesso negado"}
     
     username = request.cookies.get("auth_user")
+    client_ip = get_client_ip(request)
+
+    csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+    if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+        record_audit_log("INVALID_CSRF_ADMIN_CLEANUP", username, client_ip, f"days={days}")
+        return JSONResponse({"success": False, "error": "Token CSRF inválido"}, status_code=403)
     
     try:
         # Remover logs de auditoria antigos
@@ -4410,7 +4503,6 @@ async def cleanup_old_logs(request: Request, days: int = Form(90)):
         
         conn.commit()
         
-        client_ip = get_client_ip(request)
         record_audit_log("CLEANUP_LOGS", username, client_ip, f"Removidos {deleted_logs} logs com mais de {days} dias")
         
         return {"success": True, "deleted": deleted_logs, "message": f"Removidos {deleted_logs} logs antigos"}
@@ -4533,11 +4625,11 @@ async def filtrar_historico(request: Request, q: str = "", periodo: str = "30", 
 # ----------------------
 @app.get("/backup/usuarios/csv")
 async def backup_usuarios_csv(request: Request):
-    """Exporta todos os usuários e senhas em CSV (admin only)"""
+    """Exporta usuários em CSV sem senha (admin only)"""
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/")
     
     if is_session_expired(request):
@@ -4547,15 +4639,15 @@ async def backup_usuarios_csv(request: Request):
     client_ip = get_client_ip(request)
     
     # Buscar todos os usuários
-    cursor.execute("SELECT id, username, password, is_admin FROM users ORDER BY id")
+    cursor.execute("SELECT id, username, is_admin, status FROM users ORDER BY id")
     usuarios = cursor.fetchall()
     
     # Criar CSV
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Usuário", "Senha", "Admin"])
+    writer.writerow(["ID", "Usuário", "Admin", "Status"])
     for user in usuarios:
-        writer.writerow([user[0], user[1], user[2], "Sim" if user[3] else "Não"])
+        writer.writerow([user[0], user[1], "Sim" if user[2] else "Não", "Ativo" if user[3] == 1 else "Inativo"])
     
     record_audit_log("BACKUP_USUARIOS_CSV", username, client_ip, f"Backup de {len(usuarios)} usuários exportado em CSV")
     
@@ -4567,11 +4659,11 @@ async def backup_usuarios_csv(request: Request):
 
 @app.get("/backup/usuarios/json")
 async def backup_usuarios_json(request: Request):
-    """Exporta todos os usuários e senhas em JSON (admin only)"""
+    """Exporta usuários em JSON sem senha (admin only)"""
     if not request.cookies.get("auth_user"):
         return RedirectResponse(url="/login")
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return RedirectResponse(url="/")
     
     if is_session_expired(request):
@@ -4581,7 +4673,7 @@ async def backup_usuarios_json(request: Request):
     client_ip = get_client_ip(request)
     
     # Buscar todos os usuários
-    cursor.execute("SELECT id, username, password, is_admin FROM users ORDER BY id")
+    cursor.execute("SELECT id, username, is_admin, status FROM users ORDER BY id")
     usuarios = cursor.fetchall()
     
     # Criar JSON
@@ -4593,8 +4685,8 @@ async def backup_usuarios_json(request: Request):
             {
                 "id": u[0],
                 "username": u[1],
-                "password": u[2],
-                "is_admin": bool(u[3])
+                "is_admin": bool(u[2]),
+                "status": "ativo" if u[3] == 1 else "inativo"
             }
             for u in usuarios
         ]
@@ -4614,7 +4706,7 @@ async def restore_usuarios(request: Request):
     if not request.cookies.get("auth_user"):
         return {"success": False, "error": "Não autenticado"}
     
-    if request.cookies.get("is_admin") != "1":
+    if not request_is_admin(request):
         return {"success": False, "error": "Acesso negado"}
     
     if is_session_expired(request):
@@ -4626,6 +4718,12 @@ async def restore_usuarios(request: Request):
     try:
         form_data = await request.form()
         file = form_data.get("file")
+        csrf_token = form_data.get("csrf_token", "")
+
+        csrf_token_str = str(csrf_token).strip() if csrf_token else ""
+        if not csrf_token_str or not validate_csrf_token(request, csrf_token_str):
+            record_audit_log("INVALID_CSRF_RESTORE_USERS", username, client_ip, "Tentativa de restore com CSRF inválido")
+            return {"success": False, "error": "Token CSRF inválido"}
         
         if not file:
             return {"success": False, "error": "Nenhum arquivo enviado"}

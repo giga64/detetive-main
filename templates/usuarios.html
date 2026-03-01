@@ -1128,6 +1128,7 @@
         async function togglePermission(userId, button) {
             const formData = new FormData();
             formData.append('user_id', userId);
+            formData.append('csrf_token', '{{ csrf_token }}');
 
             try {
                 const response = await fetch('/usuarios/mudar-permissao', {
@@ -1149,6 +1150,7 @@
         async function toggleStatus(userId, button) {
             const formData = new FormData();
             formData.append('user_id', userId);
+            formData.append('csrf_token', '{{ csrf_token }}');
 
             try {
                 const response = await fetch('/usuarios/ativar-desativar', {
@@ -1178,6 +1180,7 @@
 
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('csrf_token', '{{ csrf_token }}');
 
             try {
                 const response = await fetch('/usuarios/importar-csv', {

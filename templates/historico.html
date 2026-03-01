@@ -998,12 +998,23 @@
     // ===========================
     // FAVORITOS
     // ===========================
+    function getCsrfToken() {
+      const form = document.getElementById('clearHistoryForm');
+      return form ? form.querySelector('input[name="csrf_token"]').value : '';
+    }
+
     async function toggleFavorite(searchId, button) {
       const isActive = button.classList.contains('active');
       const endpoint = isActive ? `/favoritos/remover/${searchId}` : `/favoritos/adicionar/${searchId}`;
       
       try {
-        const response = await fetch(endpoint, { method: 'POST' });
+        const formData = new FormData();
+        formData.append('csrf_token', getCsrfToken());
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: formData
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -1027,6 +1038,7 @@
         const formData = new FormData();
         formData.append('search_id', searchId);
         formData.append('note', note);
+        formData.append('csrf_token', getCsrfToken());
         
         try {
           const response = await fetch('/notas/adicionar', {
@@ -1056,6 +1068,7 @@
         const formData = new FormData();
         formData.append('search_id', searchId);
         formData.append('tag_name', tag);
+        formData.append('csrf_token', getCsrfToken());
         
         try {
           const response = await fetch('/tags/adicionar', {

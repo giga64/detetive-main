@@ -1,6 +1,38 @@
 version: '3.8'
 
 services:
+  # FastAPI Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: detetive-web
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+      - STRING_SESSION=${STRING_SESSION}
+      - ENABLE_OAB_OCR=${ENABLE_OAB_OCR:-true}
+      - DATABASE_PATH=/data/detetive.db
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./:/app
+      - detetive_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - detetive-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # Redis - Cache e Message Broker para Celery
   redis:
     image: redis:latest
@@ -19,6 +51,7 @@ services:
       retries: 5
     networks:
       - detetive-network
+    restart: unless-stopped
 
   # Celery Worker - Processamento de tarefas em background
   celery-worker:
@@ -31,35 +64,42 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+      - STRING_SESSION=${STRING_SESSION}
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
     volumes:
       - .:/app
+      - detetive_data:/data
     networks:
       - detetive-network
+    restart: unless-stopped
 
   # Celery Beat - Scheduler para tarefas agendadas
   celery-beat:
     build:
       context: .
       dockerfile: Dockerfile.celery
-    container_name: detetive-celery-beat
-    command: celery -A job_queue beat --loglevel=info
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
+    contTELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+      - TELEGRAM_GROUP_ID=${TELEGRAM_GROUP_ID}
+      - STRING_SESSION=${STRING_SESSION}
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
     volumes:
       - .:/app
+      - detetive_data:/data
     networks:
       - detetive-network
-
-volumes:
-  redis_data:
+    restart: unless-stopped//redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    volumes:
+  detetive_data:
 
 networks:
   detetive-network:
@@ -69,6 +109,12 @@ networks:
 # INSTRUÇÕES DE USO
 # ================================================================
 # 
+# 0. Criar arquivo .env com variáveis obrigatórias:
+#    TELEGRAM_API_ID=seu_id
+#    TELEGRAM_API_HASH=seu_hash
+#    TELEGRAM_GROUP_ID=id_do_grupo
+#    STRING_SESSION=sua_string_session
+#
 # 1. Iniciar todos os serviços:
 #    docker-compose up -d
 #
@@ -76,9 +122,21 @@ networks:
 #    docker-compose ps
 #
 # 3. Ver logs:
-#    docker-compose logs -f redis
-#    docker-compose logs -f celery-worker
-#    docker-compose logs -f celery-beat
+#    docker-compose logs -f web              # Web app
+#    docker-compose logs -f redis            # Redis
+#    docker-compose logs -f celery-worker    # Background tasks
+#    docker-compose logs -f celery-beat      # Scheduler
+#
+# 4. Parar tudo:
+#    docker-compose down
+#
+# 5. Limpar dados (incluindo Redis):
+#    docker-compose down -v
+#
+# 6. Rebuild após mudanças:
+#    docker-compose down
+#    docker-compose build --no-cache
+#    docker-compose up -d celery-beat
 #
 # 4. Parar tudo:
 #    docker-compose down
