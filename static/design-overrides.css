@@ -1,0 +1,7 @@
+body[data-theme='light'] {
+  color: var(--theme-text) !important;
+}
+body[data-theme='high-contrast'] * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}

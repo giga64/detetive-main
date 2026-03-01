@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casos Investigativos - OneSeek</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <style>
+    :root {
+      --bg-1: #0f172a;
+      --bg-2: #1e293b;
+      --card: rgba(15, 23, 42, 0.7);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #06b6d4;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: rgba(6, 182, 212, 0.28);
+    }
+    body[data-theme='light'] {
+      --bg-1: #f8fafc;
+      --bg-2: #e2e8f0;
+      --card: rgba(255, 255, 255, 0.86);
+      --text: #0f172a;
+      --muted: #334155;
+      --accent: #0284c7;
+      --border: rgba(2, 132, 199, 0.25);
+    }
+    body[data-theme='high-contrast'] {
+      --bg-1: #000;
+      --bg-2: #000;
+      --card: rgba(0, 0, 0, 0.96);
+      --text: #fff;
+      --muted: #d1d5db;
+      --accent: #00e5ff;
+      --border: rgba(0, 229, 255, 0.85);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .topbar { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+    .title { font-size: 2rem; font-weight: 800; letter-spacing: 1px; color: var(--accent); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: .82rem; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      background: rgba(15,23,42,.28);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .btn {
+      border: 1px solid var(--border);
+      background: rgba(6,182,212,.12);
+      color: var(--accent);
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn.primary { background: linear-gradient(135deg, #06b6d4, #0ea5a4); color: #06202a; border-color: transparent; }
+    .btn.ok { color: #10b981; border-color: rgba(16,185,129,.35); background: rgba(16,185,129,.12); }
+    .btn.warn { color: #f59e0b; border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.12); }
+    .btn.danger { color: #ef4444; border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+    .theme-select { min-width: 180px; }
+    .case-list { display: grid; gap: 10px; }
+    .case-item { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: rgba(6,182,212,.05); }
+    .case-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .case-title { font-weight: 700; }
+    .meta { color: var(--muted); font-size: .85rem; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="title">Casos Investigativos</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="themeSelect" class="theme-select field input" style="padding:8px;">
+          <option value="dark">Tema: Dark</option>
+          <option value="light">Tema: Light</option>
+          <option value="high-contrast">Tema: High Contrast</option>
+        </select>
+        <a class="btn" href="/">Painel</a>
+        <a class="btn" href="/historico">Histórico</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">Criar Novo Caso</h3>
+        <form method="post" action="/casos/novo">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="field">
+            <label>Título do Caso</label>
+            <input type="text" name="title" required placeholder="Ex: Operação X - Núcleo Norte">
+          </div>
+          <div class="field">
+            <label>Descrição Inicial</label>
+            <textarea name="description" rows="4" placeholder="Objetivo, hipótese e escopo inicial"></textarea>
+          </div>
+          <button class="btn primary" type="submit">Criar Caso</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">Ações Rápidas no Caso</h3>
+        <div class="field">
+          <label>Caso</label>
+          <select id="caseSelect">
+            <option value="">Selecione um caso</option>
+            {% for c in cases %}
+            <option value="{{ c.id }}">#{{ c.id }} - {{ c.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>ID da Consulta (Histórico)</label>
+          <input id="searchIdInput" type="number" min="1" placeholder="Ex: 152">
+        </div>
+        <div class="actions">
+          <button class="btn ok" type="button" onclick="addSearchToCase()">Vincular Consulta</button>
+          <button class="btn" type="button" onclick="addNoteToCase()">Adicionar Nota</button>
+          <button class="btn warn" type="button" onclick="addTagToCase()">Adicionar Tag</button>
+          <button class="btn" type="button" onclick="addEvidenceToCase()">Adicionar Evidência</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <h3 style="margin-top:0;color:var(--accent);">Casos Cadastrados</h3>
+      <div class="case-list">
+        {% for c in cases %}
+        <div class="case-item">
+          <div class="case-head">
+            <div>
+              <div class="case-title">#{{ c.id }} - {{ c.title }}</div>
+              <div class="meta">Status: {{ c.status }} | Consultas: {{ c.total_consultas }} | Atualizado: {{ c.updated_at }}</div>
+            </div>
+            <div class="actions">
+              <a class="btn" href="/casos/{{ c.id }}/relatorio" target="_blank">Relatório Final</a>
+            </div>
+          </div>
+          {% if c.description %}<div class="meta" style="margin-top:8px;">{{ c.description }}</div>{% endif %}
+        </div>
+        {% else %}
+        <div class="meta">Nenhum caso criado ainda.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const csrfToken = '{{ csrf_token }}';
+
+    function currentCaseId() {
+      return Number(document.getElementById('caseSelect').value || 0);
+    }
+
+    async function postCase(url, payload) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, csrf_token: csrfToken })
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Falha na operação');
+      return data;
+    }
+
+    async function addSearchToCase() {
+      const caseId = currentCaseId();
+      const searchId = Number(document.getElementById('searchIdInput').value || 0);
+      if (!caseId || !searchId) return alert('Selecione o caso e informe o ID da consulta');
+      try {
+        await postCase(`/api/casos/${caseId}/searches`, { search_id: searchId });
+        alert('Consulta vinculada ao caso com sucesso');
+        location.reload();
+      } catch (e) { alert(e.message); }
+    }
+
+    async function addNoteToCase() {
+      const caseId = currentCaseId();
+      if (!caseId) return alert('Selecione um caso');
+      const note = prompt('Digite a nota do caso:');
+      if (!note || !note.trim()) return;
+      try {
+        await postCase(`/api/casos/${caseId}/notes`, { note });
+        alert('Nota adicionada');
+      } catch (e) { alert(e.message); }
+    }
+
+    async function addTagToCase() {
+      const caseId = currentCaseId();
+      if (!caseId) return alert('Selecione um caso');
+      const tagName = prompt('Digite a tag do caso:');
+      if (!tagName || !tagName.trim()) return;
+      try {
+        await postCase(`/api/casos/${caseId}/tags`, { tag_name: tagName });
+        alert('Tag adicionada');
+      } catch (e) { alert(e.message); }
+    }
+
+    async function addEvidenceToCase() {
+      const caseId = currentCaseId();
+      if (!caseId) return alert('Selecione um caso');
+      const content = prompt('Digite a evidência (texto, link, referência):');
+      if (!content || !content.trim()) return;
+      try {
+        await postCase(`/api/casos/${caseId}/evidences`, { evidence_type: 'texto', content });
+        alert('Evidência adicionada');
+      } catch (e) { alert(e.message); }
+    }
+
+    (function initTheme() {
+      const select = document.getElementById('themeSelect');
+      const saved = localStorage.getItem('oneseek_theme') || 'dark';
+      document.body.setAttribute('data-theme', saved);
+      select.value = saved;
+      select.addEventListener('change', () => {
+        document.body.setAttribute('data-theme', select.value);
+        localStorage.setItem('oneseek_theme', select.value);
+      });
+    })();
+  </script>
+</body>
+</html>

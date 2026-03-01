@@ -15,5 +15,7 @@ celery
 sse-starlette
 bcrypt
 cryptography
+reportlab
+openpyxl
 # OCR removido - agora apenas exibe a imagem da ficha OAB (muito mais leve!)
 # playwright  # Removido - não usado
