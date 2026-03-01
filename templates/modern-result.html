@@ -2173,13 +2173,33 @@
                                         <p style="margin: 8px 0;"><strong>Data Início Atividade:</strong> {{ apis_data.info_publica.brasilapi.data_inicio_atividade }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.regime_tributario %}
-                                        <p style="margin: 8px 0;"><strong>Regime Tributário:</strong> {{ apis_data.info_publica.brasilapi.regime_tributario }}</p>
+                                        <p style="margin: 8px 0;"><strong>Regime Tributário:</strong> 
+                                            <span style="background: rgba(8,145,178,0.15); padding: 2px 8px; border-radius: 4px; font-weight: 500;">{{ apis_data.info_publica.brasilapi.regime_tributario }}</span>
+                                        </p>
+                                        {% if apis_data.info_publica.brasilapi.regime_tributario_historico and apis_data.info_publica.brasilapi.regime_tributario_historico|length > 1 %}
+                                            <details style="margin: 8px 0; padding-left: 8px;">
+                                                <summary style="cursor: pointer; color: #0891b2; font-size: 0.9rem; user-select: none;">Ver histórico ({{ apis_data.info_publica.brasilapi.regime_tributario_historico|length }} anos)</summary>
+                                                <div style="margin-top: 8px; padding: 8px; background: rgba(8,145,178,0.05); border-radius: 4px;">
+                                                    {% for reg in apis_data.info_publica.brasilapi.regime_tributario_historico|reverse %}
+                                                        <p style="margin: 4px 0; font-size: 0.85rem;">
+                                                            <strong>{{ reg.ano }}:</strong> {{ reg.forma_de_tributacao }}
+                                                            {% if reg.quantidade_de_escrituracoes %} ({{ reg.quantidade_de_escrituracoes }} escrituração){% endif %}
+                                                        </p>
+                                                    {% endfor %}
+                                                </div>
+                                            </details>
+                                        {% endif %}
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.capital_social %}
                                         <p style="margin: 8px 0;"><strong>Capital Social:</strong> R$ {{ "{:,.2f}".format(apis_data.info_publica.brasilapi.capital_social) if apis_data.info_publica.brasilapi.capital_social else 'N/A' }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.porte %}
-                                        <p style="margin: 8px 0;"><strong>Porte:</strong> {{ apis_data.info_publica.brasilapi.porte }}</p>
+                                        <p style="margin: 8px 0;"><strong>Porte:</strong> 
+                                            <span style="background: rgba(8,145,178,0.15); padding: 2px 8px; border-radius: 4px; font-weight: 500;">{{ apis_data.info_publica.brasilapi.porte }}</span>
+                                        </p>
+                                    {% endif %}
+                                    {% if apis_data.info_publica.brasilapi.natureza_juridica %}
+                                        <p style="margin: 8px 0;"><strong>Natureza Jurídica:</strong> {{ apis_data.info_publica.brasilapi.natureza_juridica }}</p>
                                     {% endif %}
                                     {% if apis_data.info_publica.brasilapi.cnae_fiscal_descricao %}
                                         <p style="margin: 8px 0;"><strong>CNAE Principal:</strong> {{ apis_data.info_publica.brasilapi.cnae_fiscal_descricao }}

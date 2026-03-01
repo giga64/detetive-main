@@ -1526,6 +1526,35 @@ async def buscar_cnpj_brasilapi(cnpj: str) -> dict:
         if response.status_code == 200:
             try:
                 data = response.json()
+                
+                # Processar regime tributário
+                regime_trib = data.get("regime_tributario", "")
+                regime_formatado = ""
+                regime_historico = []
+                
+                if isinstance(regime_trib, list) and len(regime_trib) > 0:
+                    # Pegar o mais recente (último da lista)
+                    ultimo = regime_trib[-1]
+                    if isinstance(ultimo, dict):
+                        forma = ultimo.get('forma_de_tributacao', '')
+                        ano = ultimo.get('ano', '')
+                        regime_formatado = f"{forma} ({ano})" if ano else forma
+                    
+                    # Guardar histórico completo
+                    regime_historico = regime_trib
+                elif isinstance(regime_trib, str):
+                    regime_formatado = regime_trib
+                
+                # Processar porte da empresa
+                porte_codigo = str(data.get("porte", ""))
+                porte_map = {
+                    "00": "Não Informado",
+                    "01": "Microempresa",
+                    "03": "Empresa de Pequeno Porte",
+                    "05": "Demais"
+                }
+                porte_formatado = porte_map.get(porte_codigo, porte_codigo)
+                
                 return {
                     "encontrado": True,
                     "razao_social": data.get("razao_social", ""),
@@ -1535,7 +1564,9 @@ async def buscar_cnpj_brasilapi(cnpj: str) -> dict:
                     "situacao_cadastral": data.get("situacao_cadastral", ""),
                     "data_inicio_atividade": data.get("data_inicio_atividade", ""),
                     "natureza_juridica": data.get("natureza_juridica", ""),
-                    "regime_tributario": data.get("regime_tributario", ""),
+                    "porte": porte_formatado,
+                    "regime_tributario": regime_formatado,
+                    "regime_tributario_historico": regime_historico,
                     "cnae_fiscal": data.get("cnae_fiscal", ""),
                     "cnae_fiscal_descricao": data.get("cnae_fiscal_descricao", ""),
                     "cnaes_secundarios": data.get("cnaes_secundarios", []),
