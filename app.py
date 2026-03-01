@@ -292,8 +292,10 @@ GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 # Configuração para buscar imagem OAB (LEVE - não usa OCR!)
 ENABLE_OAB_OCR = os.environ.get("ENABLE_OAB_OCR", "true").lower() in ("true", "1", "yes")
 
-# Chave de acesso Portal da Transparência
-TRANSPARENCIA_API_KEY = os.environ.get("TRANSPARENCIA_API_KEY", "876beb4baf6996f08b5149caa7fe5a7d")
+# Chave de acesso Portal da Transparência (obrigatória)
+TRANSPARENCIA_API_KEY = os.environ.get("TRANSPARENCIA_API_KEY")
+if not TRANSPARENCIA_API_KEY:
+    print("⚠️ AVISO: TRANSPARENCIA_API_KEY não configurada no .env")
 
 print(f"Configuração Telegram:")
 print(f"   Telethon: {TELETHON_VERSION}")
