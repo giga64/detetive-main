@@ -2395,6 +2395,17 @@
                                     </p>
                                 </div>
                             </div>
+                        {% elif apis_data.info_publica.transparencia_federal and not apis_data.info_publica.transparencia_federal.encontrado %}
+                            <div class="api-card" style="border-left: 4px solid #f59e0b; margin-bottom: 16px; background: linear-gradient(135deg, rgba(245,158,11,0.05) 0%, rgba(245,158,11,0.02) 100%);">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b; flex-shrink: 0;">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <p style="margin: 0; color: #92400e; font-size: 0.95rem;">{{ apis_data.info_publica.transparencia_federal.mensagem }}</p>
+                                </div>
+                            </div>
                         {% endif %}
                         
                     {% else %}

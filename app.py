@@ -2074,8 +2074,14 @@ async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
                     resultados["total_convenios"] = len(convenios)
                     resultados["convenios"] = convenios[:5]
                     logger.info(f"✅ {len(convenios)} convênio(s) encontrado(s)")
+            else:
+                # CNPJ não encontrado - retornar indicador para mostrar mensagem
+                resultados["encontrado"] = False
+                resultados["tipo"] = "Empresa"
+                resultados["mensagem"] = "CNPJ não encontrado no Portal da Transparência"
+                logger.info(f"ℹ️ CNPJ não encontrado no Portal da Transparência")
         
-        return resultados if resultados["encontrado"] else None
+        return resultados
             
     except Exception as e:
         logger.error(f"❌ Erro ao buscar transparência gastos: {str(e)}")
