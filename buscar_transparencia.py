@@ -471,37 +471,37 @@ class PortalTransparencia:
             atividades = []
             
             if response.get('favorecidoDespesas'):
-                atividades.append('📊 Favorecido por Despesas')
+                atividades.append('Favorecido por Despesas')
             if response.get('possuiContratacao'):
-                atividades.append('📋 Possui Contratação')
+                atividades.append('Possui Contratação')
             if response.get('convenios'):
-                atividades.append('🤝 Convênios Celebrados')
+                atividades.append('Convênios Celebrados')
             if response.get('favorecidoTransferencias'):
-                atividades.append('💰 Favorecido por Transferências')
+                atividades.append('Favorecido por Transferências')
             if response.get('participanteLicitacao'):
-                atividades.append('🏛️ Participante de Licitação')
+                atividades.append('Participante de Licitação')
             if response.get('emitiuNFe'):
-                atividades.append('🧾 Emitiu NF-e')
+                atividades.append('Emitiu NF-e')
             
             # Sanções (Muito importante!)
             sancoes = []
             if response.get('sancionadoCEPIM'):
-                sancoes.append('🚫 Sancionada CEPIM (Cadastro de Pessoas Impedidas)')
+                sancoes.append('Sancionada CEPIM (Cadastro de Pessoas Impedidas)')
             if response.get('sancionadoCEIS'):
-                sancoes.append('🚫 Sancionada CEIS (Empresas Inidôneas)')
+                sancoes.append('Sancionada CEIS (Empresas Inidôneas)')
             if response.get('sancionadoCNEP'):
-                sancoes.append('🚫 Sancionada CNEP (Punidas)')
+                sancoes.append('Sancionada CNEP (Punidas)')
             if response.get('sancionadoCEAF'):
-                sancoes.append('🚫 Sancionada CEAF (Entidades Admin. Punidas)')
+                sancoes.append('Sancionada CEAF (Entidades Admin. Punidas)')
             
             # Renúncias Fiscais
             renuncia_fiscal = []
             if response.get('beneficiadoRenunciaFiscal'):
-                renuncia_fiscal.append('💰 Beneficiada por Renúncia Fiscal')
+                renuncia_fiscal.append('Beneficiada por Renúncia Fiscal')
             if response.get('isentoImuneRenunciaFiscal'):
-                renuncia_fiscal.append('✅ Isenta/Imune Renúncia Fiscal')
+                renuncia_fiscal.append('Isenta/Imune Renúncia Fiscal')
             if response.get('habilitadoRenunciaFiscal'):
-                renuncia_fiscal.append('📋 Habilitada para Renúncia Fiscal')
+                renuncia_fiscal.append('Habilitada para Renúncia Fiscal')
             
             info['atividades'] = atividades
             info['sancoes'] = sancoes
