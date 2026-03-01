@@ -884,6 +884,12 @@
                             </svg>
                             Resultados
                         </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Fontes Públicas
+                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -2268,58 +2274,6 @@
                             </div>
                         {% endif %}
                         
-                        <!-- OFAC Screening (Sanções Internacionais) -->
-                        {% if apis_data.info_publica.ofac_screening %}
-                            {% set ofac = apis_data.info_publica.ofac_screening %}
-                            {% if ofac.status == 'CRÍTICO' %}
-                                {% set cor = '#dc2626' %}
-                                {% set icon = '🚨' %}
-                            {% elif ofac.status == 'ALTO' %}
-                                {% set cor = '#f59e0b' %}
-                                {% set icon = '⚠️' %}
-                            {% else %}
-                                {% set cor = '#10b981' %}
-                                {% set icon = '✅' %}
-                            {% endif %}
-                            
-                            <div class="api-card" style="border-left: 4px solid {{ cor }}; margin-bottom: 16px; background: linear-gradient(135deg, rgba({{ '220,38,38' if ofac.status == 'CRÍTICO' else ('245,158,11' if ofac.status == 'ALTO' else '16,185,129') }},0.05) 0%, rgba({{ '220,38,38' if ofac.status == 'CRÍTICO' else ('245,158,11' if ofac.status == 'ALTO' else '16,185,129') }},0.02) 100%);">
-                                <h4 style="color: {{ cor }}; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                    {{ icon }} Screening de Sanções Internacionais
-                                </h4>
-                                <div class="api-content">
-                                    <p style="margin: 8px 0;">
-                                        <strong>Status:</strong> 
-                                        <span style="background: {{ cor }}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
-                                            {{ ofac.status }}
-                                        </span>
-                                    </p>
-                                    <p style="margin: 8px 0; color: #94a3b8;">{{ ofac.mensagem }}</p>
-                                    
-                                    {% if ofac.alertas and ofac.alertas|length > 0 %}
-                                        <p style="margin: 16px 0 8px 0; font-weight: bold; color: {{ cor }};">🔍 Correspondências Encontradas:</p>
-                                        {% for alerta in ofac.alertas %}
-                                            <div style="background: rgba({{ '220,38,38' if ofac.status == 'CRÍTICO' else ('245,158,11' if ofac.status == 'ALTO' else '16,185,129') }},0.1); padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid {{ cor }};">
-                                                <p style="margin: 4px 0; font-weight: 600;">{{ alerta.nome_lista }}</p>
-                                                <p style="margin: 4px 0; font-size: 0.9rem;">
-                                                    <strong>Tipo:</strong> <span style="background: {{ cor }}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">{{ alerta.tipo_lista }}</span>
-                                                </p>
-                                                <p style="margin: 4px 0; font-size: 0.9rem;"><strong>Similaridade:</strong> {{ alerta.score_similaridade }}%</p>
-                                                <p style="margin: 4px 0; font-size: 0.9rem;"><strong>Programa:</strong> {{ alerta.programa }}</p>
-                                                {% if alerta.pais %}
-                                                    <p style="margin: 4px 0; font-size: 0.9rem;"><strong>País:</strong> {{ alerta.pais }}</p>
-                                                {% endif %}
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                    
-                                    <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #666;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>Fonte: {{ ofac.fonte }}
-                                    </p>
-                                </div>
-                            </div>
-                        {% endif %}
-                        
                         <!-- Portal da Transparência (Benefícios/Convênios) -->
                         {% if apis_data.info_publica.transparencia_federal and apis_data.info_publica.transparencia_federal.encontrado %}
                             <div class="api-card" style="border-left: 4px solid #0ea5e9; margin-bottom: 16px; background: linear-gradient(135deg, rgba(14,165,233,0.05) 0%, rgba(14,165,233,0.02) 100%);">
@@ -2385,7 +2339,6 @@
                                 <p style="margin: 12px 0 8px 0; color: #94a3b8; font-size: 1rem; font-weight: 500;">Nenhuma informação pública encontrada para este CPF</p>
                                 <p style="margin: 0; color: #64748b; font-size: 0.9rem;">Este CPF não possui registros em:</p>
                                 <ul style="margin: 12px 0; padding-left: 20px; color: #64748b; font-size: 0.9rem; text-align: left; display: inline-block;">
-                                    <li>Listas de sanções internacionais (OFAC)</li>
                                     <li>Benefícios federais (Portal da Transparência)</li>
                                     <li>Bases de dados públicas (Wikipedia, Wikidata)</li>
                                 </ul>
@@ -2403,7 +2356,6 @@
                                 <ul style="margin: 12px 0; padding-left: 20px; color: #64748b; font-size: 0.9rem; text-align: left; display: inline-block;">
                                     <li>Licitações e contratos federais</li>
                                     <li>Convênios com governo federal</li>
-                                    <li>Listas de sanções internacionais (OFAC)</li>
                                     <li>Bases de conhecimento (Wikipedia, Wikidata)</li>
                                 </ul>
                                 <p style="margin: 8px 0 0 0; color: #64748b; font-size: 0.85rem; font-style: italic;">Empresa pode operar normalmente sem participar de contratos públicos.</p>

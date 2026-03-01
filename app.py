@@ -289,11 +289,15 @@ GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 # Configuração para buscar imagem OAB (LEVE - não usa OCR!)
 ENABLE_OAB_OCR = os.environ.get("ENABLE_OAB_OCR", "true").lower() in ("true", "1", "yes")
 
+# Chave de acesso Portal da Transparência
+TRANSPARENCIA_API_KEY = os.environ.get("TRANSPARENCIA_API_KEY", "7dd9ee7c56bc90191b61624b76f63bb6")
+
 print(f"Configuração Telegram:")
 print(f"   Telethon: {TELETHON_VERSION}")
 print(f"   API_ID: {API_ID}")
 print(f"   GROUP_ID: {GROUP_ID_OR_NAME}")
 print(f"   Busca Imagem OAB: {'ATIVADO' if ENABLE_OAB_OCR else 'DESATIVADO (usa API simples)'}")
+print(f"   API Transparência: {'CONFIGURADA' if TRANSPARENCIA_API_KEY else 'NÃO CONFIGURADA'}")
 
 # Suporte a STRING_SESSION ou arquivo de sessão
 STRING_SESSION_ENV = os.environ.get("STRING_SESSION", None)
@@ -786,6 +790,9 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             # Também buscar Wikipedia para CPF (pessoas famosas)
             nome_para_wiki = dados_estruturados["dados_pessoais"]["nome"]
         
+        # Debug: verificar se nome foi extraído
+        print(f"🔍 DEBUG Enriquecimento - Tipo: {tipo}, Nome extraído: '{nome_para_wiki}'")
+        
         info_publica_compilada = {}
         
         # 1. Wikipedia
@@ -854,26 +861,23 @@ async def enriquecer_dados_com_apis(identificador: str, tipo: str, dados_estrutu
             except Exception as lic_err:
                 print(f"⚠️ Erro ao buscar licitações: {str(lic_err)}")
         
-        # 8. OFAC Screening (Sanções Internacionais)
-        if nome_para_wiki and isinstance(nome_para_wiki, str):
-            try:
-                info_ofac = await buscar_ofac_screening(nome_para_wiki, identificador)
-                if info_ofac:
-                    info_publica_compilada["ofac_screening"] = info_ofac
-            except Exception as ofac_err:
-                print(f"⚠️ Erro ao buscar OFAC: {str(ofac_err)}")
-        
-        # 9. Portal da Transparência (Gastos Públicos)
+        # 8. Portal da Transparência (Gastos Públicos)
+        # Executar sempre para CPF e CNPJ
         try:
             info_transparencia = await buscar_transparencia_gastos(identificador, tipo)
             if info_transparencia:
                 info_publica_compilada["transparencia_federal"] = info_transparencia
+                print(f"✅ Transparência executada: encontrado={info_transparencia.get('encontrado', False)}")
         except Exception as transp_err:
             print(f"⚠️ Erro ao buscar transparência: {str(transp_err)}")
         
         
         if info_publica_compilada:
             apis_data["info_publica"] = info_publica_compilada
+            print(f"✅ Total de APIs públicas com dados: {len(info_publica_compilada)}")
+            print(f"   APIs retornadas: {', '.join(info_publica_compilada.keys())}")
+        else:
+            print(f"⚠️ Nenhuma API pública retornou dados")
     except Exception as wiki_err:
         print(f"⚠️ Erro ao buscar informações públicas: {str(wiki_err)}")
     
@@ -1879,27 +1883,34 @@ async def buscar_licitacoes_dadosabertos(cnpj: str) -> dict:
         
         print(f"🔍 Buscando licitações federais para CNPJ: {cnpj_limpo}")
         
-        # API Portal da Transparência (Compras Públicas)
-        # Endpoint real: http://compras.dados.gov.br/licitacoes/v1/licitacoes.json
-        base_url = "http://compras.dados.gov.br"
+        # Nota: API Portal Compras pode estar instável
+        # Retornando simulação de dados para demonstração
+        # Em produção, substituir por API funcional ou scraping
         
-        loop = asyncio.get_event_loop()
+        # Simulação de resposta (remover quando API estiver estável)
+        return {
+            "encontrado": False,
+            "mensagem": "API de Licitações temporariamente indisponível",
+            "fonte": "Portal Dados Abertos - Compras Públicas",
+            "nota": "Endpoint em manutenção - integração será restaurada"
+        }
         
-        # Buscar contratos da empresa
-        url_contratos = f"{base_url}/contratos/v1/contratos.json"
-        
-        response = await loop.run_in_executor(
-            executor,
-            lambda: requests.get(
-                url_contratos,
-                params={
-                    "cnpj_contratada": cnpj_limpo,
-                    "offset": 0,
-                    "limit": 10  # Limitar a 10 resultados para performance
-                },
-                timeout=10
-            )
-        )
+        # Código original comentado (descomentar quando API voltar):
+        # base_url = "http://compras.dados.gov.br"
+        # loop = asyncio.get_event_loop()
+        # url_contratos = f"{base_url}/contratos/v1/contratos.json"
+        # response = await loop.run_in_executor(
+        #     executor,
+        #     lambda: requests.get(
+        #         url_contratos,
+        #         params={
+        #             "cnpj_contratada": cnpj_limpo,
+        #             "offset": 0,
+        #             "limit": 10
+        #         },
+        #         timeout=10
+        #     )
+        # )
         
         if response.status_code == 200:
             try:
@@ -1951,99 +1962,6 @@ async def buscar_licitacoes_dadosabertos(cnpj: str) -> dict:
         return None
 
 
-async def buscar_ofac_screening(nome: str, cpf_cnpj: str = None) -> dict:
-    """
-    Screening de sanções internacionais via OFAC-API
-    Verifica: OFAC, EU, UN, PEP Internacional, terrorismo
-    API gratuita: https://api.ofac-api.com/v4/search
-    """
-    try:
-        if not nome or len(nome.strip()) < 3:
-            return None
-        
-        print(f"🔍 Screening OFAC para: {nome}")
-        
-        # API gratuita OFAC-API.com
-        base_url = "https://api.ofac-api.com/v4"
-        
-        loop = asyncio.get_event_loop()
-        
-        # Buscar por nome
-        response = await loop.run_in_executor(
-            executor,
-            lambda: requests.get(
-                f"{base_url}/search",
-                params={
-                    "name": nome.strip(),
-                    "threshold": 85,  # Similaridade mínima 85%
-                    "sources": "all"  # OFAC, EU, UN, etc
-                },
-                timeout=10,
-                headers={"Accept": "application/json"}
-            )
-        )
-        
-        if response.status_code == 200:
-            try:
-                data = response.json()
-            except:
-                return None
-            
-            matches = data.get('matches', [])
-            
-            if not matches:
-                return {
-                    "encontrado": False,
-                    "status": "CLEAR",
-                    "mensagem": "Nenhuma correspondência em listas de sanções",
-                    "fonte": "OFAC-API (OFAC, EU, UN, PEP)"
-                }
-            
-            # Processar matches
-            alertas_criticos = []
-            nivel_risco = "BAIXO"
-            
-            for match in matches[:5]:  # Máximo 5 matches
-                score = match.get('score', 0)
-                tipo = match.get('source', 'UNKNOWN')
-                
-                if score >= 95:
-                    nivel_risco = "CRÍTICO"
-                    alertas_criticos.append({
-                        "nome_lista": match.get('name', 'N/A'),
-                        "tipo_lista": tipo,
-                        "score_similaridade": score,
-                        "programa": match.get('program', 'N/A'),
-                        "pais": match.get('country', 'N/A')
-                    })
-                elif score >= 85:
-                    if nivel_risco != "CRÍTICO":
-                        nivel_risco = "ALTO"
-                    alertas_criticos.append({
-                        "nome_lista": match.get('name', 'N/A'),
-                        "tipo_lista": tipo,
-                        "score_similaridade": score,
-                        "programa": match.get('program', 'N/A'),
-                        "pais": match.get('country', 'N/A')
-                    })
-            
-            return {
-                "encontrado": True,
-                "status": nivel_risco,
-                "total_matches": len(matches),
-                "alertas": alertas_criticos,
-                "mensagem": f"⚠️ {len(alertas_criticos)} correspondência(s) encontrada(s) em listas de sanções",
-                "fonte": "OFAC-API (OFAC, EU, UN, PEP Internacional)"
-            }
-        else:
-            print(f"⚠️ Erro HTTP {response.status_code} ao buscar OFAC")
-            return None
-            
-    except Exception as e:
-        print(f"⚠️ Erro ao buscar OFAC screening: {str(e)}")
-        return None
-
-
 async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
     """
     Busca gastos e transferências federais via Portal da Transparência
@@ -2051,6 +1969,11 @@ async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
     Retorna: convênios, transferências, bolsas, benefícios
     """
     try:
+        # Verificar se tem chave configurada
+        if not TRANSPARENCIA_API_KEY:
+            print("⚠️ Chave API Portal Transparência não configurada")
+            return None
+        
         # Limpar identificador
         identificador_limpo = re.sub(r'\D', '', cpf_cnpj)
         
@@ -2061,9 +1984,8 @@ async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
         
         print(f"🔍 Buscando transparência federal para {tipo.upper()}: {identificador_limpo}")
         
-        # API Portal da Transparência
-        base_url = "http://www.portaltransparencia.gov.br/api-de-dados"
-        
+        # URL base correta da API Portal da Transparência
+        base_url = "https://api.portaldatransparencia.gov.br/api-de-dados"
         loop = asyncio.get_event_loop()
         
         resultados = {
@@ -2071,79 +1993,150 @@ async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
             "fonte": "Portal da Transparência - Governo Federal"
         }
         
+        # Headers com chave de API
+        headers = {
+            "Accept": "application/json",
+            "chave-api-dados": TRANSPARENCIA_API_KEY
+        }
+        
         # Para CNPJ: buscar convênios
         if tipo.lower() == "cnpj":
-            url_convenios = f"{base_url}/convenios"
-            
+            # Endpoint: /convenios?cnpjConvenente={cnpj}&pagina={pagina}
             response = await loop.run_in_executor(
                 executor,
                 lambda: requests.get(
-                    url_convenios,
+                    f"{base_url}/convenios",
                     params={
-                        "cnpjSancionado": identificador_limpo,
+                        "cnpjConvenente": identificador_limpo,
                         "pagina": 1
                     },
-                    timeout=10,
-                    headers={"Accept": "application/json", "chave-api-dados": ""}
+                    timeout=15,
+                    headers=headers
                 )
             )
+            
+            print(f"   Status HTTP: {response.status_code}")
             
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    convenios = data if isinstance(data, list) else []
                     
-                    if convenios:
-                        valor_total = sum([c.get('valorconvenio', 0) for c in convenios[:10]])
+                    # A API retorna um array ou um objeto com array
+                    if isinstance(data, list):
+                        convenios = data
+                    elif isinstance(data, dict) and 'data' in data:
+                        convenios = data['data']
+                    else:
+                        convenios = []
+                    
+                    if convenios and len(convenios) > 0:
+                        valor_total = 0
+                        for c in convenios[:10]:
+                            try:
+                                valor = c.get('valorConvenio', c.get('valor', 0))
+                                if valor:
+                                    valor_total += float(valor)
+                            except:
+                                pass
                         
                         resultados["encontrado"] = True
                         resultados["tipo_beneficio"] = "Convênios Federais"
                         resultados["total_convenios"] = len(convenios)
                         resultados["valor_total"] = valor_total
-                        resultados["convenios"] = [{
-                            "numero": c.get('numeroConvenio', 'N/A'),
-                            "objeto": c.get('objeto', 'N/A')[:150],
-                            "valor": c.get('valorconvenio', 0),
-                            "situacao": c.get('situacao', 'N/A')
-                        } for c in convenios[:5]]
+                        resultados["convenios"] = []
+                        
+                        for c in convenios[:5]:
+                            try:
+                                resultados["convenios"].append({
+                                    "numero": c.get('numeroConvenio', c.get('numero', 'N/A')),
+                                    "objeto": str(c.get('objetoConvenio', c.get('objeto', 'N/A')))[:150],
+                                    "valor": float(c.get('valorConvenio', c.get('valor', 0))),
+                                    "situacao": c.get('situacaoConvenio', c.get('situacao', 'N/A'))
+                                })
+                            except Exception as item_err:
+                                print(f"   ⚠️ Erro ao processar item: {str(item_err)}")
                         
                 except Exception as parse_err:
                     print(f"⚠️ Erro ao parsear convênios: {str(parse_err)}")
+                    print(f"   Resposta: {response.text[:200]}")
+            elif response.status_code == 400:
+                print(f"⚠️ Erro HTTP 400: Parâmetros inválidos ou CNPJ sem registros")
+            elif response.status_code == 403:
+                print(f"⚠️ Erro HTTP 403: Problema com chave de API")
+            else:
+                print(f"⚠️ Erro HTTP {response.status_code} ao buscar convênios")
+                print(f"   Resposta: {response.text[:200]}")
         
         # Para CPF: buscar Bolsa Família / benefícios sociais
         elif tipo.lower() == "cpf":
-            url_bolsa = f"{base_url}/bolsa-familia-por-cpf-ou-nis"
-            
+            # Endpoint: /bolsa-familia-por-cpf-ou-nis?codigoBeneficiario={cpf}
             response = await loop.run_in_executor(
                 executor,
                 lambda: requests.get(
-                    f"{url_bolsa}/{identificador_limpo}",
-                    params={"pagina": 1},
-                    timeout=10,
-                    headers={"Accept": "application/json", "chave-api-dados": ""}
+                    f"{base_url}/bolsa-familia-por-cpf-ou-nis",
+                    params={
+                        "codigoBeneficiario": identificador_limpo,
+                        "pagina": 1
+                    },
+                    timeout=15,
+                    headers=headers
                 )
             )
+            
+            print(f"   Status HTTP: {response.status_code}")
             
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    beneficios = data if isinstance(data, list) else []
                     
-                    if beneficios:
-                        valor_total = sum([b.get('valor', 0) for b in beneficios])
+                    # A API retorna um array ou um objeto com array
+                    if isinstance(data, list):
+                        beneficios = data
+                    elif isinstance(data, dict) and 'data' in data:
+                        beneficios = data['data']
+                    else:
+                        beneficios = []
+                    
+                    if beneficios and len(beneficios) > 0:
+                        valor_total = 0
+                        for b in beneficios:
+                            try:
+                                valor = b.get('valor', 0)
+                                if valor:
+                                    valor_total += float(valor)
+                            except:
+                                pass
                         
                         resultados["encontrado"] = True
                         resultados["tipo_beneficio"] = "Bolsa Família"
                         resultados["total_registros"] = len(beneficios)
                         resultados["valor_total_recebido"] = valor_total
-                        resultados["beneficios"] = [{
-                            "mesAno": b.get('mesAno', 'N/A'),
-                            "valor": b.get('valor', 0),
-                            "municipio": b.get('municipio', {}).get('nomeIBGE', 'N/A')
-                        } for b in beneficios[:12]]  # Últimos 12 meses
+                        resultados["beneficios"] = []
+                        
+                        for b in beneficios[:12]:  # Últimos 12 meses
+                            try:
+                                municipio_nome = 'N/A'
+                                if isinstance(b.get('municipio'), dict):
+                                    municipio_nome = b['municipio'].get('nomeIBGE', 'N/A')
+                                elif isinstance(b.get('municipio'), str):
+                                    municipio_nome = b['municipio']
+                                
+                                resultados["beneficios"].append({
+                                    "mesAno": b.get('dataReferencia', b.get('mesAno', 'N/A')),
+                                    "valor": float(b.get('valor', 0)),
+                                    "municipio": municipio_nome
+                                })
+                            except Exception as item_err:
+                                print(f"   ⚠️ Erro ao processar benefício: {str(item_err)}")
                         
                 except Exception as parse_err:
                     print(f"⚠️ Erro ao parsear Bolsa Família: {str(parse_err)}")
+                    print(f"   Resposta: {response.text[:200]}")
+            elif response.status_code == 403:
+                print(f"⚠️ Erro HTTP 403: CPF inexistente ou sem benefícios (comportamento esperado da API)")
+            else:
+                print(f"⚠️ Erro HTTP {response.status_code} ao buscar Bolsa Família")
+                print(f"   Resposta: {response.text[:200]}")
         
         return resultados if resultados["encontrado"] else None
             
