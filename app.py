@@ -47,6 +47,9 @@ from circuit_breaker_manager import inicializar_circuit_breakers, circuit_breake
 from job_queue import enfileirar_tarefa, obter_status_tarefa, obter_stats_queue
 from sse_streaming import stream_consulta_completa, criar_sse_response
 
+# Import do módulo Portal da Transparência
+from buscar_transparencia import PortalTransparencia
+
 # ──────────────────────────────────────
 # Funções de Segurança: Hash de Senhas
 # ──────────────────────────────────────
@@ -290,7 +293,7 @@ GROUP_ID_OR_NAME = os.environ.get("TELEGRAM_GROUP_ID", "2874013146")
 ENABLE_OAB_OCR = os.environ.get("ENABLE_OAB_OCR", "true").lower() in ("true", "1", "yes")
 
 # Chave de acesso Portal da Transparência
-TRANSPARENCIA_API_KEY = os.environ.get("TRANSPARENCIA_API_KEY", "7dd9ee7c56bc90191b61624b76f63bb6")
+TRANSPARENCIA_API_KEY = os.environ.get("TRANSPARENCIA_API_KEY", "876beb4baf6996f08b5149caa7fe5a7d")
 
 print(f"Configuração Telegram:")
 print(f"   Telethon: {TELETHON_VERSION}")
@@ -1964,184 +1967,116 @@ async def buscar_licitacoes_dadosabertos(cnpj: str) -> dict:
 
 async def buscar_transparencia_gastos(cpf_cnpj: str, tipo: str) -> dict:
     """
-    Busca gastos e transferências federais via Portal da Transparência
-    Endpoint: http://www.portaltransparencia.gov.br/api-de-dados
-    Retorna: convênios, transferências, bolsas, benefícios
+    Busca dados do servidor via Portal da Transparência
+    Retorna: informações de servidor público (CPF) ou dados públicos (CNPJ)
     """
     try:
         # Verificar se tem chave configurada
         if not TRANSPARENCIA_API_KEY:
-            print("⚠️ Chave API Portal Transparência não configurada")
+            logger.warning("⚠️ Chave API Portal Transparência não configurada")
             return None
         
         # Limpar identificador
-        identificador_limpo = re.sub(r'\D', '', cpf_cnpj)
+        cpf_cnpj_limpo = re.sub(r'\D', '', cpf_cnpj)
         
-        if tipo.lower() == "cpf" and len(identificador_limpo) != 11:
+        if tipo.lower() == "cpf" and len(cpf_cnpj_limpo) != 11:
             return None
-        elif tipo.lower() == "cnpj" and len(identificador_limpo) != 14:
+        elif tipo.lower() == "cnpj" and len(cpf_cnpj_limpo) != 14:
             return None
         
-        print(f"🔍 Buscando transparência federal para {tipo.upper()}: {identificador_limpo}")
+        logger.info(f"🔍 Buscando transparência federal para {tipo.upper()}: {cpf_cnpj_limpo}")
         
-        # URL base correta da API Portal da Transparência
-        base_url = "https://api.portaldatransparencia.gov.br/api-de-dados"
         loop = asyncio.get_event_loop()
+        client = PortalTransparencia(api_key=TRANSPARENCIA_API_KEY)
         
         resultados = {
             "encontrado": False,
             "fonte": "Portal da Transparência - Governo Federal"
         }
         
-        # Headers com chave de API
-        headers = {
-            "Accept": "application/json",
-            "chave-api-dados": TRANSPARENCIA_API_KEY
-        }
-        
-        # Para CNPJ: buscar convênios
-        if tipo.lower() == "cnpj":
-            # Endpoint: /convenios?cnpjConvenente={cnpj}&pagina={pagina}
-            response = await loop.run_in_executor(
+        # Para CPF: buscar dados de servidor público + informações de pessoa física
+        if tipo.lower() == "cpf":
+            # Buscar dados de servidor
+            servidor = await loop.run_in_executor(
                 executor,
-                lambda: requests.get(
-                    f"{base_url}/convenios",
-                    params={
-                        "cnpjConvenente": identificador_limpo,
-                        "pagina": 1
-                    },
-                    timeout=15,
-                    headers=headers
-                )
+                client.buscar_servidor_por_cpf,
+                cpf_cnpj
             )
             
-            print(f"   Status HTTP: {response.status_code}")
-            
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    
-                    # A API retorna um array ou um objeto com array
-                    if isinstance(data, list):
-                        convenios = data
-                    elif isinstance(data, dict) and 'data' in data:
-                        convenios = data['data']
-                    else:
-                        convenios = []
-                    
-                    if convenios and len(convenios) > 0:
-                        valor_total = 0
-                        for c in convenios[:10]:
-                            try:
-                                valor = c.get('valorConvenio', c.get('valor', 0))
-                                if valor:
-                                    valor_total += float(valor)
-                            except:
-                                pass
-                        
-                        resultados["encontrado"] = True
-                        resultados["tipo_beneficio"] = "Convênios Federais"
-                        resultados["total_convenios"] = len(convenios)
-                        resultados["valor_total"] = valor_total
-                        resultados["convenios"] = []
-                        
-                        for c in convenios[:5]:
-                            try:
-                                resultados["convenios"].append({
-                                    "numero": c.get('numeroConvenio', c.get('numero', 'N/A')),
-                                    "objeto": str(c.get('objetoConvenio', c.get('objeto', 'N/A')))[:150],
-                                    "valor": float(c.get('valorConvenio', c.get('valor', 0))),
-                                    "situacao": c.get('situacaoConvenio', c.get('situacao', 'N/A'))
-                                })
-                            except Exception as item_err:
-                                print(f"   ⚠️ Erro ao processar item: {str(item_err)}")
-                        
-                except Exception as parse_err:
-                    print(f"⚠️ Erro ao parsear convênios: {str(parse_err)}")
-                    print(f"   Resposta: {response.text[:200]}")
-            elif response.status_code == 400:
-                print(f"⚠️ Erro HTTP 400: Parâmetros inválidos ou CNPJ sem registros")
-            elif response.status_code == 403:
-                print(f"⚠️ Erro HTTP 403: Problema com chave de API")
-            else:
-                print(f"⚠️ Erro HTTP {response.status_code} ao buscar convênios")
-                print(f"   Resposta: {response.text[:200]}")
-        
-        # Para CPF: buscar Bolsa Família / benefícios sociais
-        elif tipo.lower() == "cpf":
-            # Endpoint: /bolsa-familia-por-cpf-ou-nis?codigoBeneficiario={cpf}
-            response = await loop.run_in_executor(
+            # Buscar informações gerais de pessoa física (paralelo)
+            pessoa_fisica = await loop.run_in_executor(
                 executor,
-                lambda: requests.get(
-                    f"{base_url}/bolsa-familia-por-cpf-ou-nis",
-                    params={
-                        "codigoBeneficiario": identificador_limpo,
-                        "pagina": 1
-                    },
-                    timeout=15,
-                    headers=headers
-                )
+                client.buscar_dados_pessoa_fisica,
+                cpf_cnpj
             )
             
-            print(f"   Status HTTP: {response.status_code}")
+            # Se encontrou servidor OU pessoa física
+            if (servidor and servidor.get('encontrado')) or (pessoa_fisica and pessoa_fisica.get('encontrado')):
+                resultados["encontrado"] = True
+                
+                # Dados do servidor (se houver)
+                if servidor and servidor.get('encontrado'):
+                    resultados["tipo"] = "Servidor Público"
+                    resultados["nome"] = servidor.get('nome')
+                    resultados["tipo_servidor"] = servidor.get('tipo_servidor')
+                    resultados["situacao"] = servidor.get('situacao')
+                    resultados["orgao"] = servidor.get('orgao')
+                    resultados["sigla_orgao"] = servidor.get('sigla_orgao')
+                    logger.info(f"✅ Servidor encontrado: {resultados.get('nome')}")
+                
+                # Complementar com informações de pessoa física
+                if pessoa_fisica and pessoa_fisica.get('encontrado'):
+                    if not resultados.get('nome'):
+                        resultados["nome"] = pessoa_fisica.get('nome')
+                    
+                    resultados["cpf_mascarado"] = pessoa_fisica.get('cpf')
+                    resultados["nis"] = pessoa_fisica.get('nis')
+                    resultados["envolvimentos"] = pessoa_fisica.get('envolvimentos', [])
+                    resultados["beneficios_sociais"] = pessoa_fisica.get('beneficios', [])
+                    resultados["atividades"] = pessoa_fisica.get('atividades', [])
+                    resultados["sancoes"] = pessoa_fisica.get('sancoes', [])
+                    logger.info(f"✅ Dados de pessoa física obtidos")
+        
+        # Para CNPJ: buscar dados de empresa + convênios
+        elif tipo.lower() == "cnpj":
+            # Buscar em paralelo: pessoa jurídica + convênios
+            pessoa_juridica = await loop.run_in_executor(
+                executor,
+                client.buscar_dados_pessoa_juridica,
+                cpf_cnpj
+            )
             
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    
-                    # A API retorna um array ou um objeto com array
-                    if isinstance(data, list):
-                        beneficios = data
-                    elif isinstance(data, dict) and 'data' in data:
-                        beneficios = data['data']
-                    else:
-                        beneficios = []
-                    
-                    if beneficios and len(beneficios) > 0:
-                        valor_total = 0
-                        for b in beneficios:
-                            try:
-                                valor = b.get('valor', 0)
-                                if valor:
-                                    valor_total += float(valor)
-                            except:
-                                pass
-                        
-                        resultados["encontrado"] = True
-                        resultados["tipo_beneficio"] = "Bolsa Família"
-                        resultados["total_registros"] = len(beneficios)
-                        resultados["valor_total_recebido"] = valor_total
-                        resultados["beneficios"] = []
-                        
-                        for b in beneficios[:12]:  # Últimos 12 meses
-                            try:
-                                municipio_nome = 'N/A'
-                                if isinstance(b.get('municipio'), dict):
-                                    municipio_nome = b['municipio'].get('nomeIBGE', 'N/A')
-                                elif isinstance(b.get('municipio'), str):
-                                    municipio_nome = b['municipio']
-                                
-                                resultados["beneficios"].append({
-                                    "mesAno": b.get('dataReferencia', b.get('mesAno', 'N/A')),
-                                    "valor": float(b.get('valor', 0)),
-                                    "municipio": municipio_nome
-                                })
-                            except Exception as item_err:
-                                print(f"   ⚠️ Erro ao processar benefício: {str(item_err)}")
-                        
-                except Exception as parse_err:
-                    print(f"⚠️ Erro ao parsear Bolsa Família: {str(parse_err)}")
-                    print(f"   Resposta: {response.text[:200]}")
-            elif response.status_code == 403:
-                print(f"⚠️ Erro HTTP 403: CPF inexistente ou sem benefícios (comportamento esperado da API)")
-            else:
-                print(f"⚠️ Erro HTTP {response.status_code} ao buscar Bolsa Família")
-                print(f"   Resposta: {response.text[:200]}")
+            convenios = await loop.run_in_executor(
+                executor,
+                client.buscar_convenios_por_cnpj,
+                cpf_cnpj
+            )
+            
+            # Se encontrou dados de empresa OU convênios
+            if (pessoa_juridica and pessoa_juridica.get('encontrado')) or convenios:
+                resultados["encontrado"] = True
+                
+                # Dados da empresa (pessoa jurídica)
+                if pessoa_juridica and pessoa_juridica.get('encontrado'):
+                    resultados["tipo"] = "Empresa"
+                    resultados["cnpj"] = pessoa_juridica.get('cnpj')
+                    resultados["razao_social"] = pessoa_juridica.get('razao_social')
+                    resultados["nome_fantasia"] = pessoa_juridica.get('nome_fantasia')
+                    resultados["atividades"] = pessoa_juridica.get('atividades', [])
+                    resultados["sancoes"] = pessoa_juridica.get('sancoes', [])
+                    resultados["renuncia_fiscal"] = pessoa_juridica.get('renuncia_fiscal', [])
+                    logger.info(f"✅ Dados de empresa obtidos: {pessoa_juridica.get('razao_social')}")
+                
+                # Convênios (se houver)
+                if convenios:
+                    resultados["total_convenios"] = len(convenios)
+                    resultados["convenios"] = convenios[:5]
+                    logger.info(f"✅ {len(convenios)} convênio(s) encontrado(s)")
         
         return resultados if resultados["encontrado"] else None
             
     except Exception as e:
-        print(f"⚠️ Erro ao buscar transparência gastos: {str(e)}")
+        logger.error(f"❌ Erro ao buscar transparência gastos: {str(e)}")
         return None
 
 

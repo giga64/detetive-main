@@ -884,12 +884,6 @@
                             </svg>
                             Resultados
                         </button>
-                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                            Fontes Públicas
-                        </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1017,6 +1011,12 @@
                                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                             </svg>
                             Empresas
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'public-info')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Fontes Públicas
                         </button>
                         <button class="tab-btn" onclick="switchTab(event, 'raw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
@@ -2274,7 +2274,7 @@
                             </div>
                         {% endif %}
                         
-                        <!-- Portal da Transparência (Benefícios/Convênios) -->
+                        <!-- Portal da Transparência (Servidor Público / Dados) -->
                         {% if apis_data.info_publica.transparencia_federal and apis_data.info_publica.transparencia_federal.encontrado %}
                             <div class="api-card" style="border-left: 4px solid #0ea5e9; margin-bottom: 16px; background: linear-gradient(135deg, rgba(14,165,233,0.05) 0%, rgba(14,165,233,0.02) 100%);">
                                 <h4 style="color: #0ea5e9; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
@@ -2282,41 +2282,112 @@
                                     🏛️ Portal da Transparência Federal
                                 </h4>
                                 <div class="api-content">
-                                    <p style="margin: 8px 0;"><strong>Tipo:</strong> {{ apis_data.info_publica.transparencia_federal.tipo_beneficio }}</p>
                                     
-                                    {% if apis_data.info_publica.transparencia_federal.total_convenios %}
-                                        <p style="margin: 8px 0;"><strong>Total de Convênios:</strong> <span style="background: rgba(14,165,233,0.2); padding: 2px 8px; border-radius: 4px; font-weight: bold;">{{ apis_data.info_publica.transparencia_federal.total_convenios }}</span></p>
-                                        <p style="margin: 8px 0;"><strong>Valor Total:</strong> <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">R$ {{ "{:,.2f}".format(apis_data.info_publica.transparencia_federal.valor_total) }}</span></p>
-                                        
-                                        {% if apis_data.info_publica.transparencia_federal.convenios %}
-                                            <p style="margin: 16px 0 8px 0; font-weight: bold;">📋 Convênios:</p>
-                                            {% for convenio in apis_data.info_publica.transparencia_federal.convenios %}
-                                                <div style="background: rgba(14,165,233,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(14,165,233,0.2);">
-                                                    <p style="margin: 4px 0; font-weight: 600; color: #0ea5e9;">{{ convenio.numero }}</p>
-                                                    <p style="margin: 4px 0; font-size: 0.9rem; color: #94a3b8;">{{ convenio.objeto }}</p>
-                                                    <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Valor:</strong> R$ {{ "{:,.2f}".format(convenio.valor) if convenio.valor else 'N/A' }}</p>
-                                                    <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Situação:</strong> {{ convenio.situacao }}</p>
-                                                </div>
-                                            {% endfor %}
+                                    <!-- Dados de Servidor Público (CPF) -->
+                                    {% if apis_data.info_publica.transparencia_federal.tipo == 'Servidor Público' %}
+                                        <p style="margin: 8px 0;"><strong>👤 Nome:</strong> {{ apis_data.info_publica.transparencia_federal.nome }}</p>
+                                        {% if apis_data.info_publica.transparencia_federal.cpf_mascarado %}
+                                            <p style="margin: 8px 0;"><strong>🔐 CPF:</strong> <span style="font-family: monospace; background: rgba(100,116,139,0.1); padding: 2px 6px; border-radius: 3px;">{{ apis_data.info_publica.transparencia_federal.cpf_mascarado }}</span></p>
                                         {% endif %}
+                                        {% if apis_data.info_publica.transparencia_federal.nis and apis_data.info_publica.transparencia_federal.nis|length > 0 %}
+                                            <p style="margin: 8px 0;"><strong>🆔 NIS:</strong> <span style="font-family: monospace; background: rgba(100,116,139,0.1); padding: 2px 6px; border-radius: 3px;">{{ apis_data.info_publica.transparencia_federal.nis }}</span></p>
+                                        {% endif %}
+                                        <p style="margin: 8px 0;"><strong>🛡️ Tipo de Servidor:</strong> <span style="background: rgba(14,165,233,0.2); padding: 2px 8px; border-radius: 4px; font-weight: bold;">{{ apis_data.info_publica.transparencia_federal.tipo_servidor }}</span></p>
+                                        <p style="margin: 8px 0;"><strong>📊 Situação:</strong> <span style="background: rgba(34,197,94,0.2); padding: 2px 8px; border-radius: 4px; color: #22c55e;">{{ apis_data.info_publica.transparencia_federal.situacao }}</span></p>
+                                        <p style="margin: 8px 0;"><strong>🏢 Órgão:</strong> {{ apis_data.info_publica.transparencia_federal.orgao }}</p>
+                                        <p style="margin: 8px 0; font-size: 0.85rem; color: #64748b;"><strong>Sigla:</strong> {{ apis_data.info_publica.transparencia_federal.sigla_orgao }}</p>
                                     {% endif %}
                                     
-                                    {% if apis_data.info_publica.transparencia_federal.total_registros %}
-                                        <p style="margin: 8px 0;"><strong>Total de Registros:</strong> <span style="background: rgba(14,165,233,0.2); padding: 2px 8px; border-radius: 4px; font-weight: bold;">{{ apis_data.info_publica.transparencia_federal.total_registros }}</span></p>
-                                        <p style="margin: 8px 0;"><strong>Valor Total Recebido:</strong> <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">R$ {{ "{:,.2f}".format(apis_data.info_publica.transparencia_federal.valor_total_recebido) }}</span></p>
+                                    <!-- Envolvimentos -->
+                                    {% if apis_data.info_publica.transparencia_federal.envolvimentos %}
+                                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                            <p style="margin: 8px 0; font-weight: bold; color: #0ea5e9;">📋 Envolvimentos:</p>
+                                            {% for env in apis_data.info_publica.transparencia_federal.envolvimentos %}
+                                                <p style="margin: 4px 0; font-size: 0.9rem; padding-left: 8px;">{{ env }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Benefícios Sociais -->
+                                    {% if apis_data.info_publica.transparencia_federal.beneficios_sociais and apis_data.info_publica.transparencia_federal.beneficios_sociais|length > 0 %}
+                                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                            <p style="margin: 8px 0; font-weight: bold; color: #10b981;">💰 Benefícios Sociais Recebidos:</p>
+                                            {% for benef in apis_data.info_publica.transparencia_federal.beneficios_sociais %}
+                                                <span style="display: inline-block; background: rgba(16,185,129,0.15); padding: 4px 8px; border-radius: 4px; margin: 4px 4px 4px 0; font-size: 0.85rem; border: 1px solid rgba(16,185,129,0.3);">
+                                                    💳 {{ benef }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Atividades -->
+                                    {% if apis_data.info_publica.transparencia_federal.atividades and apis_data.info_publica.transparencia_federal.atividades|length > 0 %}
+                                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                            <p style="margin: 8px 0; font-weight: bold; color: #0ea5e9;">📊 Atividades Relacionadas:</p>
+                                            {% for ativ in apis_data.info_publica.transparencia_federal.atividades %}
+                                                <p style="margin: 4px 0; font-size: 0.9rem; padding-left: 8px;">{{ ativ }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Sanções (Alert) -->
+                                    {% if apis_data.info_publica.transparencia_federal.sancoes and apis_data.info_publica.transparencia_federal.sancoes|length > 0 %}
+                                        <div style="margin-top: 12px; padding: 12px; background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; border-radius: 4px;">
+                                            <p style="margin: 0 0 8px 0; font-weight: bold; color: #dc2626;">🚨 SANÇÕES REGISTRADAS:</p>
+                                            {% for sanc in apis_data.info_publica.transparencia_federal.sancoes %}
+                                                <p style="margin: 4px 0; font-size: 0.9rem; color: #991b1b;">{{ sanc }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Dados de Empresa (CNPJ) -->
+                                    {% if apis_data.info_publica.transparencia_federal.tipo == 'Empresa' %}
+                                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                            <p style="margin: 8px 0;"><strong>🏢 Razão Social:</strong> {{ apis_data.info_publica.transparencia_federal.razao_social }}</p>
+                                            {% if apis_data.info_publica.transparencia_federal.nome_fantasia and apis_data.info_publica.transparencia_federal.nome_fantasia != 'N/A' %}
+                                                <p style="margin: 8px 0;"><strong>📛 Nome Fantasia:</strong> {{ apis_data.info_publica.transparencia_federal.nome_fantasia }}</p>
+                                            {% endif %}
+                                        </div>
                                         
-                                        {% if apis_data.info_publica.transparencia_federal.beneficios %}
-                                            <p style="margin: 16px 0 8px 0; font-weight: bold;">📋 Benefícios Recebidos:</p>
-                                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
-                                                {% for beneficio in apis_data.info_publica.transparencia_federal.beneficios %}
-                                                    <div style="background: rgba(14,165,233,0.05); padding: 8px; border-radius: 4px; border: 1px solid rgba(14,165,233,0.2); text-align: center;">
-                                                        <p style="margin: 2px 0; font-size: 0.85rem; color: #64748b;">{{ beneficio.mesAno }}</p>
-                                                        <p style="margin: 2px 0; font-weight: bold; color: #10b981;">R$ {{ "{:,.2f}".format(beneficio.valor) }}</p>
-                                                        <p style="margin: 2px 0; font-size: 0.8rem; color: #94a3b8;">{{ beneficio.municipio }}</p>
-                                                    </div>
+                                        <!-- Atividades da Empresa -->
+                                        {% if apis_data.info_publica.transparencia_federal.atividades and apis_data.info_publica.transparencia_federal.atividades|length > 0 %}
+                                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                                <p style="margin: 8px 0; font-weight: bold; color: #0ea5e9;">📊 Atividades da Empresa:</p>
+                                                {% for ativ in apis_data.info_publica.transparencia_federal.atividades %}
+                                                    <p style="margin: 4px 0; font-size: 0.9rem; padding-left: 8px;">{{ ativ }}</p>
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
+                                        
+                                        <!-- Renúncia Fiscal -->
+                                        {% if apis_data.info_publica.transparencia_federal.renuncia_fiscal and apis_data.info_publica.transparencia_federal.renuncia_fiscal|length > 0 %}
+                                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                                <p style="margin: 8px 0; font-weight: bold; color: #10b981;">💰 Renúncia Fiscal:</p>
+                                                {% for renu in apis_data.info_publica.transparencia_federal.renuncia_fiscal %}
+                                                    <p style="margin: 4px 0; font-size: 0.9rem; padding-left: 8px;">{{ renu }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    <!-- Convênios (CNPJ) -->
+                                    {% if apis_data.info_publica.transparencia_federal.total_convenios %}
+                                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(14,165,233,0.2);">
+                                            <p style="margin: 8px 0;"><strong>Total de Convênios:</strong> <span style="background: rgba(14,165,233,0.2); padding: 2px 8px; border-radius: 4px; font-weight: bold;">{{ apis_data.info_publica.transparencia_federal.total_convenios }}</span></p>
+                                            
+                                            {% if apis_data.info_publica.transparencia_federal.convenios %}
+                                                <p style="margin: 16px 0 8px 0; font-weight: bold;">📋 Convênios Celebrados:</p>
+                                                {% for convenio in apis_data.info_publica.transparencia_federal.convenios %}
+                                                    <div style="background: rgba(14,165,233,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(14,165,233,0.2);">
+                                                        <p style="margin: 4px 0; font-weight: 600; color: #0ea5e9;">{{ convenio.nome }}</p>
+                                                        <p style="margin: 4px 0; font-size: 0.9rem; color: #94a3b8;">{{ convenio.objeto[:100] }}</p>
+                                                        <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Valor:</strong> {{ convenio.valor_formatado }}</p>
+                                                        <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Concedente:</strong> {{ convenio.concedente }}</p>
+                                                        <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Data:</strong> {{ convenio.data_assinatura }}</p>
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
                                     
                                     <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #666;">
